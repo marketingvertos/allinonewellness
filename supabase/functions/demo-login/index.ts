@@ -416,6 +416,7 @@ Deno.serve(async (req) => {
     }
 
     await seed(userId!);
+    await seedWellness(userId!);
 
     return new Response(JSON.stringify({ email: DEMO_EMAIL, password: DEMO_PASSWORD }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
