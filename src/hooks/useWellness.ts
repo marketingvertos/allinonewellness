@@ -691,3 +691,167 @@ export function useDeleteWellnessPlan() {
       toast({ title: "Could not remove plan", description: getErrorMessage(error), variant: "destructive" }),
   });
 }
+
+/* --------------------------- Body measurements --------------------------- */
+
+export interface BodyMeasurement {
+  id: string;
+  recorded_date: string;
+  waist: number | null;
+  hip: number | null;
+  chest: number | null;
+  body_fat_percentage: number | null;
+}
+
+export function useBodyMeasurements(memberId: string | undefined) {
+  return useQuery({
+    queryKey: ["body-measurements", memberId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("body_measurements")
+        .select("id, recorded_date, waist, hip, chest, body_fat_percentage")
+        .eq("member_id", memberId!)
+        .order("recorded_date");
+      if (error) throw error;
+      return data as unknown as BodyMeasurement[];
+    },
+    enabled: !!memberId,
+  });
+}
+
+export function useAddBodyMeasurement() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (entry: Record<string, unknown>) => {
+      const { error } = await supabase.from("body_measurements").insert(entry as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["body-measurements"] });
+      t.success("Measurements recorded");
+    },
+    onError: t.onError,
+  });
+}
+
+/* ------------------------------ Birthdays ------------------------------ */
+
+export interface BirthdayEntry {
+  id: string;
+  full_name: string;
+  mobile_number: string;
+  date_of_birth: string;
+  nextDate: Date;
+  daysAway: number;
+  turningAge: number;
+}
+
+export function useUpcomingBirthdays(windowDays = 30) {
+  return useQuery({
+    queryKey: ["wellness-birthdays", windowDays],
+    queryFn: async (): Promise<BirthdayEntry[]> => {
+      const { data, error } = await supabase
+        .from("wellness_members")
+        .select("id, full_name, mobile_number, date_of_birth")
+        .not("date_of_birth", "is", null);
+      if (error) throw error;
+
+      const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      const today = new Date(`${todayStr}T00:00:00`);
+
+      return (data ?? [])
+        .map((m) => {
+          const dob = new Date(`${m.date_of_birth as string}T00:00:00`);
+          let next = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
+          if (next < today) next = new Date(today.getFullYear() + 1, dob.getMonth(), dob.getDate());
+          const daysAway = Math.round((next.getTime() - today.getTime()) / 86400000);
+          return {
+            id: m.id as string,
+            full_name: m.full_name as string,
+            mobile_number: m.mobile_number as string,
+            date_of_birth: m.date_of_birth as string,
+            nextDate: next,
+            daysAway,
+            turningAge: next.getFullYear() - dob.getFullYear(),
+          };
+        })
+        .filter((b) => b.daysAway <= windowDays)
+        .sort((a, b) => a.daysAway - b.daysAway);
+    },
+  });
+}
+
+/* --------------------- Check-in with optional weight --------------------- */
+
+export function useCheckInWithWeight() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (args: {
+      memberId: string;
+      weight?: number | null;
+      recordedBy?: string | null;
+      method?: string;
+      skipCheckIn?: boolean;
+    }) => {
+      let result: { status: string; message?: string; remaining?: number; mode?: string } | null = null;
+
+      if (!args.skipCheckIn) {
+        const { data, error } = await supabase.rpc("checkin_member", {
+          p_member_id: args.memberId,
+          p_method: args.method ?? "staff_entry",
+        } as never);
+        if (error) throw error;
+        result = data as never;
+      }
+
+      if (args.weight && args.recordedBy) {
+        const recorded_date = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+        await supabase
+          .from("weight_tracking")
+          .delete()
+          .eq("member_id", args.memberId)
+          .eq("recorded_date", recorded_date);
+        const { error } = await supabase.from("weight_tracking").insert({
+          member_id: args.memberId,
+          weight: args.weight,
+          recorded_date,
+          recorded_by: args.recordedBy,
+        } as never);
+        if (error) throw error;
+        const { error: e2 } = await supabase
+          .from("wellness_members")
+          .update({ current_weight: args.weight })
+          .eq("id", args.memberId);
+        if (e2) throw e2;
+      }
+
+      return result;
+    },
+    onSuccess: (result, vars) => {
+      qc.invalidateQueries();
+      const weightNote = vars.weight ? ` Weight ${vars.weight} kg saved.` : "";
+      if (!result) {
+        toast({ title: "Weight updated", description: `Today's reading recorded.` });
+        return;
+      }
+      if (result.status === "ok") {
+        toast({
+          title: "Checked in",
+          description:
+            (result.mode === "trial" ? "Trial visit recorded." : `Serving used. ${result.remaining} servings left.`) +
+            weightNote,
+        });
+      } else {
+        toast({
+          title: "Check-in not recorded",
+          description: result.message ?? "Please review the member's plan.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: unknown) =>
+      toast({ title: "Could not save", description: getErrorMessage(error), variant: "destructive" }),
+  });
+}

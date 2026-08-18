@@ -6,7 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/formatters";
-import { Users, CalendarCheck, BadgeCheck, AlertTriangle, IndianRupee } from "lucide-react";
+import { Users, CalendarCheck, BadgeCheck, AlertTriangle, IndianRupee, QrCode } from "lucide-react";
+import { BirthdaysCard } from "@/components/wellness/BirthdaysCard";
 
 export default function WellnessDashboard() {
   const { data, isLoading } = useWellnessStats();
@@ -21,9 +22,16 @@ export default function WellnessDashboard() {
   return (
     <div className="space-y-6">
       <PageBanner title="Wellness overview" description="Members, attendance and serving balances at a glance.">
-        <Button asChild className="w-full sm:w-auto">
-          <Link to="/wellness/checkin">Open check-in</Link>
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Button asChild className="w-full sm:w-auto">
+            <Link to="/wellness/checkin">Open check-in</Link>
+          </Button>
+          <Button asChild variant="secondary" className="w-full sm:w-auto">
+            <Link to="/wellness/qr">
+              <QrCode className="mr-2 h-4 w-4" /> Check-in QR
+            </Link>
+          </Button>
+        </div>
       </PageBanner>
 
       {isLoading ? (
@@ -86,6 +94,10 @@ export default function WellnessDashboard() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <BirthdaysCard />
       </div>
     </div>
   );

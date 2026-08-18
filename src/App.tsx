@@ -24,6 +24,7 @@ import WellnessDashboard from "./pages/WellnessDashboard";
 import WellnessMembers from "./pages/WellnessMembers";
 import WellnessCheckIn from "./pages/WellnessCheckIn";
 import WellnessPlans from "./pages/WellnessPlans";
+import WellnessQr from "./pages/WellnessQr";
 import { PortalLayout } from "./pages/portal/PortalLayout";
 import PortalAuth from "./pages/portal/PortalAuth";
 import PortalHome from "./pages/portal/PortalHome";
@@ -60,6 +61,7 @@ const App = () => (
                 <Route path="/wellness/members" element={<WellnessMembers />} />
                 <Route path="/wellness/checkin" element={<WellnessCheckIn />} />
                 <Route path="/wellness/plans" element={<WellnessPlans />} />
+                <Route path="/wellness/qr" element={<WellnessQr />} />
               </Route>
               <Route path="/portal/auth" element={<PortalAuth />} />
               <Route element={<PortalLayout />}>

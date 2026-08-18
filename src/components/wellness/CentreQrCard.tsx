@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime } from "@/lib/formatters";
-import { Printer, RefreshCw } from "lucide-react";
+import { Maximize2, Printer, RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function CentreQrCard() {
   const { data: settings, isLoading } = useCentreSettings();
@@ -42,6 +43,11 @@ export function CentreQrCard() {
                 onClick={() => rotate.mutate()}
               >
                 <RefreshCw className="mr-2 h-4 w-4" /> New code
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/wellness/qr">
+                  <Maximize2 className="mr-2 h-4 w-4" /> Poster
+                </Link>
               </Button>
             </div>
           </>
