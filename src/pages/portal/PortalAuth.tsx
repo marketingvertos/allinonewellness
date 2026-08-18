@@ -20,6 +20,7 @@ export default function PortalAuth() {
 
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
 
   if (loading) {
@@ -153,10 +154,19 @@ export default function PortalAuth() {
             </TabsContent>
             <TabsContent value="activate" className="space-y-4 pt-4">
               {fields("up")}
+              <div className="space-y-2">
+                <Label htmlFor="up-code">Activation code</Label>
+                <Input
+                  id="up-code"
+                  placeholder="6-character code from the front desk"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
-                Use the mobile number you gave at the centre. If it is not registered yet, please ask the front desk.
+                Use the mobile number you gave at the centre along with the activation code the front desk shares with you.
               </p>
-              <Button className="w-full" disabled={!valid || busy} onClick={activate}>
+              <Button className="w-full" disabled={!valid || code.trim().length < 4 || busy} onClick={activate}>
                 {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Activate
               </Button>
             </TabsContent>
