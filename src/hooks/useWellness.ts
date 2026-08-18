@@ -565,10 +565,10 @@ export function useWellnessStats() {
         return acc;
       }, {});
 
-      const monthStart = new Date();
-      monthStart.setDate(1);
-      const revenueThisMonth = (memberships.data ?? [])
-        .filter((m) => new Date(m.start_date as string) >= monthStart)
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const revenueLast30Days = (memberships.data ?? [])
+        .filter((m) => new Date(m.start_date as string) >= since)
         .reduce((sum, m) => sum + Number(m.price_paid ?? 0), 0);
 
       return {
