@@ -215,18 +215,19 @@ export default function DataImportExport() {
     if (type === "contacts") {
       const headers = ["first_name", "last_name", "email", "phone", "position", "company", "tags"];
       const sampleRows = [
-        ["Jane", "Smith", "jane.smith@example.com", "+1-555-0101", "VP Sales", "Acme Corp", "decision-maker;enterprise"],
-        ["John", "Doe", "john.doe@example.com", "+1-555-0102", "CTO", "Globex Inc", "technical;champion"],
-        ["Maria", "Garcia", "maria.g@example.com", "", "Account Manager", "Initech", ""],
+        ["Ananya", "Sharma", "ananya.sharma@tatadigital.com", "+91 98200 12345", "VP Sales", "Tata Digital Pvt. Ltd.", "decision-maker;enterprise"],
+        ["Karthik", "Subramanian", "karthik.s@zerodha.com", "+91 99000 45678", "CTO", "Zerodha Broking", "technical;champion"],
+        ["Neha", "Gupta", "neha.gupta@nykaa.com", "", "Growth Manager", "Nykaa Retail", ""],
       ];
       downloadCSV(headers, sampleRows, "contacts_template.csv");
     } else {
       const headers = ["title", "company", "value", "probability", "close_date", "stage", "notes"];
       const sampleRows = [
-        ["Enterprise License Deal", "Acme Corp", "85000", "60", "2026-04-15", "Qualified", "Initial discussions went well"],
-        ["SaaS Migration Project", "Globex Inc", "120000", "40", "2026-05-01", "Proposal", "Awaiting budget approval"],
-        ["Training Package", "Initech", "25000", "80", "2026-03-20", "Negotiation", "Final terms being reviewed"],
+        ["Annual CRM Licence", "Tata Digital Pvt. Ltd.", "8500000", "60", "2026-10-15", "Qualified", "Value in INR, GST extra"],
+        ["Marketing Automation Rollout", "Infosys BPM", "6200000", "40", "2026-11-01", "Proposal", "Awaiting budget approval"],
+        ["Training Package", "Mahindra Logistics", "250000", "80", "2026-09-20", "Negotiation", "Final terms being reviewed"],
       ];
+
       downloadCSV(headers, sampleRows, "deals_template.csv");
     }
     toast({ title: "Template downloaded", description: `Use this CSV as a starting point for your ${type} import.` });
