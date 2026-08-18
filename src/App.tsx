@@ -20,6 +20,10 @@ import Settings from "./pages/Settings";
 import DataImportExport from "./pages/DataImportExport";
 import Tasks from "./pages/Tasks";
 import CalendarView from "./pages/CalendarView";
+import WellnessDashboard from "./pages/WellnessDashboard";
+import WellnessMembers from "./pages/WellnessMembers";
+import WellnessCheckIn from "./pages/WellnessCheckIn";
+import WellnessPlans from "./pages/WellnessPlans";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
