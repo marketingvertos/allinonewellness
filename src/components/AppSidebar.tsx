@@ -43,6 +43,13 @@ const mainNav = [
   { title: "Import/Export", icon: FileSpreadsheet, to: "/data" },
 ];
 
+const wellnessNav = [
+  { title: "Overview", icon: HeartPulse, to: "/wellness" },
+  { title: "Members", icon: Users, to: "/wellness/members" },
+  { title: "Check-in", icon: ScanLine, to: "/wellness/checkin" },
+  { title: "Plans", icon: ClipboardList, to: "/wellness/plans" },
+];
+
 export function AppSidebar() {
   const { signOut, user } = useAuth();
 
