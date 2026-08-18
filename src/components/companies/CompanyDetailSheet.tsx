@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil, X, Save, Trash2, Globe, Factory, Users, Calendar, Clock } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/formatters";
 
 interface CompanyDetailSheetProps {
   company: Company | null;
@@ -112,11 +112,11 @@ export function CompanyDetailSheet({ company, open, onOpenChange }: CompanyDetai
               <div className="space-y-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-3.5 w-3.5" />
-                  <span>Created {format(new Date(company.created_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                  <span>Created {formatDateTime(company.created_at)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5" />
-                  <span>Updated {format(new Date(company.updated_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                  <span>Updated {formatDateTime(company.updated_at)}</span>
                 </div>
               </div>
             </div>

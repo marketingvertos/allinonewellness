@@ -45,11 +45,11 @@ function Pill({ children }: { children: React.ReactNode }) {
 }
 
 const DEAL_NOTIFICATIONS = [
-  { company: "Arcline", amount: "$48,000", time: "just now" },
-  { company: "Vantage Co", amount: "$32,500", time: "2m ago" },
-  { company: "Helix Labs", amount: "$67,200", time: "5m ago" },
-  { company: "Northpeak", amount: "$21,000", time: "8m ago" },
-  { company: "Stratos Inc", amount: "$55,800", time: "12m ago" },
+  { company: "Tata Digital", amount: "₹48,00,000", time: "just now" },
+  { company: "Zerodha", amount: "₹32,50,000", time: "2m ago" },
+  { company: "Nykaa Retail", amount: "₹67,20,000", time: "5m ago" },
+  { company: "Swiggy", amount: "₹21,00,000", time: "8m ago" },
+  { company: "Asian Paints", amount: "₹55,80,000", time: "12m ago" },
 ];
 
 function StackedNotifications() {
@@ -252,7 +252,7 @@ export default function Landing() {
                 </svg>
                 <div>
                   <p className="text-xs text-muted-foreground">Pipeline value</p>
-                  <p className="text-lg font-semibold">$284,500</p>
+                  <p className="text-lg font-semibold">₹2,84,50,000</p>
                 </div>
               </div>
             </div>
@@ -355,10 +355,10 @@ export default function Landing() {
                     <line x1="50" y1="135" x2="260" y2="135" stroke="hsl(170 30% 76%)" strokeWidth="0.5" />
 
                     {/* Y-axis labels */}
-                    <text x="44" y="34" fill="hsl(170,15%,15%)" fontSize="9" fontWeight="600" fontFamily="sans-serif" textAnchor="end" opacity="0.5">$80k</text>
-                    <text x="44" y="69" fill="hsl(170,15%,15%)" fontSize="9" fontWeight="600" fontFamily="sans-serif" textAnchor="end" opacity="0.5">$60k</text>
-                    <text x="44" y="104" fill="hsl(170,15%,15%)" fontSize="9" fontWeight="600" fontFamily="sans-serif" textAnchor="end" opacity="0.5">$40k</text>
-                    <text x="44" y="139" fill="hsl(170,15%,15%)" fontSize="9" fontWeight="600" fontFamily="sans-serif" textAnchor="end" opacity="0.5">$20k</text>
+                    <text x="44" y="34" fill="hsl(170,15%,15%)" fontSize="9" fontWeight="600" fontFamily="sans-serif" textAnchor="end" opacity="0.5">₹80L</text>
+                    <text x="44" y="69" fill="hsl(170,15%,15%)" fontSize="9" fontWeight="600" fontFamily="sans-serif" textAnchor="end" opacity="0.5">₹60L</text>
+                    <text x="44" y="104" fill="hsl(170,15%,15%)" fontSize="9" fontWeight="600" fontFamily="sans-serif" textAnchor="end" opacity="0.5">₹40L</text>
+                    <text x="44" y="139" fill="hsl(170,15%,15%)" fontSize="9" fontWeight="600" fontFamily="sans-serif" textAnchor="end" opacity="0.5">₹20L</text>
 
                     {/* Bars — bottoms at y=155 baseline, moved down from trend line */}
                     <rect x="65" y="108" width="22" height="47" rx="4" fill="white" opacity="0.6" />

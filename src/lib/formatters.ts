@@ -1,18 +1,51 @@
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
+
+export const APP_TIME_ZONE = "Asia/Kolkata";
+export const APP_LOCALE = "en-IN";
 
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat(APP_LOCALE, {
     style: "currency",
-    currency: "USD",
+    currency: "INR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(value ?? 0);
+}
+
+/** Short Indian-style figures: ₹12.5L, ₹1.2Cr */
+export function formatCompactCurrency(value: number): string {
+  const v = value ?? 0;
+  const abs = Math.abs(v);
+  const sign = v < 0 ? "-" : "";
+  if (abs >= 10000000) return `${sign}₹${(abs / 10000000).toFixed(abs >= 100000000 ? 0 : 1)}Cr`;
+  if (abs >= 100000) return `${sign}₹${(abs / 100000).toFixed(abs >= 10000000 ? 0 : 1)}L`;
+  if (abs >= 1000) return `${sign}₹${(abs / 1000).toFixed(abs >= 100000 ? 0 : 1)}K`;
+  return formatCurrency(v);
 }
 
 export function formatRelativeDate(date: string | Date): string {
   return formatDistanceToNow(new Date(date), { addSuffix: true });
 }
 
+/** e.g. 18 Aug 2026 (IST) */
 export function formatDate(date: string | Date): string {
-  return format(new Date(date), "MMM d, yyyy");
+  return new Intl.DateTimeFormat(APP_LOCALE, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: APP_TIME_ZONE,
+  }).format(new Date(date));
+}
+
+/** e.g. 18 Aug 2026 at 4:30 pm (IST) */
+export function formatDateTime(date: string | Date): string {
+  const d = new Date(date);
+  const day = formatDate(d);
+  const time = new Intl.DateTimeFormat(APP_LOCALE, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: APP_TIME_ZONE,
+  }).format(d);
+  return `${day} at ${time}`;
 }

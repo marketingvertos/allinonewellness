@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil, X, Save, Trash2, Calendar, Clock, LinkIcon } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { formatDateTime } from "@/lib/formatters";
 
 interface TaskDetailDialogProps {
   task: Task | null;
@@ -182,7 +182,7 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="text-muted-foreground">Due:</span>
-                  <span>{task.due_date ? format(parseISO(task.due_date), "MMM d, yyyy 'at' h:mm a") : "—"}</span>
+                  <span>{task.due_date ? formatDateTime(task.due_date) : "—"}</span>
                 </div>
                 {task.deals && (
                   <div className="flex items-center gap-2">
@@ -205,11 +205,11 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
               <div className="space-y-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-3.5 w-3.5" />
-                  <span>Created {format(new Date(task.created_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                  <span>Created {formatDateTime(task.created_at)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5" />
-                  <span>Updated {format(new Date(task.updated_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                  <span>Updated {formatDateTime(task.updated_at)}</span>
                 </div>
               </div>
 
