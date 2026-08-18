@@ -122,6 +122,20 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
               <Detail label="Target weight" value={member.target_weight ? `${member.target_weight} kg` : "—"} />
               <Detail label="Height" value={member.height ? `${member.height} cm` : "—"} />
             </dl>
+            <div className="rounded-lg border p-4 text-sm">
+              <p className="font-medium">Member portal access</p>
+              {(member as { user_id?: string | null }).user_id ? (
+                <p className="text-muted-foreground">Portal login is active for this member.</p>
+              ) : (
+                <p className="text-muted-foreground">
+                  Share this activation code so the member can activate the portal at /portal/auth:{" "}
+                  <span className="font-mono font-semibold text-foreground">
+                    {(member as { activation_code?: string }).activation_code ?? "—"}
+                  </span>
+                </p>
+              )}
+            </div>
+
             {activeTrial && (
               <div className="rounded-lg border p-4 text-sm">
                 <p className="font-medium">Trial in progress</p>

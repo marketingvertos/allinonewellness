@@ -589,3 +589,105 @@ export function useWellnessStats() {
     },
   });
 }
+
+/* ------------------------- Centre QR / self check-in ------------------------- */
+
+export function useCentreSettings() {
+  return useQuery({
+    queryKey: ["wellness-centre-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_centre_settings")
+        .select("id, checkin_code, code_rotated_at")
+        .maybeSingle();
+      if (error) throw error;
+      return data as unknown as { id: string; checkin_code: string; code_rotated_at: string } | null;
+    },
+  });
+}
+
+export function useRotateCheckinCode() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("rotate_checkin_code" as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wellness-centre-settings"] });
+      t.success("New QR code generated");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useSelfCheckIn() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (code: string) => {
+      const { data, error } = await supabase.rpc("member_self_checkin", { p_code: code } as never);
+      if (error) throw error;
+      return data as unknown as { status: string; message?: string; remaining?: number; mode?: string };
+    },
+    onSuccess: () => qc.invalidateQueries(),
+  });
+}
+
+/* --------------------------- Member portal data --------------------------- */
+
+export function useMyMemberProfile() {
+  return useQuery({
+    queryKey: ["my-member-profile"],
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return null;
+      const { data, error } = await supabase
+        .from("wellness_members")
+        .select("*")
+        .eq("user_id", auth.user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as unknown as WellnessMember | null;
+    },
+  });
+}
+
+/* ------------------------------ Plan admin ------------------------------ */
+
+export function usePlanUsage() {
+  return useQuery({
+    queryKey: ["wellness-plan-usage"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("wellness_plan_usage" as never);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as { plan_id: string; usage_count: number }[];
+      return Object.fromEntries(rows.map((r) => [r.plan_id, Number(r.usage_count)])) as Record<string, number>;
+    },
+  });
+}
+
+export function useDeleteWellnessPlan() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (planId: string) => {
+      const { data, error } = await supabase.rpc("delete_wellness_plan", { p_plan_id: planId } as never);
+      if (error) throw error;
+      return data as unknown as { status: string; references?: number };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["wellness-plans"] });
+      qc.invalidateQueries({ queryKey: ["wellness-plan-usage"] });
+      toast({
+        title: result?.status === "deleted" ? "Plan deleted" : "Plan deactivated",
+        description:
+          result?.status === "deleted"
+            ? "The plan was never sold, so it has been removed."
+            : `The plan is used by ${result?.references ?? 0} record(s), so history was kept and it is now inactive.`,
+      });
+    },
+    onError: (error: unknown) =>
+      toast({ title: "Could not remove plan", description: getErrorMessage(error), variant: "destructive" }),
+  });
+}
