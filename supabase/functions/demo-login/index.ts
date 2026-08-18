@@ -415,6 +415,12 @@ Deno.serve(async (req) => {
       await admin.from("profiles").update({ company: "Vertos Marketing Pvt. Ltd." }).eq("user_id", userId);
     }
 
+    // The demo account manages the whole workspace, including wellness records.
+    const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", userId!);
+    if (!roles?.some((r) => r.role === "admin")) {
+      await admin.from("user_roles").insert({ user_id: userId!, role: "admin" });
+    }
+
     await seed(userId!);
     await seedWellness(userId!);
 
