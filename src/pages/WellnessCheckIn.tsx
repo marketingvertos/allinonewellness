@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/formatters";
 import { Search } from "lucide-react";
+import { CentreQrCard } from "@/components/wellness/CentreQrCard";
 
 export default function WellnessCheckIn() {
   const [query, setQuery] = useState("");
@@ -24,6 +25,7 @@ export default function WellnessCheckIn() {
         description="Scan or search a member, then record today's visit. One serving is deducted automatically."
       />
 
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Find a member</CardTitle>
@@ -62,6 +64,8 @@ export default function WellnessCheckIn() {
             ))}
         </CardContent>
       </Card>
+      <CentreQrCard />
+      </div>
 
       <Card>
         <CardHeader>

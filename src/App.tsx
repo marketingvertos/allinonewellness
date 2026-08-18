@@ -24,6 +24,11 @@ import WellnessDashboard from "./pages/WellnessDashboard";
 import WellnessMembers from "./pages/WellnessMembers";
 import WellnessCheckIn from "./pages/WellnessCheckIn";
 import WellnessPlans from "./pages/WellnessPlans";
+import { PortalLayout } from "./pages/portal/PortalLayout";
+import PortalAuth from "./pages/portal/PortalAuth";
+import PortalHome from "./pages/portal/PortalHome";
+import PortalCheckIn from "./pages/portal/PortalCheckIn";
+import PortalHistory from "./pages/portal/PortalHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +60,12 @@ const App = () => (
                 <Route path="/wellness/members" element={<WellnessMembers />} />
                 <Route path="/wellness/checkin" element={<WellnessCheckIn />} />
                 <Route path="/wellness/plans" element={<WellnessPlans />} />
+              </Route>
+              <Route path="/portal/auth" element={<PortalAuth />} />
+              <Route element={<PortalLayout />}>
+                <Route path="/portal" element={<PortalHome />} />
+                <Route path="/portal/checkin" element={<PortalCheckIn />} />
+                <Route path="/portal/history" element={<PortalHistory />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
