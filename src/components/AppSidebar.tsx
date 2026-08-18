@@ -17,6 +17,7 @@ import {
   HeartPulse,
   ScanLine,
   ClipboardList,
+  QrCode,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -52,6 +53,7 @@ const wellnessNav = [
   { title: "Members", icon: Users, to: "/wellness/members" },
   { title: "Check-in", icon: ScanLine, to: "/wellness/checkin" },
   { title: "Plans", icon: ClipboardList, to: "/wellness/plans" },
+  { title: "Check-in QR", icon: QrCode, to: "/wellness/qr" },
 ];
 
 export function AppSidebar() {
