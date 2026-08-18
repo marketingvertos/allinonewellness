@@ -214,7 +214,184 @@ async function seed(userId: string) {
   ]);
 }
 
-Deno.serve(async (req) => {
+const WELLNESS_MEMBERS = [
+  ["Ananya Iyer", "female", "weight_loss", 78.4, 72.5, 65],
+  ["Rohit Deshmukh", "male", "fat_loss", 92.0, 87.2, 80],
+  ["Meera Nair", "female", "weight_management", 61.2, 60.4, 58],
+  ["Vikram Chauhan", "male", "body_transformation", 104.5, 96.8, 85],
+  ["Sneha Kulkarni", "female", "weight_loss", 71.0, 66.3, 60],
+  ["Arjun Menon", "male", "general_wellness", 74.8, 74.0, 72],
+  ["Divya Raghavan", "female", "healthy_lifestyle", 66.5, 64.9, 62],
+  ["Karthik Subramanian", "male", "weight_loss", 88.9, 83.1, 78],
+  ["Pooja Bhatt", "female", "fat_loss", 69.7, 65.2, 60],
+  ["Sandeep Rathore", "male", "weight_gain", 54.3, 58.1, 65],
+  ["Lakshmi Venkatesh", "female", "weight_loss", 82.0, 77.4, 68],
+  ["Imran Sheikh", "male", "weight_management", 79.5, 78.2, 75],
+  ["Nisha Agarwal", "female", "healthy_lifestyle", 63.8, 62.5, 60],
+  ["Harpreet Kaur", "female", "weight_loss", 85.6, 79.9, 70],
+  ["Manish Gupta", "male", "fat_loss", 97.2, 91.5, 82],
+] as const;
+
+const isoDate = (offsetDays: number) =>
+  new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
+
+async function seedWellness(userId: string) {
+  const { count } = await admin
+    .from("wellness_members")
+    .select("id", { count: "exact", head: true })
+    .eq("created_by", userId);
+  if ((count ?? 0) > 0) return;
+
+  const { data: plans } = await admin
+    .from("wellness_plans")
+    .insert([
+      { name: "3-Day Trial", plan_type: "trial", duration_days: 3, total_servings: 3, price: 0, description: "Complimentary introductory trial.", created_by: userId },
+      { name: "Starter — 12 Servings", plan_type: "membership", duration_days: 30, total_servings: 12, price: 2400, description: "Alternate-day plan for beginners.", created_by: userId },
+      { name: "Balance — 30 Servings", plan_type: "membership", duration_days: 30, total_servings: 30, price: 5500, description: "Daily serving for a full month.", created_by: userId },
+      { name: "Transform — 90 Servings", plan_type: "membership", duration_days: 90, total_servings: 90, price: 14500, description: "Quarterly transformation programme.", created_by: userId },
+    ])
+    .select("id, name, total_servings, duration_days, price");
+  if (!plans) throw new Error("plan insert failed");
+
+  const planByName = (name: string) => plans.find((p) => p.name.startsWith(name))!;
+
+  const { data: batches } = await admin
+    .from("wellness_batches")
+    .insert([
+      { name: "Morning Batch (6:30 AM IST)", program_type: "weight_loss", start_date: isoDate(-40), coach_staff_id: userId, max_capacity: 25, created_by: userId },
+      { name: "Evening Batch (7:00 PM IST)", program_type: "general_wellness", start_date: isoDate(-25), coach_staff_id: userId, max_capacity: 25, created_by: userId },
+    ])
+    .select("id");
+
+  const statuses = ["active_member", "active_member", "active_member", "active_member", "active_member", "active_member", "renewal_due", "renewal_due", "trial", "trial", "lead", "lead", "expired", "active_member", "active_member"];
+
+  const { data: members } = await admin
+    .from("wellness_members")
+    .insert(
+      WELLNESS_MEMBERS.map(([name, gender, goal, initial, current, target], i) => ({
+        full_name: name,
+        mobile_number: `+91 9${String(800000000 + i * 1234567).slice(0, 9)}`,
+        email: `${name.split(" ")[0].toLowerCase()}@example.in`,
+        gender,
+        goal,
+        initial_weight: initial,
+        current_weight: current,
+        target_weight: target,
+        height: gender === "female" ? 158 + (i % 8) : 170 + (i % 9),
+        joining_date: isoDate(-(60 - i * 3)),
+        status: statuses[i],
+        batch_id: batches?.[i % 2]?.id ?? null,
+        created_by: userId,
+      })),
+    )
+    .select("id, full_name, status, current_weight, initial_weight");
+  if (!members) throw new Error("member insert failed");
+
+  // Trials for the trial-stage members
+  const trialMembers = members.filter((m) => m.status === "trial");
+  if (trialMembers.length) {
+    await admin.from("wellness_trials").insert(
+      trialMembers.map((m, i) => ({
+        member_id: m.id,
+        plan_id: planByName("3-Day").id,
+        start_date: isoDate(-i),
+        duration_days: 3,
+        weight_at_start: m.current_weight,
+        status: "active",
+        created_by: userId,
+      })),
+    );
+  }
+
+  // Memberships for active / renewal-due members
+  const paidMembers = members.filter((m) => m.status === "active_member" || m.status === "renewal_due");
+  const membershipRows = paidMembers.map((m, i) => {
+    const plan = i % 3 === 0 ? planByName("Transform") : i % 2 === 0 ? planByName("Balance") : planByName("Starter");
+    const used = Math.min(plan.total_servings - (m.status === "renewal_due" ? 2 : 6 + (i % 8)), plan.total_servings);
+    const safeUsed = Math.max(used, 0);
+    return {
+      member_id: m.id,
+      plan_id: plan.id,
+      membership_code: `WM-2026-${String(100200 + i)}`,
+      start_date: isoDate(-(20 + i)),
+      end_date: isoDate(plan.duration_days - 20 - i),
+      total_servings: plan.total_servings,
+      used_servings: safeUsed,
+      remaining_servings: plan.total_servings - safeUsed,
+      status: m.status === "renewal_due" ? "expiring_soon" : "active",
+      price_paid: plan.price,
+      created_by: userId,
+    };
+  });
+  const { data: memberships } = await admin
+    .from("wellness_memberships")
+    .insert(membershipRows)
+    .select("id, member_id, total_servings, used_servings, remaining_servings");
+
+  if (memberships) {
+    await admin.from("serving_transactions").insert(
+      memberships.map((ms) => ({
+        member_id: ms.member_id,
+        membership_id: ms.id,
+        txn_type: "membership_allocation",
+        change: ms.total_servings,
+        balance_after: ms.total_servings,
+        created_by: userId,
+        note: "Demo allocation",
+      })),
+    );
+
+    // Attendance for the last 5 days across paid members
+    const attendance: Record<string, unknown>[] = [];
+    memberships.forEach((ms, idx) => {
+      for (let d = 1; d <= 5; d++) {
+        if ((idx + d) % 3 === 0) continue;
+        attendance.push({
+          member_id: ms.member_id,
+          membership_id: ms.id,
+          visit_date: isoDate(-d),
+          visit_time: new Date(Date.now() - d * 86400000).toISOString(),
+          serving_deducted: true,
+          remaining_balance_snapshot: Math.max(ms.remaining_servings + d, 0),
+          checkin_method: "staff_entry",
+          staff_id: userId,
+        });
+      }
+    });
+    if (attendance.length) await admin.from("wellness_attendance").insert(attendance);
+  }
+
+  // Weight history
+  const weights: Record<string, unknown>[] = [];
+  members.forEach((m) => {
+    const start = Number(m.initial_weight ?? 70);
+    const end = Number(m.current_weight ?? start);
+    for (let w = 0; w < 5; w++) {
+      weights.push({
+        member_id: m.id,
+        recorded_date: isoDate(-(28 - w * 7)),
+        weight: Number((start + ((end - start) * w) / 4).toFixed(1)),
+        recorded_by: userId,
+      });
+    }
+  });
+  await admin.from("weight_tracking").insert(weights);
+
+  await admin.from("member_notes").insert(
+    members.slice(0, 5).map((m) => ({
+      member_id: m.id,
+      note: `${m.full_name.split(" ")[0]} prefers the morning slot and follows a vegetarian meal plan.`,
+      created_by: userId,
+    })),
+  );
+
+  await admin.from("wellness_notification_templates").insert([
+    { trigger_key: "trial_day_1", channel: "whatsapp", message_template: "Namaste {{name}}, welcome to your 3-day wellness trial!", created_by: userId },
+    { trigger_key: "serving_balance_5", channel: "whatsapp", message_template: "Hi {{name}}, only 5 servings left. Renew to stay on track.", created_by: userId },
+    { trigger_key: "membership_activated", channel: "whatsapp", message_template: "Your membership {{code}} is active until {{end_date}}.", created_by: userId },
+  ]);
+}
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
