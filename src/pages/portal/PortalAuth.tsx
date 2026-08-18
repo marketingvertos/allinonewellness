@@ -54,34 +54,39 @@ export default function PortalAuth() {
     setBusy(true);
     try {
       const digits = normalizeMobile(mobile);
-      const { error } = await supabase.auth.signUp({
-        email: mobileToEmail(mobile),
+      const email = mobileToEmail(mobile);
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
         password,
         options: {
           emailRedirectTo: window.location.origin,
           data: { account_type: "wellness_member", mobile_number: digits },
         },
       });
+
+      if (signUpError) {
+        // Account may already exist from an earlier attempt — try signing in instead.
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signUpError;
+      }
+
+      const { data, error } = await supabase.rpc("claim_member_account", {
+        p_mobile: digits,
+        p_code: code.trim(),
+      } as never);
       if (error) throw error;
 
-      // The database links this login to the member record created at the centre.
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        const { data: member } = await supabase
-          .from("wellness_members")
-          .select("id")
-          .eq("user_id", userData.user.id)
-          .maybeSingle();
-        if (!member) {
-          await supabase.auth.signOut();
-          toast({
-            title: "We could not find your membership",
-            description: "Please ask the front desk to register this mobile number first.",
-            variant: "destructive",
-          });
-          return;
-        }
+      const result = data as unknown as { status: string; message?: string };
+      if (result?.status !== "ok") {
+        await supabase.auth.signOut();
+        toast({
+          title: "Could not activate",
+          description: result?.message ?? "Please check the details with the front desk.",
+          variant: "destructive",
+        });
+        return;
       }
+
       toast({ title: "Account activated", description: "You are signed in." });
     } catch (error) {
       toast({
@@ -93,6 +98,7 @@ export default function PortalAuth() {
       setBusy(false);
     }
   };
+
 
   const fields = (idPrefix: string) => (
     <div className="space-y-4">
