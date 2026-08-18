@@ -37,6 +37,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
     mobile_number: "",
     email: "",
     gender: "",
+    date_of_birth: "",
     goal: "",
     initial_weight: "",
     target_weight: "",
@@ -52,6 +53,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       mobile_number: form.mobile_number.trim(),
       email: form.email.trim() || null,
       gender: form.gender || null,
+      date_of_birth: form.date_of_birth || null,
       goal: form.goal || null,
       initial_weight: form.initial_weight ? Number(form.initial_weight) : null,
       current_weight: form.initial_weight ? Number(form.initial_weight) : null,
@@ -65,6 +67,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       mobile_number: "",
       email: "",
       gender: "",
+      date_of_birth: "",
       goal: "",
       initial_weight: "",
       target_weight: "",
@@ -106,6 +109,10 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="wm-dob">Date of birth</Label>
+            <Input id="wm-dob" type="date" value={form.date_of_birth} onChange={(e) => set("date_of_birth")(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label>Goal</Label>
