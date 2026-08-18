@@ -62,6 +62,50 @@ export type Database = {
           },
         ]
       }
+      body_measurements: {
+        Row: {
+          body_fat_percentage: number | null
+          chest: number | null
+          created_at: string
+          hip: number | null
+          id: string
+          member_id: string
+          recorded_by: string
+          recorded_date: string
+          waist: number | null
+        }
+        Insert: {
+          body_fat_percentage?: number | null
+          chest?: number | null
+          created_at?: string
+          hip?: number | null
+          id?: string
+          member_id: string
+          recorded_by: string
+          recorded_date?: string
+          waist?: number | null
+        }
+        Update: {
+          body_fat_percentage?: number | null
+          chest?: number | null
+          created_at?: string
+          hip?: number | null
+          id?: string
+          member_id?: string
+          recorded_by?: string
+          recorded_date?: string
+          waist?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_measurements_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string
@@ -252,6 +296,38 @@ export type Database = {
         }
         Relationships: []
       }
+      member_notes: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          member_id: string
+          note: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          member_id: string
+          note: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          member_id?: string
+          note?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_notes_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -388,6 +464,67 @@ export type Database = {
         }
         Relationships: []
       }
+      serving_transactions: {
+        Row: {
+          attendance_id: string | null
+          balance_after: number
+          change: number
+          created_at: string
+          created_by: string
+          id: string
+          member_id: string
+          membership_id: string
+          note: string | null
+          txn_type: Database["public"]["Enums"]["serving_txn_type"]
+        }
+        Insert: {
+          attendance_id?: string | null
+          balance_after: number
+          change: number
+          created_at?: string
+          created_by: string
+          id?: string
+          member_id: string
+          membership_id: string
+          note?: string | null
+          txn_type: Database["public"]["Enums"]["serving_txn_type"]
+        }
+        Update: {
+          attendance_id?: string | null
+          balance_after?: number
+          change?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          member_id?: string
+          membership_id?: string
+          note?: string | null
+          txn_type?: Database["public"]["Enums"]["serving_txn_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serving_transactions_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serving_transactions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serving_transactions_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           completed: boolean
@@ -516,11 +653,513 @@ export type Database = {
         }
         Relationships: []
       }
+      weight_tracking: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          notes: string | null
+          recorded_by: string
+          recorded_date: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          notes?: string | null
+          recorded_by: string
+          recorded_date?: string
+          weight: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          notes?: string | null
+          recorded_by?: string
+          recorded_date?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weight_tracking_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_attendance: {
+        Row: {
+          checkin_method: Database["public"]["Enums"]["checkin_method"]
+          created_at: string
+          id: string
+          member_id: string
+          membership_id: string | null
+          remaining_balance_snapshot: number | null
+          serving_deducted: boolean
+          staff_id: string | null
+          trial_id: string | null
+          visit_date: string
+          visit_time: string
+        }
+        Insert: {
+          checkin_method?: Database["public"]["Enums"]["checkin_method"]
+          created_at?: string
+          id?: string
+          member_id: string
+          membership_id?: string | null
+          remaining_balance_snapshot?: number | null
+          serving_deducted?: boolean
+          staff_id?: string | null
+          trial_id?: string | null
+          visit_date?: string
+          visit_time?: string
+        }
+        Update: {
+          checkin_method?: Database["public"]["Enums"]["checkin_method"]
+          created_at?: string
+          id?: string
+          member_id?: string
+          membership_id?: string | null
+          remaining_balance_snapshot?: number | null
+          serving_deducted?: boolean
+          staff_id?: string | null
+          trial_id?: string | null
+          visit_date?: string
+          visit_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_attendance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_attendance_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_attendance_trial_id_fkey"
+            columns: ["trial_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_trials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_batches: {
+        Row: {
+          coach_staff_id: string | null
+          created_at: string
+          created_by: string
+          end_date: string | null
+          id: string
+          max_capacity: number | null
+          name: string
+          program_type: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          coach_staff_id?: string | null
+          created_at?: string
+          created_by: string
+          end_date?: string | null
+          id?: string
+          max_capacity?: number | null
+          name: string
+          program_type?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          coach_staff_id?: string | null
+          created_at?: string
+          created_by?: string
+          end_date?: string | null
+          id?: string
+          max_capacity?: number | null
+          name?: string
+          program_type?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wellness_members: {
+        Row: {
+          activity_level: string | null
+          batch_id: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string
+          current_weight: number | null
+          date_of_birth: string | null
+          email: string | null
+          full_name: string
+          gender: string | null
+          goal: Database["public"]["Enums"]["wellness_goal"] | null
+          height: number | null
+          id: string
+          initial_weight: number | null
+          joining_date: string
+          mobile_number: string
+          status: Database["public"]["Enums"]["wellness_status"]
+          target_weight: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_level?: string | null
+          batch_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by: string
+          current_weight?: number | null
+          date_of_birth?: string | null
+          email?: string | null
+          full_name: string
+          gender?: string | null
+          goal?: Database["public"]["Enums"]["wellness_goal"] | null
+          height?: number | null
+          id?: string
+          initial_weight?: number | null
+          joining_date?: string
+          mobile_number: string
+          status?: Database["public"]["Enums"]["wellness_status"]
+          target_weight?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_level?: string | null
+          batch_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string
+          current_weight?: number | null
+          date_of_birth?: string | null
+          email?: string | null
+          full_name?: string
+          gender?: string | null
+          goal?: Database["public"]["Enums"]["wellness_goal"] | null
+          height?: number | null
+          id?: string
+          initial_weight?: number | null
+          joining_date?: string
+          mobile_number?: string
+          status?: Database["public"]["Enums"]["wellness_status"]
+          target_weight?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_members_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_members_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_memberships: {
+        Row: {
+          created_at: string
+          created_by: string
+          end_date: string
+          id: string
+          member_id: string
+          membership_code: string
+          plan_id: string
+          price_paid: number
+          remaining_servings: number
+          renewed_from: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["membership_status"]
+          total_servings: number
+          updated_at: string
+          used_servings: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          end_date: string
+          id?: string
+          member_id: string
+          membership_code: string
+          plan_id: string
+          price_paid?: number
+          remaining_servings: number
+          renewed_from?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["membership_status"]
+          total_servings: number
+          updated_at?: string
+          used_servings?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          end_date?: string
+          id?: string
+          member_id?: string
+          membership_code?: string
+          plan_id?: string
+          price_paid?: number
+          remaining_servings?: number
+          renewed_from?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["membership_status"]
+          total_servings?: number
+          updated_at?: string
+          used_servings?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_memberships_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_memberships_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_memberships_renewed_from_fkey"
+            columns: ["renewed_from"]
+            isOneToOne: false
+            referencedRelation: "wellness_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_notification_log: {
+        Row: {
+          channel: string
+          created_at: string
+          error_message: string | null
+          id: string
+          member_id: string
+          message: string | null
+          sent_at: string | null
+          status: string
+          trigger_key: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          member_id: string
+          message?: string | null
+          sent_at?: string | null
+          status?: string
+          trigger_key: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          member_id?: string
+          message?: string | null
+          sent_at?: string | null
+          status?: string
+          trigger_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_notification_log_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_notification_templates: {
+        Row: {
+          active: boolean
+          channel: string
+          created_at: string
+          created_by: string
+          id: string
+          message_template: string
+          trigger_key: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          channel: string
+          created_at?: string
+          created_by: string
+          id?: string
+          message_template: string
+          trigger_key: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          channel?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          message_template?: string
+          trigger_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wellness_plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string
+          description: string | null
+          duration_days: number
+          id: string
+          name: string
+          plan_type: string
+          price: number
+          servings_per_day: number
+          total_servings: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by: string
+          description?: string | null
+          duration_days?: number
+          id?: string
+          name: string
+          plan_type?: string
+          price?: number
+          servings_per_day?: number
+          total_servings?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          duration_days?: number
+          id?: string
+          name?: string
+          plan_type?: string
+          price?: number
+          servings_per_day?: number
+          total_servings?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wellness_trials: {
+        Row: {
+          created_at: string
+          created_by: string
+          duration_days: number
+          end_date: string | null
+          id: string
+          member_id: string
+          plan_id: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["trial_status"]
+          updated_at: string
+          weight_at_start: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          duration_days?: number
+          end_date?: string | null
+          id?: string
+          member_id: string
+          plan_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["trial_status"]
+          updated_at?: string
+          weight_at_start?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          duration_days?: number
+          end_date?: string | null
+          id?: string
+          member_id?: string
+          plan_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["trial_status"]
+          updated_at?: string
+          weight_at_start?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_trials_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_trials_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      adjust_servings: {
+        Args: { p_change: number; p_membership_id: string; p_note?: string }
+        Returns: number
+      }
+      checkin_member: {
+        Args: {
+          p_member_id: string
+          p_method?: Database["public"]["Enums"]["checkin_method"]
+        }
+        Returns: Json
+      }
+      convert_trial_to_membership: {
+        Args: { p_plan_id: string; p_price?: number; p_trial_id: string }
+        Returns: string
+      }
+      create_membership: {
+        Args: { p_member_id: string; p_plan_id: string; p_price?: number }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -532,11 +1171,55 @@ export type Database = {
         Args: { _target_user_id: string; _user_id: string }
         Returns: boolean
       }
+      is_wellness_manager: { Args: { _user_id: string }; Returns: boolean }
+      is_wellness_staff: { Args: { _user_id: string }; Returns: boolean }
+      owns_wellness_member: {
+        Args: { _member_id: string; _user_id: string }
+        Returns: boolean
+      }
+      refresh_wellness_statuses: { Args: never; Returns: undefined }
+      renew_membership: {
+        Args: { p_membership_id: string; p_plan_id?: string; p_price?: number }
+        Returns: string
+      }
       seed_default_pipeline: { Args: { p_user_id: string }; Returns: string }
     }
     Enums: {
       activity_type: "call" | "email" | "meeting" | "note"
       app_role: "admin" | "manager" | "rep"
+      checkin_method:
+        | "qr_scan"
+        | "barcode_scan"
+        | "admin_manual"
+        | "staff_entry"
+      membership_status: "active" | "expiring_soon" | "expired" | "cancelled"
+      serving_txn_type:
+        | "membership_allocation"
+        | "daily_deduction"
+        | "manual_adjustment"
+        | "renewal_allocation"
+        | "refund_adjustment"
+      trial_status:
+        | "active"
+        | "completed"
+        | "expired"
+        | "converted"
+        | "cancelled"
+      wellness_goal:
+        | "weight_loss"
+        | "fat_loss"
+        | "weight_management"
+        | "weight_gain"
+        | "general_wellness"
+        | "healthy_lifestyle"
+        | "body_transformation"
+      wellness_status:
+        | "lead"
+        | "trial"
+        | "active_member"
+        | "renewal_due"
+        | "expired"
+        | "inactive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -666,6 +1349,44 @@ export const Constants = {
     Enums: {
       activity_type: ["call", "email", "meeting", "note"],
       app_role: ["admin", "manager", "rep"],
+      checkin_method: [
+        "qr_scan",
+        "barcode_scan",
+        "admin_manual",
+        "staff_entry",
+      ],
+      membership_status: ["active", "expiring_soon", "expired", "cancelled"],
+      serving_txn_type: [
+        "membership_allocation",
+        "daily_deduction",
+        "manual_adjustment",
+        "renewal_allocation",
+        "refund_adjustment",
+      ],
+      trial_status: [
+        "active",
+        "completed",
+        "expired",
+        "converted",
+        "cancelled",
+      ],
+      wellness_goal: [
+        "weight_loss",
+        "fat_loss",
+        "weight_management",
+        "weight_gain",
+        "general_wellness",
+        "healthy_lifestyle",
+        "body_transformation",
+      ],
+      wellness_status: [
+        "lead",
+        "trial",
+        "active_member",
+        "renewal_due",
+        "expired",
+        "inactive",
+      ],
     },
   },
 } as const
