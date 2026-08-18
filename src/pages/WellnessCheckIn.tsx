@@ -1,70 +1,114 @@
 import { useMemo, useState } from "react";
-import { useCheckIn, useTodayAttendance, useWellnessMembers } from "@/hooks/useWellness";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCheckInWithWeight, useTodayAttendance, useWellnessMembers } from "@/hooks/useWellness";
 import { PageBanner } from "@/components/PageBanner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/formatters";
-import { Search } from "lucide-react";
+import { QrCode, Search } from "lucide-react";
 import { CentreQrCard } from "@/components/wellness/CentreQrCard";
 
 export default function WellnessCheckIn() {
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
+  const [weights, setWeights] = useState<Record<string, string>>({});
   const { data: members } = useWellnessMembers(query);
   const { data: today } = useTodayAttendance();
-  const checkIn = useCheckIn();
+  const checkIn = useCheckInWithWeight();
 
   const checkedInIds = useMemo(() => new Set((today ?? []).map((a) => a.member_id)), [today]);
   const results = (members ?? []).slice(0, 8);
+
+  const submit = async (memberId: string, skipCheckIn: boolean) => {
+    const raw = weights[memberId];
+    await checkIn.mutateAsync({
+      memberId,
+      skipCheckIn,
+      weight: raw ? Number(raw) : null,
+      recordedBy: user?.id ?? null,
+      method: "staff_entry",
+    });
+    setWeights((w) => ({ ...w, [memberId]: "" }));
+  };
 
   return (
     <div className="space-y-6">
       <PageBanner
         title="Daily check-in"
-        description="Scan or search a member, then record today's visit. One serving is deducted automatically."
-      />
+        description="Scan or search a member, record today's weight, then check them in. One serving is deducted automatically."
+      >
+        <Button asChild variant="secondary" className="w-full sm:w-auto">
+          <Link to="/wellness/qr">
+            <QrCode className="mr-2 h-4 w-4" /> Print check-in QR
+          </Link>
+        </Button>
+      </PageBanner>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Find a member</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              autoFocus
-              className="pl-9"
-              placeholder="Scan barcode or type name / mobile number"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Find a member</CardTitle>
+            <CardDescription>Weight is optional — leave it blank to just record the visit.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                autoFocus
+                className="pl-9"
+                placeholder="Scan barcode or type name / mobile number"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
 
-          {query.length > 1 &&
-            results.map((m) => (
-              <div key={m.id} className="flex items-center justify-between rounded-md border px-3 py-2">
-                <div>
-                  <p className="font-medium">{m.full_name}</p>
-                  <p className="text-sm text-muted-foreground">{m.mobile_number}</p>
-                </div>
-                {checkedInIds.has(m.id) ? (
-                  <Badge variant="secondary">Checked in</Badge>
-                ) : (
-                  <Button
-                    size="sm"
-                    disabled={checkIn.isPending}
-                    onClick={() => checkIn.mutate({ memberId: m.id, method: "staff_entry" })}
-                  >
-                    Check in
-                  </Button>
-                )}
-              </div>
-            ))}
-        </CardContent>
-      </Card>
-      <CentreQrCard />
+            {query.length > 1 &&
+              results.map((m) => {
+                const done = checkedInIds.has(m.id);
+                return (
+                  <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="font-medium">{m.full_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {m.mobile_number}
+                        {m.current_weight ? ` · last ${m.current_weight} kg` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        className="w-24"
+                        inputMode="decimal"
+                        placeholder="kg"
+                        value={weights[m.id] ?? ""}
+                        onChange={(e) => setWeights((w) => ({ ...w, [m.id]: e.target.value }))}
+                      />
+                      {done ? (
+                        <>
+                          <Badge variant="secondary">Checked in</Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!weights[m.id] || checkIn.isPending}
+                            onClick={() => submit(m.id, true)}
+                          >
+                            Save weight
+                          </Button>
+                        </>
+                      ) : (
+                        <Button size="sm" disabled={checkIn.isPending} onClick={() => submit(m.id, false)}>
+                          Check in
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </CardContent>
+        </Card>
+        <CentreQrCard />
       </div>
 
       <Card>
