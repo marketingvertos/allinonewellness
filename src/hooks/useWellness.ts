@@ -1,7 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { getErrorMessage } from "@/lib/sanitize";
+import { sanitizeErrorMessage } from "@/lib/sanitize";
+
+function getErrorMessage(error: unknown): string {
+  const raw = (error as { message?: string })?.message ?? "";
+  // Domain rules raised by the database are already user-safe.
+  if (/[.!]$/.test(raw) && raw.length < 160 && !raw.toLowerCase().includes("relation")) return raw;
+  return sanitizeErrorMessage(raw);
+}
 
 export type WellnessStatus =
   | "lead"
