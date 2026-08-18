@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil, X, Save, Trash2, Globe, Factory, Users, Calendar, Clock } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/formatters";
 
 interface CompanyDetailSheetProps {
   company: Company | null;

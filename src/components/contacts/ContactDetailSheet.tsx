@@ -12,10 +12,10 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { TaskItem } from "@/components/tasks/TaskItem";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
-import { formatRelativeDate } from "@/lib/formatters";
+import { formatRelativeDate, formatDateTime } from "@/lib/formatters";
 import { useToast } from "@/hooks/use-toast";
 import { Building2, Mail, Phone, Briefcase, Tag, Pencil, X, Save, Trash2, Plus, FileText, Calendar, Clock } from "lucide-react";
-import { format } from "date-fns";
+
 
 interface ContactDetailSheetProps {
   contact: Contact | null;

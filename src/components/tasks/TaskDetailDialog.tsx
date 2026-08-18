@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil, X, Save, Trash2, Calendar, Clock, LinkIcon } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { formatDateTime } from "@/lib/formatters";
 
 interface TaskDetailDialogProps {
   task: Task | null;
