@@ -577,7 +577,7 @@ export function useWellnessStats() {
         checkinsToday: checkins.count ?? 0,
         activeMemberships: (memberships.data ?? []).filter((m) => m.status === "active").length,
         renewalsDue: (memberships.data ?? []).filter((m) => m.status === "expiring_soon").length,
-        revenueThisMonth,
+        revenueLast30Days,
         lowBalance: (lowBalance.data ?? []) as unknown as {
           id: string;
           member_id: string;
