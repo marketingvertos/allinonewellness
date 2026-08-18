@@ -16,7 +16,11 @@ import {
   useStartTrial,
   useWeightHistory,
   useWellnessPlans,
+  useBodyMeasurements,
+  useUpdateWellnessMember,
 } from "@/hooks/useWellness";
+import { MemberDashboard } from "./MemberDashboard";
+import { RecordMeasurementDialog } from "./RecordMeasurementDialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -46,6 +50,8 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const { data: ledger } = useServingLedger(memberId);
   const { data: weights } = useWeightHistory(memberId);
   const { data: notes } = useMemberNotes(memberId);
+  const { data: measurements } = useBodyMeasurements(memberId);
+  const updateMember = useUpdateWellnessMember();
 
   const startTrial = useStartTrial();
   const createMembership = useCreateMembership();
@@ -58,6 +64,8 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const [planId, setPlanId] = useState("");
   const [weight, setWeight] = useState("");
   const [note, setNote] = useState("");
+  const [dob, setDob] = useState<string | null>(null);
+  const [measureOpen, setMeasureOpen] = useState(false);
 
   if (!member) return null;
 
@@ -69,7 +77,7 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
+      <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
         <SheetHeader>
           <SheetTitle className="flex flex-wrap items-center gap-2">
             {member.full_name}
@@ -114,26 +122,48 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 pt-4">
-            <dl className="grid grid-cols-2 gap-4 text-sm">
-              <Detail label="Goal" value={member.goal?.replace(/_/g, " ") ?? "—"} />
-              <Detail label="Batch" value={member.wellness_batches?.name ?? "—"} />
-              <Detail label="Starting weight" value={member.initial_weight ? `${member.initial_weight} kg` : "—"} />
-              <Detail label="Current weight" value={member.current_weight ? `${member.current_weight} kg` : "—"} />
-              <Detail label="Target weight" value={member.target_weight ? `${member.target_weight} kg` : "—"} />
-              <Detail label="Height" value={member.height ? `${member.height} cm` : "—"} />
-            </dl>
-            <div className="rounded-lg border p-4 text-sm">
-              <p className="font-medium">Member portal access</p>
-              {(member as { user_id?: string | null }).user_id ? (
-                <p className="text-muted-foreground">Portal login is active for this member.</p>
-              ) : (
-                <p className="text-muted-foreground">
-                  Share this activation code so the member can activate the portal at /portal/auth:{" "}
-                  <span className="font-mono font-semibold text-foreground">
-                    {(member as { activation_code?: string }).activation_code ?? "—"}
-                  </span>
-                </p>
-              )}
+            <MemberDashboard
+              member={member}
+              membership={activeMembership}
+              weights={weights ?? []}
+              attendance={attendance ?? []}
+              measurements={measurements ?? []}
+            />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-lg border p-4 text-sm">
+                <p className="font-medium">Date of birth</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    type="date"
+                    value={dob ?? member.date_of_birth ?? ""}
+                    onChange={(e) => setDob(e.target.value)}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!dob || dob === member.date_of_birth || updateMember.isPending}
+                    onClick={() => dob && updateMember.mutate({ id: member.id, date_of_birth: dob })}
+                  >
+                    Save
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">Used for birthday reminders on the overview page.</p>
+              </div>
+
+              <div className="rounded-lg border p-4 text-sm">
+                <p className="font-medium">Member portal access</p>
+                {(member as { user_id?: string | null }).user_id ? (
+                  <p className="text-muted-foreground">Portal login is active for this member.</p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    Share this activation code so the member can activate the portal at /portal/auth:{" "}
+                    <span className="font-mono font-semibold text-foreground">
+                      {(member as { activation_code?: string }).activation_code ?? "—"}
+                    </span>
+                  </p>
+                )}
+              </div>
             </div>
 
             {activeTrial && (
@@ -279,6 +309,32 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
                 Save
               </Button>
             </div>
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <div>
+                <p className="text-sm font-medium">Body measurements</p>
+                <p className="text-xs text-muted-foreground">
+                  {measurements?.length ? `${measurements.length} recorded` : "None recorded yet"}
+                </p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => setMeasureOpen(true)}>
+                Record measurements
+              </Button>
+            </div>
+
+            {measurements?.length ? (
+              <div className="space-y-2">
+                {[...measurements].reverse().map((m) => (
+                  <div key={m.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                    <span>{formatDate(m.recorded_date)}</span>
+                    <span className="text-muted-foreground">
+                      {[m.waist && `W ${m.waist}`, m.hip && `H ${m.hip}`, m.chest && `C ${m.chest}`,
+                        m.body_fat_percentage && `Fat ${m.body_fat_percentage}%`].filter(Boolean).join(" · ")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
             {weights?.length ? (
               <div className="space-y-2">
                 {[...weights].reverse().map((w) => (
@@ -316,6 +372,8 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             ))}
           </TabsContent>
         </Tabs>
+
+        <RecordMeasurementDialog memberId={member.id} open={measureOpen} onOpenChange={setMeasureOpen} />
       </SheetContent>
     </Sheet>
   );
