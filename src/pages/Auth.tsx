@@ -259,6 +259,20 @@ export default function Auth() {
           </div>
 
           <Button
+            variant="secondary"
+            className="w-full mb-3"
+            onClick={handleDemoLogin}
+            disabled={demoLoading}
+          >
+            {demoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Try demo"}
+          </Button>
+          <p className="mb-4 text-center text-xs text-muted-foreground">
+            Explore a shared sample workspace with Indian companies, ₹ deal values and IST dates.
+          </p>
+
+
+
+          <Button
             variant="outline"
             className="w-full"
             onClick={async () => {
