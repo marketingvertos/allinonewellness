@@ -4,18 +4,20 @@ Set up a live member record with the actual data provided, seed the real journey
 
 ## Profile
 
-| Field | Value |
-| --- | --- |
-| Name | Pawan Tripathi |
-| Gender | Male |
-| Mobile | +91 9815064617 |
-| Joining date | 26 Jun 2026 |
-| Height | 175 cm |
-| Starting weight | 82.7 kg |
-| Current weight | 75.6 kg |
-| Target weight | 72 kg (adjustable — say if you want a different target) |
-| Goal | Weight loss |
-| Status | Active member |
+
+| Field           | Value                                                   |
+| --------------- | ------------------------------------------------------- |
+| Name            | Pawan Tripathi                                          |
+| Gender          | Male                                                    |
+| Mobile          | +91 9815064617                                          |
+| Joining date    | 26 Jun 2026                                             |
+| Height          | 175 cm                                                  |
+| Starting weight | 82.7 kg                                                 |
+| Current weight  | 75.6 kg                                                 |
+| Target weight   | 70 kg (adjustable — say if you want a different target) |
+| Goal            | Weight loss                                             |
+| Status          | Active member                                           |
+
 
 ## Progress data seeded
 
