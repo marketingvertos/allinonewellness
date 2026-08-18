@@ -49,10 +49,6 @@ const CONTACTS = [
   ["Pooja", "Malhotra", "Brand Manager", 6, "pooja.malhotra", ["marketing"]],
 ] as const;
 
-const DEALS: [string, number, number, number, number, number, string][] = [
-  // title-suffix idx: [companyIdx, contactIdx, value, probability, stageIdx, closeInDays, notes]
-];
-
 const DEAL_ROWS = [
   { title: "Annual CRM Licence — Tata Digital", c: 0, ct: 0, value: 8500000, prob: 80, stage: 3, close: 20, notes: "Procurement review pending; GST invoice required." },
   { title: "Marketing Automation Rollout — Infosys BPM", c: 1, ct: 2, value: 6200000, prob: 60, stage: 2, close: 35, notes: "Pilot for Bengaluru delivery centre." },
