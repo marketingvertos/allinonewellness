@@ -51,6 +51,10 @@ const App = () => (
                 <Route path="/data" element={<DataImportExport />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/calendar" element={<CalendarView />} />
+                <Route path="/wellness" element={<WellnessDashboard />} />
+                <Route path="/wellness/members" element={<WellnessMembers />} />
+                <Route path="/wellness/checkin" element={<WellnessCheckIn />} />
+                <Route path="/wellness/plans" element={<WellnessPlans />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
