@@ -14,6 +14,9 @@ import {
   FileSpreadsheet,
   CheckSquare,
   CalendarDays,
+  HeartPulse,
+  ScanLine,
+  ClipboardList,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
