@@ -797,6 +797,33 @@ export type Database = {
         }
         Relationships: []
       }
+      wellness_centre_settings: {
+        Row: {
+          checkin_code: string
+          code_rotated_at: string
+          created_at: string
+          id: string
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          checkin_code?: string
+          code_rotated_at?: string
+          created_at?: string
+          id?: string
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          checkin_code?: string
+          code_rotated_at?: string
+          created_at?: string
+          id?: string
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wellness_members: {
         Row: {
           activity_level: string | null
@@ -1160,6 +1187,7 @@ export type Database = {
         Args: { p_member_id: string; p_plan_id: string; p_price?: number }
         Returns: string
       }
+      delete_wellness_plan: { Args: { p_plan_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1173,6 +1201,7 @@ export type Database = {
       }
       is_wellness_manager: { Args: { _user_id: string }; Returns: boolean }
       is_wellness_staff: { Args: { _user_id: string }; Returns: boolean }
+      member_self_checkin: { Args: { p_code: string }; Returns: Json }
       owns_wellness_member: {
         Args: { _member_id: string; _user_id: string }
         Returns: boolean
@@ -1182,7 +1211,15 @@ export type Database = {
         Args: { p_membership_id: string; p_plan_id?: string; p_price?: number }
         Returns: string
       }
+      rotate_checkin_code: { Args: never; Returns: string }
       seed_default_pipeline: { Args: { p_user_id: string }; Returns: string }
+      wellness_plan_usage: {
+        Args: never
+        Returns: {
+          plan_id: string
+          usage_count: number
+        }[]
+      }
     }
     Enums: {
       activity_type: "call" | "email" | "meeting" | "note"
