@@ -826,6 +826,7 @@ export type Database = {
       }
       wellness_members: {
         Row: {
+          activation_code: string
           activity_level: string | null
           batch_id: string | null
           contact_id: string | null
@@ -848,6 +849,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          activation_code?: string
           activity_level?: string | null
           batch_id?: string | null
           contact_id?: string | null
@@ -870,6 +872,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          activation_code?: string
           activity_level?: string | null
           batch_id?: string | null
           contact_id?: string | null
@@ -1177,6 +1180,10 @@ export type Database = {
           p_member_id: string
           p_method?: Database["public"]["Enums"]["checkin_method"]
         }
+        Returns: Json
+      }
+      claim_member_account: {
+        Args: { p_code: string; p_mobile: string }
         Returns: Json
       }
       convert_trial_to_membership: {
