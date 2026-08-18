@@ -1,1 +1,3 @@
 project_id = "mnzzbqqzmaydisylyyhd"
+[functions.demo-login]
+verify_jwt = false
