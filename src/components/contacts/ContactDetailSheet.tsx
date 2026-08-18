@@ -154,11 +154,11 @@ export function ContactDetailSheet({ contact, open, onOpenChange }: ContactDetai
               <div className="space-y-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-3.5 w-3.5" />
-                  <span>Created {format(new Date(contact.created_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                  <span>Created {formatDateTime(contact.created_at)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5" />
-                  <span>Updated {format(new Date(contact.updated_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                  <span>Updated {formatDateTime(contact.updated_at)}</span>
                 </div>
               </div>
             </div>
