@@ -98,6 +98,30 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Wellness</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {wellnessNav.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.to}
+                      end={item.to === "/wellness"}
+                      className={({ isActive }) =>
+                        isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : ""
+                      }
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="p-4 space-y-2">
