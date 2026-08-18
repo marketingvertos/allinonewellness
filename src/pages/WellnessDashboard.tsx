@@ -49,11 +49,11 @@ export default function WellnessDashboard() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Revenue this month</CardTitle>
+            <CardTitle className="text-base">Revenue (last 30 days)</CardTitle>
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{formatCurrency(data?.revenueThisMonth ?? 0)}</p>
+            <p className="text-3xl font-bold">{formatCurrency(data?.revenueLast30Days ?? 0)}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {Object.entries(data?.statusCounts ?? {}).map(([status, count]) => (
                 <Badge key={status} variant="outline" className="capitalize">
