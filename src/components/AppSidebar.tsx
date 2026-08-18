@@ -14,6 +14,9 @@ import {
   FileSpreadsheet,
   CheckSquare,
   CalendarDays,
+  HeartPulse,
+  ScanLine,
+  ClipboardList,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,6 +25,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -41,6 +45,13 @@ const mainNav = [
   { title: "Forecast", icon: TrendingUp, to: "/forecast" },
   { title: "Reports", icon: BarChart3, to: "/reports" },
   { title: "Import/Export", icon: FileSpreadsheet, to: "/data" },
+];
+
+const wellnessNav = [
+  { title: "Overview", icon: HeartPulse, to: "/wellness" },
+  { title: "Members", icon: Users, to: "/wellness/members" },
+  { title: "Check-in", icon: ScanLine, to: "/wellness/checkin" },
+  { title: "Plans", icon: ClipboardList, to: "/wellness/plans" },
 ];
 
 export function AppSidebar() {
@@ -75,6 +86,30 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.to}
+                      className={({ isActive }) =>
+                        isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : ""
+                      }
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Wellness</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {wellnessNav.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.to}
+                      end={item.to === "/wellness"}
                       className={({ isActive }) =>
                         isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : ""
                       }

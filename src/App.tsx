@@ -20,6 +20,10 @@ import Settings from "./pages/Settings";
 import DataImportExport from "./pages/DataImportExport";
 import Tasks from "./pages/Tasks";
 import CalendarView from "./pages/CalendarView";
+import WellnessDashboard from "./pages/WellnessDashboard";
+import WellnessMembers from "./pages/WellnessMembers";
+import WellnessCheckIn from "./pages/WellnessCheckIn";
+import WellnessPlans from "./pages/WellnessPlans";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +51,10 @@ const App = () => (
                 <Route path="/data" element={<DataImportExport />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/calendar" element={<CalendarView />} />
+                <Route path="/wellness" element={<WellnessDashboard />} />
+                <Route path="/wellness/members" element={<WellnessMembers />} />
+                <Route path="/wellness/checkin" element={<WellnessCheckIn />} />
+                <Route path="/wellness/plans" element={<WellnessPlans />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
