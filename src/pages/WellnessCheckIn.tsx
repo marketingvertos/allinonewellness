@@ -16,6 +16,8 @@ import { QrScannerSheet } from "@/components/wellness/QrScannerSheet";
 export default function WellnessCheckIn() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
+  const [scanning, setScanning] = useState(false);
+
   const [weights, setWeights] = useState<Record<string, string>>({});
   const { data: members } = useWellnessMembers(query);
   const { data: today } = useTodayAttendance();
