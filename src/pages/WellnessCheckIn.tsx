@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/formatters";
-import { QrCode, Search } from "lucide-react";
+import { Camera, QrCode, Search } from "lucide-react";
 import { CentreQrCard } from "@/components/wellness/CentreQrCard";
+import { QrScannerSheet } from "@/components/wellness/QrScannerSheet";
+
 
 export default function WellnessCheckIn() {
   const { user } = useAuth();
