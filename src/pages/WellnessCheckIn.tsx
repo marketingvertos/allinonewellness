@@ -8,12 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/formatters";
-import { QrCode, Search } from "lucide-react";
+import { Camera, QrCode, Search } from "lucide-react";
 import { CentreQrCard } from "@/components/wellness/CentreQrCard";
+import { QrScannerSheet } from "@/components/wellness/QrScannerSheet";
+
 
 export default function WellnessCheckIn() {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
+  const [scanning, setScanning] = useState(false);
+
   const [weights, setWeights] = useState<Record<string, string>>({});
   const { data: members } = useWellnessMembers(query);
   const { data: today } = useTodayAttendance();
@@ -54,16 +58,22 @@ export default function WellnessCheckIn() {
             <CardDescription>Weight is optional — leave it blank to just record the visit.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                autoFocus
-                className="pl-9"
-                placeholder="Scan barcode or type name / mobile number"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  className="pl-9"
+                  placeholder="Scan barcode or type name / mobile number"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+              <Button variant="outline" onClick={() => setScanning(true)}>
+                <Camera className="mr-2 h-4 w-4" /> Scan
+              </Button>
             </div>
+
 
             {query.length > 1 &&
               results.map((m) => {
@@ -133,6 +143,15 @@ export default function WellnessCheckIn() {
           )}
         </CardContent>
       </Card>
+
+      <QrScannerSheet
+        open={scanning}
+        onOpenChange={setScanning}
+        title="Scan member code"
+        description="Scan a member's QR or barcode to look them up instantly."
+        onResult={(code) => setQuery(code)}
+      />
     </div>
+
   );
 }
