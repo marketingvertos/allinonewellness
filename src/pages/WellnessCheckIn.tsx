@@ -143,6 +143,15 @@ export default function WellnessCheckIn() {
           )}
         </CardContent>
       </Card>
+
+      <QrScannerSheet
+        open={scanning}
+        onOpenChange={setScanning}
+        title="Scan member code"
+        description="Scan a member's QR or barcode to look them up instantly."
+        onResult={(code) => setQuery(code)}
+      />
     </div>
+
   );
 }
