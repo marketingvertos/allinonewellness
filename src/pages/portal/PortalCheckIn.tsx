@@ -101,7 +101,7 @@ export default function PortalCheckIn() {
                     : result?.message ?? "Please review your plan at the front desk.")}
               </p>
 
-              {ok && identity?.memberId && !weightSaved && (
+              {(ok || result?.status === "duplicate") && identity?.memberId && !weightSaved && (
                 <div className="mx-auto max-w-xs space-y-2 rounded-lg border p-4 text-left">
                   <Label htmlFor="portal-weight">Today&apos;s weight (kg)</Label>
                   <div className="flex gap-2">
