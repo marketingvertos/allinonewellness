@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
-import { useMemberships, useMemberAttendance, useMyMemberProfile } from "@/hooks/useWellness";
+import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory } from "@/hooks/useWellness";
+import { AchievementsPanel } from "@/components/wellness/AchievementsPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ export default function PortalHome() {
   const { data: profile } = useMyMemberProfile();
   const { data: memberships } = useMemberships(identity?.memberId ?? undefined);
   const { data: attendance } = useMemberAttendance(identity?.memberId ?? undefined);
+  const { data: weights } = useWeightHistory(identity?.memberId ?? undefined);
 
   const active = (memberships ?? []).find((m) => m.status === "active" || m.status === "expiring_soon");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -87,6 +89,8 @@ export default function PortalHome() {
           </CardContent>
         </Card>
       )}
+
+      {profile && <AchievementsPanel member={profile} weights={weights ?? []} compact />}
     </div>
   );
 }

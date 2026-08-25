@@ -21,6 +21,8 @@ import {
 } from "@/hooks/useWellness";
 import { MemberDashboard } from "./MemberDashboard";
 import { RecordMeasurementDialog } from "./RecordMeasurementDialog";
+import { AchievementsPanel } from "./AchievementsPanel";
+import { ReferrerPicker } from "./ReferrerPicker";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -66,8 +68,12 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const [note, setNote] = useState("");
   const [dob, setDob] = useState<string | null>(null);
   const [measureOpen, setMeasureOpen] = useState(false);
+  const [referrerDraft, setReferrerDraft] = useState<string | null | undefined>(undefined);
 
   if (!member) return null;
+
+  const currentReferrer = (member as { referred_by_member_id?: string | null }).referred_by_member_id ?? null;
+  const referrerValue = referrerDraft === undefined ? currentReferrer : referrerDraft;
 
   const activeTrial = trials?.find((t) => t.status === "active");
   const activeMembership = memberships?.find((m) => m.status === "active" || m.status === "expiring_soon");
@@ -118,6 +124,7 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="servings">Servings</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="achievements">Achievements</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
           </TabsList>
 
@@ -164,7 +171,32 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
                   </p>
                 )}
               </div>
+
+              <div className="rounded-lg border p-4 text-sm sm:col-span-2">
+                <p className="font-medium">Referred by / helped by</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <ReferrerPicker
+                    value={referrerValue}
+                    excludeId={member.id}
+                    onChange={(id) => setReferrerDraft(id)}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={referrerValue === currentReferrer || updateMember.isPending}
+                    onClick={() =>
+                      updateMember.mutate({ id: member.id, referred_by_member_id: referrerValue })
+                    }
+                  >
+                    Save
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Credits the selected member with helping this person join.
+                </p>
+              </div>
             </div>
+
 
             {activeTrial && (
               <div className="rounded-lg border p-4 text-sm">
@@ -347,6 +379,10 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             ) : (
               <p className="text-sm text-muted-foreground">No weight entries yet.</p>
             )}
+          </TabsContent>
+
+          <TabsContent value="achievements" className="pt-4">
+            <AchievementsPanel member={member} weights={weights ?? []} />
           </TabsContent>
 
           <TabsContent value="notes" className="space-y-4 pt-4">

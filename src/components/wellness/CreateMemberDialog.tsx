@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ReferrerPicker } from "./ReferrerPicker";
 
 const GOALS = [
   { value: "weight_loss", label: "Weight loss" },
@@ -32,6 +33,7 @@ interface Props {
 export function CreateMemberDialog({ open, onOpenChange }: Props) {
   const { user } = useAuth();
   const createMember = useCreateWellnessMember();
+  const [referrerId, setReferrerId] = useState<string | null>(null);
   const [form, setForm] = useState({
     full_name: "",
     mobile_number: "",
@@ -46,6 +48,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
 
   const set = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
 
+
   const submit = async () => {
     if (!user) return;
     await createMember.mutateAsync({
@@ -59,9 +62,11 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       current_weight: form.initial_weight ? Number(form.initial_weight) : null,
       target_weight: form.target_weight ? Number(form.target_weight) : null,
       height: form.height ? Number(form.height) : null,
+      referred_by_member_id: referrerId,
       status: "lead",
       created_by: user.id,
     });
+    setReferrerId(null);
     setForm({
       full_name: "",
       mobile_number: "",
@@ -136,6 +141,13 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
           <div className="space-y-2">
             <Label htmlFor="wm-height">Height (cm)</Label>
             <Input id="wm-height" inputMode="decimal" value={form.height} onChange={(e) => set("height")(e.target.value)} />
+          </div>
+          <div className="sm:col-span-2 space-y-2">
+            <Label>Referred by / helped by (optional)</Label>
+            <ReferrerPicker value={referrerId} onChange={(id) => setReferrerId(id)} />
+            <p className="text-xs text-muted-foreground">
+              The selected member gets credit for helping this person join.
+            </p>
           </div>
         </div>
 

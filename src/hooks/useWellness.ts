@@ -35,6 +35,7 @@ export interface WellnessMember {
   height: number | null;
   activity_level: string | null;
   batch_id: string | null;
+  referred_by_member_id?: string | null;
   contact_id: string | null;
   created_by: string;
   created_at: string;

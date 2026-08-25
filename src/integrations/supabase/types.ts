@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievement_definitions: {
+        Row: {
+          category: string
+          created_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          threshold: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          threshold: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          threshold?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       activities: {
         Row: {
           contact_id: string | null
@@ -295,6 +334,45 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      member_achievements: {
+        Row: {
+          achievement_id: string
+          created_at: string
+          id: string
+          member_id: string
+          unlocked_at: string
+        }
+        Insert: {
+          achievement_id: string
+          created_at?: string
+          id?: string
+          member_id: string
+          unlocked_at?: string
+        }
+        Update: {
+          achievement_id?: string
+          created_at?: string
+          id?: string
+          member_id?: string
+          unlocked_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievement_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_achievements_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       member_notes: {
         Row: {
@@ -843,6 +921,7 @@ export type Database = {
           initial_weight: number | null
           joining_date: string
           mobile_number: string
+          referred_by_member_id: string | null
           status: Database["public"]["Enums"]["wellness_status"]
           target_weight: number | null
           updated_at: string
@@ -866,6 +945,7 @@ export type Database = {
           initial_weight?: number | null
           joining_date?: string
           mobile_number: string
+          referred_by_member_id?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
           target_weight?: number | null
           updated_at?: string
@@ -889,6 +969,7 @@ export type Database = {
           initial_weight?: number | null
           joining_date?: string
           mobile_number?: string
+          referred_by_member_id?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
           target_weight?: number | null
           updated_at?: string
@@ -907,6 +988,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_members_referred_by_member_id_fkey"
+            columns: ["referred_by_member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
             referencedColumns: ["id"]
           },
         ]
@@ -1212,6 +1300,11 @@ export type Database = {
       owns_wellness_member: {
         Args: { _member_id: string; _user_id: string }
         Returns: boolean
+      }
+      recalc_all_member_achievements: { Args: never; Returns: undefined }
+      recalc_member_achievements: {
+        Args: { p_member_id: string }
+        Returns: undefined
       }
       refresh_wellness_statuses: { Args: never; Returns: undefined }
       renew_membership: {
