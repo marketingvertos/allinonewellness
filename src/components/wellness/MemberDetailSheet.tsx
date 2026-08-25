@@ -21,6 +21,8 @@ import {
 } from "@/hooks/useWellness";
 import { MemberDashboard } from "./MemberDashboard";
 import { RecordMeasurementDialog } from "./RecordMeasurementDialog";
+import { AchievementsPanel } from "./AchievementsPanel";
+import { ReferrerPicker } from "./ReferrerPicker";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
