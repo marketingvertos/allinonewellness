@@ -859,3 +859,291 @@ export function useCheckInWithWeight() {
       toast({ title: "Could not save", description: getErrorMessage(error), variant: "destructive" }),
   });
 }
+
+/* -------------------------------- Batches -------------------------------- */
+
+export interface WellnessBatch {
+  id: string;
+  name: string;
+  program_type: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  coach_staff_id: string | null;
+  max_capacity: number | null;
+  status: string;
+}
+
+export function useBatches(activeOnly = false) {
+  return useQuery({
+    queryKey: ["wellness-batches", activeOnly],
+    queryFn: async () => {
+      let q = supabase.from("wellness_batches").select("*").order("created_at", { ascending: false });
+      if (activeOnly) q = q.eq("status", "active");
+      const [batches, members] = await Promise.all([
+        q,
+        supabase.from("wellness_members").select("batch_id").not("batch_id", "is", null),
+      ]);
+      if (batches.error) throw batches.error;
+      const counts: Record<string, number> = {};
+      for (const m of members.data ?? []) {
+        const key = (m as { batch_id: string }).batch_id;
+        counts[key] = (counts[key] ?? 0) + 1;
+      }
+      return (batches.data as unknown as WellnessBatch[]).map((b) => ({ ...b, memberCount: counts[b.id] ?? 0 }));
+    },
+  });
+}
+
+export function useSaveBatch() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async ({ id, ...values }: { id?: string } & Record<string, unknown>) => {
+      if (id) {
+        const { error } = await supabase.from("wellness_batches").update(values as never).eq("id", id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("wellness_batches").insert(values as never);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wellness-batches"] });
+      t.success("Batch saved");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useDeleteBatch() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { count } = await supabase
+        .from("wellness_members")
+        .select("id", { count: "exact", head: true })
+        .eq("batch_id", id);
+      if ((count ?? 0) > 0) {
+        const { error } = await supabase.from("wellness_batches").update({ status: "archived" } as never).eq("id", id);
+        if (error) throw error;
+        return "archived" as const;
+      }
+      const { error } = await supabase.from("wellness_batches").delete().eq("id", id);
+      if (error) throw error;
+      return "deleted" as const;
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["wellness-batches"] });
+      t.success(result === "deleted" ? "Batch deleted" : "Batch archived (members kept)");
+    },
+    onError: t.onError,
+  });
+}
+
+/* ----------------------------- Notifications ----------------------------- */
+
+export interface NotificationTemplate {
+  id: string;
+  trigger_key: string;
+  channel: string;
+  message_template: string;
+  active: boolean;
+}
+
+export interface NotificationLogEntry {
+  id: string;
+  member_id: string;
+  trigger_key: string;
+  channel: string;
+  message: string | null;
+  status: string;
+  error_message: string | null;
+  sent_at: string | null;
+  created_at: string;
+  wellness_members?: { id: string; full_name: string; mobile_number: string } | null;
+}
+
+export function useNotificationTemplates() {
+  return useQuery({
+    queryKey: ["wellness-notification-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_notification_templates")
+        .select("*")
+        .order("trigger_key");
+      if (error) throw error;
+      return data as unknown as NotificationTemplate[];
+    },
+  });
+}
+
+export function useSaveNotificationTemplate() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async ({ id, ...values }: { id?: string } & Record<string, unknown>) => {
+      if (id) {
+        const { error } = await supabase
+          .from("wellness_notification_templates")
+          .update(values as never)
+          .eq("id", id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("wellness_notification_templates").insert(values as never);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wellness-notification-templates"] });
+      t.success("Template saved");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useDeleteNotificationTemplate() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("wellness_notification_templates").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wellness-notification-templates"] });
+      t.success("Template removed");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useNotificationLog(status: string = "queued") {
+  return useQuery({
+    queryKey: ["wellness-notification-log", status],
+    queryFn: async () => {
+      let q = supabase
+        .from("wellness_notification_log")
+        .select("*, wellness_members(id, full_name, mobile_number)")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (status !== "all") q = q.eq("status", status);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data as unknown as NotificationLogEntry[];
+    },
+  });
+}
+
+export function useMarkNotificationSent() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: { id: string; status?: string; error?: string }) => {
+      const { error } = await supabase.rpc("mark_notification_sent", {
+        p_log_id: args.id,
+        p_status: args.status ?? "sent",
+        p_error: args.error ?? null,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wellness-notification-log"] });
+      t.success("Notification updated");
+    },
+    onError: t.onError,
+  });
+}
+
+/* ------------------------------ Active trials ----------------------------- */
+
+export function useActiveTrials() {
+  return useQuery({
+    queryKey: ["wellness-trials-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_trials")
+        .select("*, wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight)")
+        .eq("status", "active")
+        .order("end_date");
+      if (error) throw error;
+      return data as unknown as (WellnessTrial & {
+        wellness_members?: WellnessMember | null;
+      })[];
+    },
+  });
+}
+
+/* --------------------------- Serving consumption -------------------------- */
+
+export function useServingTrend(days = 30) {
+  return useQuery({
+    queryKey: ["wellness-serving-trend", days],
+    queryFn: async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - days);
+      const { data, error } = await supabase
+        .from("wellness_attendance")
+        .select("visit_date, serving_deducted")
+        .gte("visit_date", since.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }))
+        .order("visit_date");
+      if (error) throw error;
+
+      const buckets: Record<string, { visits: number; servings: number }> = {};
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        buckets[d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })] = { visits: 0, servings: 0 };
+      }
+      for (const row of data ?? []) {
+        const key = (row as { visit_date: string }).visit_date;
+        if (!buckets[key]) buckets[key] = { visits: 0, servings: 0 };
+        buckets[key].visits += 1;
+        if ((row as { serving_deducted: boolean }).serving_deducted) buckets[key].servings += 1;
+      }
+      return Object.entries(buckets).map(([date, v]) => ({ date, ...v }));
+    },
+  });
+}
+
+/* ------------------------------- Referrals -------------------------------- */
+
+export function useReferralCounts() {
+  return useQuery({
+    queryKey: ["wellness-referral-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_members")
+        .select("referred_by_member_id")
+        .not("referred_by_member_id", "is", null);
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of data ?? []) {
+        const key = (row as { referred_by_member_id: string }).referred_by_member_id;
+        counts[key] = (counts[key] ?? 0) + 1;
+      }
+      return counts;
+    },
+  });
+}
+
+export function useTopReferrers(limit = 10) {
+  const counts = useReferralCounts();
+  return useQuery({
+    queryKey: ["wellness-top-referrers", limit, counts.data],
+    enabled: !!counts.data,
+    queryFn: async () => {
+      const entries = Object.entries(counts.data ?? {})
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit);
+      if (!entries.length) return [] as { id: string; full_name: string; count: number }[];
+      const { data, error } = await supabase
+        .from("wellness_members")
+        .select("id, full_name")
+        .in("id", entries.map(([id]) => id));
+      if (error) throw error;
+      const names = Object.fromEntries((data ?? []).map((m) => [m.id as string, m.full_name as string]));
+      return entries.map(([id, count]) => ({ id, full_name: names[id] ?? "Member", count }));
+    },
+  });
+}
