@@ -124,6 +124,7 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="servings">Servings</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="achievements">Achievements</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
           </TabsList>
 
