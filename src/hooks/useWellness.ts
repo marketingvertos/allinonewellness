@@ -100,7 +100,10 @@ export function useWellnessMembers(search?: string, status?: WellnessStatus | "a
         .select("*, wellness_batches(id, name)")
         .order("created_at", { ascending: false });
       if (status && status !== "all") q = q.eq("status", status);
-      if (search) q = q.or(`full_name.ilike.%${search}%,mobile_number.ilike.%${search}%`);
+      if (search)
+        q = q.or(
+          `full_name.ilike.%${search}%,mobile_number.ilike.%${search}%,activation_code.ilike.%${search}%,email.ilike.%${search}%`,
+        );
       const { data, error } = await q;
       if (error) throw error;
       return data as unknown as WellnessMember[];
