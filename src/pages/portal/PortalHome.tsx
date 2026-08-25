@@ -87,6 +87,8 @@ export default function PortalHome() {
           </CardContent>
         </Card>
       )}
+
+      {profile && <AchievementsPanel member={profile} weights={weights ?? []} compact />}
     </div>
   );
 }
