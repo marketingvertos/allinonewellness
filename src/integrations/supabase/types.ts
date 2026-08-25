@@ -1296,6 +1296,10 @@ export type Database = {
       }
       is_wellness_manager: { Args: { _user_id: string }; Returns: boolean }
       is_wellness_staff: { Args: { _user_id: string }; Returns: boolean }
+      mark_notification_sent: {
+        Args: { p_error?: string; p_log_id: string; p_status?: string }
+        Returns: undefined
+      }
       member_self_checkin: { Args: { p_code: string }; Returns: Json }
       owns_wellness_member: {
         Args: { _member_id: string; _user_id: string }
