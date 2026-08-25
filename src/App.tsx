@@ -25,6 +25,7 @@ import WellnessMembers from "./pages/WellnessMembers";
 import WellnessCheckIn from "./pages/WellnessCheckIn";
 import WellnessPlans from "./pages/WellnessPlans";
 import WellnessQr from "./pages/WellnessQr";
+import WellnessAchievements from "./pages/WellnessAchievements";
 import { PortalLayout } from "./pages/portal/PortalLayout";
 import PortalAuth from "./pages/portal/PortalAuth";
 import PortalHome from "./pages/portal/PortalHome";
