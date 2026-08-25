@@ -19,6 +19,9 @@ import {
   ClipboardList,
   QrCode,
   Trophy,
+  Layers,
+  Sparkles,
+  Bell,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -55,6 +58,9 @@ const wellnessNav = [
   { title: "Check-in", icon: ScanLine, to: "/wellness/checkin" },
   { title: "Plans", icon: ClipboardList, to: "/wellness/plans" },
   { title: "Check-in QR", icon: QrCode, to: "/wellness/qr" },
+  { title: "Trials", icon: Sparkles, to: "/wellness/trials" },
+  { title: "Batches", icon: Layers, to: "/wellness/batches" },
+  { title: "Notifications", icon: Bell, to: "/wellness/notifications" },
   { title: "Achievements", icon: Trophy, to: "/wellness/achievements" },
 ];
 

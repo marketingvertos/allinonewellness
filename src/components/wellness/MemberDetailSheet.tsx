@@ -13,7 +13,6 @@ import {
   useCreateMembership,
   useRenewMembership,
   useServingLedger,
-  useStartTrial,
   useWeightHistory,
   useWellnessPlans,
   useBodyMeasurements,
@@ -23,6 +22,8 @@ import { MemberDashboard } from "./MemberDashboard";
 import { RecordMeasurementDialog } from "./RecordMeasurementDialog";
 import { AchievementsPanel } from "./AchievementsPanel";
 import { ReferrerPicker } from "./ReferrerPicker";
+import { BatchPicker } from "./BatchPicker";
+import { StartTrialDialog } from "./StartTrialDialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,6 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const { data: measurements } = useBodyMeasurements(memberId);
   const updateMember = useUpdateWellnessMember();
 
-  const startTrial = useStartTrial();
   const createMembership = useCreateMembership();
   const renewMembership = useRenewMembership();
   const adjustServings = useAdjustServings();
@@ -69,6 +69,7 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const [dob, setDob] = useState<string | null>(null);
   const [measureOpen, setMeasureOpen] = useState(false);
   const [referrerDraft, setReferrerDraft] = useState<string | null | undefined>(undefined);
+  const [trialOpen, setTrialOpen] = useState(false);
 
   if (!member) return null;
 
@@ -99,20 +100,8 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             Check in today
           </Button>
           {!activeTrial && !activeMembership && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                user &&
-                startTrial.mutate({
-                  member_id: member.id,
-                  duration_days: 3,
-                  weight_at_start: member.current_weight,
-                  created_by: user.id,
-                })
-              }
-            >
-              Start 3-day trial
+            <Button size="sm" variant="outline" onClick={() => setTrialOpen(true)}>
+              Start trial
             </Button>
           )}
         </div>
@@ -170,6 +159,16 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
                     </span>
                   </p>
                 )}
+              </div>
+
+              <div className="rounded-lg border p-4 text-sm sm:col-span-2">
+                <p className="font-medium">Batch</p>
+                <div className="mt-2">
+                  <BatchPicker
+                    value={member.batch_id}
+                    onChange={(id) => updateMember.mutate({ id: member.id, batch_id: id })}
+                  />
+                </div>
               </div>
 
               <div className="rounded-lg border p-4 text-sm sm:col-span-2">
@@ -410,6 +409,7 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
         </Tabs>
 
         <RecordMeasurementDialog memberId={member.id} open={measureOpen} onOpenChange={setMeasureOpen} />
+        <StartTrialDialog member={member} open={trialOpen} onOpenChange={setTrialOpen} />
       </SheetContent>
     </Sheet>
   );
