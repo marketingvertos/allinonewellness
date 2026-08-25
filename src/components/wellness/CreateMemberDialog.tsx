@@ -62,9 +62,11 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       current_weight: form.initial_weight ? Number(form.initial_weight) : null,
       target_weight: form.target_weight ? Number(form.target_weight) : null,
       height: form.height ? Number(form.height) : null,
+      referred_by_member_id: referrerId,
       status: "lead",
       created_by: user.id,
     });
+    setReferrerId(null);
     setForm({
       full_name: "",
       mobile_number: "",
