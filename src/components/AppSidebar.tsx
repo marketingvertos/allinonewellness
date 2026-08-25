@@ -55,6 +55,7 @@ const wellnessNav = [
   { title: "Check-in", icon: ScanLine, to: "/wellness/checkin" },
   { title: "Plans", icon: ClipboardList, to: "/wellness/plans" },
   { title: "Check-in QR", icon: QrCode, to: "/wellness/qr" },
+  { title: "Achievements", icon: Trophy, to: "/wellness/achievements" },
 ];
 
 export function AppSidebar() {
