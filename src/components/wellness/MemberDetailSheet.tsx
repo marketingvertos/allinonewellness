@@ -170,8 +170,31 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
                     </span>
                   </p>
                 )}
+              <div className="rounded-lg border p-4 text-sm sm:col-span-2">
+                <p className="font-medium">Referred by / helped by</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <ReferrerPicker
+                    value={referrerValue}
+                    excludeId={member.id}
+                    onChange={(id) => setReferrerDraft(id)}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={referrerValue === currentReferrer || updateMember.isPending}
+                    onClick={() =>
+                      updateMember.mutate({ id: member.id, referred_by_member_id: referrerValue })
+                    }
+                  >
+                    Save
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Credits the selected member with helping this person join.
+                </p>
               </div>
             </div>
+
 
             {activeTrial && (
               <div className="rounded-lg border p-4 text-sm">
