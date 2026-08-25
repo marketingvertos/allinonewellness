@@ -170,6 +170,8 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
                     </span>
                   </p>
                 )}
+              </div>
+
               <div className="rounded-lg border p-4 text-sm sm:col-span-2">
                 <p className="font-medium">Referred by / helped by</p>
                 <div className="mt-2 flex items-center gap-2">
