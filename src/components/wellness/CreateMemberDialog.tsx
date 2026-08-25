@@ -33,6 +33,7 @@ interface Props {
 export function CreateMemberDialog({ open, onOpenChange }: Props) {
   const { user } = useAuth();
   const createMember = useCreateWellnessMember();
+  const [referrerId, setReferrerId] = useState<string | null>(null);
   const [form, setForm] = useState({
     full_name: "",
     mobile_number: "",
@@ -46,6 +47,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
   });
 
   const set = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
+
 
   const submit = async () => {
     if (!user) return;
