@@ -1,22 +1,36 @@
 import { Link } from "react-router-dom";
-import { useWellnessStats } from "@/hooks/useWellness";
+import { useActiveMemberships, useActiveTrials, useTopReferrers, useWellnessStats } from "@/hooks/useWellness";
 import { PageBanner } from "@/components/PageBanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/formatters";
-import { Users, CalendarCheck, BadgeCheck, AlertTriangle, IndianRupee, QrCode } from "lucide-react";
+import { Users, CalendarCheck, BadgeCheck, AlertTriangle, IndianRupee, QrCode, Sparkles, Trophy } from "lucide-react";
 import { BirthdaysCard } from "@/components/wellness/BirthdaysCard";
+import { ServingTrendChart } from "@/components/wellness/ServingTrendChart";
 
 export default function WellnessDashboard() {
   const { data, isLoading } = useWellnessStats();
+  const { data: trials } = useActiveTrials();
+  const { data: memberships } = useActiveMemberships();
+  const { data: topReferrers } = useTopReferrers(5);
+
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const trialsEndingToday = (trials ?? []).filter((t) => t.end_date <= today).length;
+  const converted = (data?.statusCounts?.active_member ?? 0) + (data?.statusCounts?.renewal_due ?? 0);
+  const trialPool = converted + (data?.statusCounts?.trial ?? 0);
+  const conversionRate = trialPool ? Math.round((converted / trialPool) * 100) : 0;
+  const renewals = (memberships ?? []).filter((m) => m.status === "expiring_soon");
 
   const cards = [
     { title: "Total members", value: data?.totalMembers ?? 0, icon: Users },
     { title: "Check-ins today", value: data?.checkinsToday ?? 0, icon: CalendarCheck },
     { title: "Active memberships", value: data?.activeMemberships ?? 0, icon: BadgeCheck },
+    { title: "Active trials", value: trials?.length ?? 0, icon: Sparkles },
+    { title: "Trials ending today", value: trialsEndingToday, icon: AlertTriangle },
     { title: "Renewals due", value: data?.renewalsDue ?? 0, icon: AlertTriangle },
+    { title: "Trial conversion", value: `${conversionRate}%`, icon: Trophy },
   ];
 
   return (
@@ -91,6 +105,53 @@ export default function WellnessDashboard() {
               ))
             ) : (
               <p className="text-sm text-muted-foreground">Everyone has a healthy balance.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <ServingTrendChart />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Renewals due</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {renewals.length ? (
+              renewals.map((m) => (
+                <div key={m.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-medium">{m.wellness_members?.full_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {m.wellness_plans?.name} · ends {formatDate(m.end_date)}
+                    </p>
+                  </div>
+                  <Badge variant="secondary">{m.remaining_servings} servings left</Badge>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No memberships expiring in the next few days.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Top referrers</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {topReferrers?.length ? (
+              topReferrers.map((r, i) => (
+                <div key={r.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                  <span className="font-medium">
+                    {i + 1}. {r.full_name}
+                  </span>
+                  <Badge variant="outline">{r.count} helped</Badge>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No referrals recorded yet.</p>
             )}
           </CardContent>
         </Card>
