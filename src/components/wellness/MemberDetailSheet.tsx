@@ -381,6 +381,10 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             )}
           </TabsContent>
 
+          <TabsContent value="achievements" className="pt-4">
+            <AchievementsPanel member={member} weights={weights ?? []} />
+          </TabsContent>
+
           <TabsContent value="notes" className="space-y-4 pt-4">
             <div className="space-y-2">
               <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Internal note (not visible to the member)" />
