@@ -142,6 +142,13 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
             <Label htmlFor="wm-height">Height (cm)</Label>
             <Input id="wm-height" inputMode="decimal" value={form.height} onChange={(e) => set("height")(e.target.value)} />
           </div>
+          <div className="sm:col-span-2 space-y-2">
+            <Label>Referred by / helped by (optional)</Label>
+            <ReferrerPicker value={referrerId} onChange={(id) => setReferrerId(id)} />
+            <p className="text-xs text-muted-foreground">
+              The selected member gets credit for helping this person join.
+            </p>
+          </div>
         </div>
 
         <DialogFooter>
