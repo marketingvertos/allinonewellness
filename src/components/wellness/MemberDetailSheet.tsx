@@ -68,8 +68,12 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const [note, setNote] = useState("");
   const [dob, setDob] = useState<string | null>(null);
   const [measureOpen, setMeasureOpen] = useState(false);
+  const [referrerDraft, setReferrerDraft] = useState<string | null | undefined>(undefined);
 
   if (!member) return null;
+
+  const currentReferrer = (member as { referred_by_member_id?: string | null }).referred_by_member_id ?? null;
+  const referrerValue = referrerDraft === undefined ? currentReferrer : referrerDraft;
 
   const activeTrial = trials?.find((t) => t.status === "active");
   const activeMembership = memberships?.find((m) => m.status === "active" || m.status === "expiring_soon");
