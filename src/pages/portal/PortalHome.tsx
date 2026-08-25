@@ -14,6 +14,7 @@ export default function PortalHome() {
   const { data: profile } = useMyMemberProfile();
   const { data: memberships } = useMemberships(identity?.memberId ?? undefined);
   const { data: attendance } = useMemberAttendance(identity?.memberId ?? undefined);
+  const { data: weights } = useWeightHistory(identity?.memberId ?? undefined);
 
   const active = (memberships ?? []).find((m) => m.status === "active" || m.status === "expiring_soon");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
