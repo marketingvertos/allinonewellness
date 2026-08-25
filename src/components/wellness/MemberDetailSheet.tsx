@@ -13,7 +13,6 @@ import {
   useCreateMembership,
   useRenewMembership,
   useServingLedger,
-  useStartTrial,
   useWeightHistory,
   useWellnessPlans,
   useBodyMeasurements,
@@ -57,7 +56,6 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const { data: measurements } = useBodyMeasurements(memberId);
   const updateMember = useUpdateWellnessMember();
 
-  const startTrial = useStartTrial();
   const createMembership = useCreateMembership();
   const renewMembership = useRenewMembership();
   const adjustServings = useAdjustServings();
