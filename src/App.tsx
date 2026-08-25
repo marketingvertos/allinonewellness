@@ -26,6 +26,9 @@ import WellnessCheckIn from "./pages/WellnessCheckIn";
 import WellnessPlans from "./pages/WellnessPlans";
 import WellnessQr from "./pages/WellnessQr";
 import WellnessAchievements from "./pages/WellnessAchievements";
+import WellnessBatches from "./pages/WellnessBatches";
+import WellnessTrials from "./pages/WellnessTrials";
+import WellnessNotifications from "./pages/WellnessNotifications";
 import { PortalLayout } from "./pages/portal/PortalLayout";
 import PortalAuth from "./pages/portal/PortalAuth";
 import PortalHome from "./pages/portal/PortalHome";
@@ -64,6 +67,9 @@ const App = () => (
                 <Route path="/wellness/plans" element={<WellnessPlans />} />
                 <Route path="/wellness/qr" element={<WellnessQr />} />
                 <Route path="/wellness/achievements" element={<WellnessAchievements />} />
+                <Route path="/wellness/batches" element={<WellnessBatches />} />
+                <Route path="/wellness/trials" element={<WellnessTrials />} />
+                <Route path="/wellness/notifications" element={<WellnessNotifications />} />
               </Route>
               <Route path="/portal/auth" element={<PortalAuth />} />
               <Route element={<PortalLayout />}>
