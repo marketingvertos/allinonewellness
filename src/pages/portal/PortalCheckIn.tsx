@@ -64,7 +64,8 @@ export default function PortalCheckIn() {
 
   const status = request?.status ?? result?.status;
   const waiting = status === "pending";
-  const approved = status === "approved" || result?.status === "duplicate";
+  const duplicate = result?.status === "duplicate";
+  const approved = status === "approved" || duplicate;
   const rejected = status === "rejected" || status === "expired";
   const failed = !waiting && !approved && !rejected && !!result && result.status !== "ok";
   const idle = !running && !result && !error;
