@@ -410,10 +410,12 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             ))}
           </TabsContent>
         </Tabs>
+        </div>
 
         <RecordMeasurementDialog memberId={member.id} open={measureOpen} onOpenChange={setMeasureOpen} />
         <StartTrialDialog member={member} open={trialOpen} onOpenChange={setTrialOpen} />
       </SheetContent>
+
     </Sheet>
   );
 }
