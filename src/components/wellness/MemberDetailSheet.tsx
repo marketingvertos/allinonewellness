@@ -281,12 +281,13 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
               <div className="space-y-2">
                 <p className="text-sm font-medium">History</p>
                 {memberships.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                    <span>{m.wellness_plans?.name ?? m.membership_code}</span>
-                    <span className="text-muted-foreground">
+                  <div key={m.id} className="flex flex-col gap-1 rounded-md border px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                    <span className="font-medium">{m.wellness_plans?.name ?? m.membership_code}</span>
+                    <span className="text-xs text-muted-foreground sm:text-sm">
                       {formatDate(m.start_date)} → {formatDate(m.end_date)}
                     </span>
                   </div>
+
                 ))}
               </div>
             )}
