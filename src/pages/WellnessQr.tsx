@@ -55,20 +55,20 @@ export default function WellnessQr() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_1fr] print:block">
         <Card className="print:border-0 print:shadow-none">
-          <CardContent className="p-6 print:p-0">
+          <CardContent className="p-3 sm:p-6 print:p-0">
             {isLoading || !settings ? (
               <Skeleton className="h-80 w-full" />
             ) : (
               <div
                 ref={posterRef}
-                className="flex flex-col items-center gap-4 rounded-xl border p-8 text-center print:border-0"
+                className="flex w-full flex-col items-center gap-4 rounded-xl border p-4 text-center sm:p-8 print:border-0"
               >
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                   Wellness Centre
                 </p>
-                <h2 className="text-2xl font-bold">Scan to mark attendance</h2>
-                <div className="rounded-xl border bg-background p-4">
-                  <QRCodeSVG value={url} size={260} includeMargin={false} />
+                <h2 className="text-xl font-bold sm:text-2xl">Scan to mark attendance</h2>
+                <div className="w-full max-w-[260px] rounded-xl border bg-background p-3 sm:p-4">
+                  <QRCodeSVG value={url} size={260} includeMargin={false} className="h-auto w-full" />
                 </div>
                 <div className="space-y-1 text-sm text-muted-foreground">
                   <p>Open your phone camera, scan the code, sign in once — your visit is recorded instantly.</p>
