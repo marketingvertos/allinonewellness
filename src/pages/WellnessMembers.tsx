@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
+import { WellnessListRow } from "@/components/wellness/WellnessListRow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate } from "@/lib/formatters";
 import { Download, Plus, Search, Users } from "lucide-react";
