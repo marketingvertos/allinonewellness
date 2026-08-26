@@ -54,6 +54,8 @@ export default function WellnessCheckIn() {
         </Button>
       </PageBanner>
 
+      <PendingCheckInsCard />
+
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <Card>
           <CardHeader>
