@@ -131,15 +131,16 @@ export default function WellnessCheckIn() {
         <CardContent className="space-y-2">
           {today?.length ? (
             today.map((a) => (
-              <div key={a.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                <div>
-                  <p className="font-medium">{a.wellness_members?.full_name}</p>
+              <div key={a.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{a.wellness_members?.full_name}</p>
                   <p className="text-xs text-muted-foreground">{formatDateTime(a.visit_time)}</p>
                 </div>
-                <span className="text-muted-foreground">
+                <span className="shrink-0 text-right text-xs text-muted-foreground sm:text-sm">
                   {a.serving_deducted ? `${a.remaining_balance_snapshot} servings left` : "Trial visit"}
                 </span>
               </div>
+
             ))
           ) : (
             <p className="text-sm text-muted-foreground">No check-ins recorded today.</p>
