@@ -128,24 +128,31 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/40 p-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary">
-          {member.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+      <div className="rounded-xl border bg-muted/40 p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary">
+            {member.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-semibold">{member.full_name}</p>
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              {[memberAge ? `${memberAge} yrs` : null, member.gender, member.height ? `${member.height} cm` : null,
+                `Joined ${formatDate(member.joining_date)}`].filter(Boolean).join(" · ")}
+            </p>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{member.full_name}</p>
-          <p className="text-sm text-muted-foreground">
-            {[memberAge ? `${memberAge} yrs` : null, member.gender, member.height ? `${member.height} cm` : null,
-              `Joined ${formatDate(member.joining_date)}`].filter(Boolean).join(" · ")}
-          </p>
-        </div>
-        {member.date_of_birth && (
-          <Badge variant="outline" className="gap-1">
-            <Cake className="h-3 w-3" /> {formatDate(member.date_of_birth)}
-          </Badge>
+        {(member.date_of_birth || member.goal) && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {member.date_of_birth && (
+              <Badge variant="outline" className="gap-1">
+                <Cake className="h-3 w-3" /> {formatDate(member.date_of_birth)}
+              </Badge>
+            )}
+            {member.goal && <Badge variant="secondary" className="capitalize">{member.goal.replace(/_/g, " ")}</Badge>}
+          </div>
         )}
-        {member.goal && <Badge variant="secondary" className="capitalize">{member.goal.replace(/_/g, " ")}</Badge>}
       </div>
+
 
       <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
         {tiles.map((t) => (
