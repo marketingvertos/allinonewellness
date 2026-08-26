@@ -6,17 +6,19 @@ import {
   useMemberReferrals,
   useUnlockedAchievements,
 } from "@/hooks/useAchievements";
+import { MilestoneBadge, tierForIndex } from "./MilestoneBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { formatDate } from "@/lib/formatters";
-import { Lock, Trophy, Users } from "lucide-react";
+import { Trophy, Users } from "lucide-react";
 
 interface MemberLike {
   id: string;
   goal: string | null;
   initial_weight: number | null;
   current_weight: number | null;
+  target_weight?: number | null;
 }
 
 interface Props {
@@ -34,6 +36,10 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
     () => new Set((unlocked ?? []).map((u) => u.achievement_id)),
     [unlocked],
   );
+  const unlockedAt = useMemo(
+    () => new Map((unlocked ?? []).map((u) => [u.achievement_id, u.unlocked_at])),
+    [unlocked],
+  );
 
   const referralCount = (referrals ?? []).filter((r) => r.status !== "inactive").length;
 
@@ -46,8 +52,17 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
       ? Number((healthCategory === "weight_gain" ? current - start : start - current).toFixed(1))
       : 0;
 
+  // How much the member set out to lose/gain — drives which milestones are worth showing.
+  const goalDelta =
+    start != null && member.target_weight != null
+      ? Number(
+          Math.abs(healthCategory === "weight_gain" ? member.target_weight - start : start - member.target_weight)
+            .toFixed(1),
+        )
+      : null;
+
   const community = buildLadder("referral", defs ?? [], unlockedIds, referralCount);
-  const health = buildLadder(healthCategory, defs ?? [], unlockedIds, Math.max(0, delta));
+  const health = buildLadder(healthCategory, defs ?? [], unlockedIds, Math.max(0, delta), goalDelta);
 
   const showHealth =
     !!member.goal && ["weight_loss", "fat_loss", "weight_gain", "body_transformation"].includes(member.goal);
@@ -85,16 +100,18 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
             </p>
           )}
 
-          <div className="flex flex-wrap gap-2">
-            {community.milestones.map((m) => (
-              <span
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+            {community.visible.map((m, i) => (
+              <MilestoneBadge
                 key={m.def.id}
-                className={`rounded-full border px-2 py-1 text-xs ${
-                  m.unlocked ? "border-primary/40 bg-primary/10 font-medium" : "text-muted-foreground"
-                }`}
-              >
-                {m.unlocked ? m.def.icon : "🔒"} {m.def.name}
-              </span>
+                size="sm"
+                icon={m.def.icon}
+                name={m.def.name}
+                unlocked={m.unlocked}
+                tier={tierForIndex(i, community.visible.length)}
+                inProgress={community.next?.id === m.def.id}
+                progressPct={community.pct}
+              />
             ))}
           </div>
 
@@ -145,28 +162,36 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
               <p className="text-sm text-muted-foreground">All milestones unlocked. Outstanding work!</p>
             )}
 
-            <div className="space-y-1">
-              {health.milestones.map((m) => (
-                <div
+            <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5">
+              {health.visible.map((m, i) => (
+                <MilestoneBadge
                   key={m.def.id}
-                  className={`flex items-center justify-between rounded-md border px-3 py-2 text-sm ${
-                    m.unlocked ? "border-primary/40 bg-primary/5" : "text-muted-foreground"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    {m.unlocked ? <span>{m.def.icon}</span> : <Lock className="h-3.5 w-3.5" />}
-                    {m.def.name}
-                  </span>
-                  <span className="text-xs uppercase tracking-wide">{m.unlocked ? "Unlocked" : "Locked"}</span>
-                </div>
+                  icon={m.def.icon}
+                  name={m.def.name}
+                  unlocked={m.unlocked}
+                  tier={tierForIndex(i, health.visible.length)}
+                  inProgress={health.next?.id === m.def.id}
+                  progressPct={health.pct}
+                  caption={
+                    unlockedAt.get(m.def.id) ? formatDate(unlockedAt.get(m.def.id)!.slice(0, 10)) : undefined
+                  }
+                />
               ))}
             </div>
+
+            {health.hiddenCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {health.hiddenCount} further milestone{health.hiddenCount === 1 ? "" : "s"} unlock automatically if the
+                goal is extended.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
     </div>
   );
 }
+
 
 function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
