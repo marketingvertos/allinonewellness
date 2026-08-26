@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatters";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ArrowDownRight, ArrowUpRight, Cake, Minus } from "lucide-react";
 
 interface Props {
@@ -44,6 +45,7 @@ function age(dob: string | null) {
 }
 
 export function MemberDashboard({ member, membership, weights, attendance, measurements }: Props) {
+  const isMobile = useIsMobile();
   const start = member.initial_weight ?? weights[0]?.weight ?? null;
   const current = weights.length ? weights[weights.length - 1].weight : member.current_weight;
   const target = member.target_weight;
@@ -145,11 +147,11 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
         {member.goal && <Badge variant="secondary" className="capitalize">{member.goal.replace(/_/g, " ")}</Badge>}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
         {tiles.map((t) => (
           <div key={t.label} className="rounded-xl border p-3">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">{t.label}</p>
-            <p className="mt-1 flex items-center gap-1 text-2xl font-bold">
+            <p className="mt-1 flex items-center gap-1 text-xl font-bold sm:text-2xl">
               {t.value}
               {"trend" in t && t.trend != null && t.trend !== 0 && (
                 t.trend < 0 ? (
@@ -191,7 +193,7 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Weight trend</CardTitle>
           </CardHeader>
-          <CardContent className="h-52">
+          <CardContent className="h-44 px-2 sm:h-52 sm:px-6">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={weightSeries} margin={{ left: -20, right: 8, top: 8 }}>
                 <defs>
@@ -201,8 +203,8 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="date" fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                <YAxis domain={["dataMin - 2", "dataMax + 2"]} fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                <XAxis dataKey="date" fontSize={10} minTickGap={isMobile ? 24 : 8} interval="preserveStartEnd" tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                <YAxis domain={["dataMin - 2", "dataMax + 2"]} width={isMobile ? 30 : 40} fontSize={10} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
                 <Tooltip
                   contentStyle={{
                     background: "hsl(var(--popover))",
@@ -225,12 +227,12 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Attendance (last 8 weeks)</CardTitle>
           </CardHeader>
-          <CardContent className="h-48">
+          <CardContent className="h-44 px-2 sm:h-48 sm:px-6">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyVisits} margin={{ left: -24, right: 8, top: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                <XAxis dataKey="label" fontSize={10} minTickGap={isMobile ? 16 : 4} interval="preserveStartEnd" tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                <YAxis allowDecimals={false} width={isMobile ? 24 : 34} fontSize={10} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
                 <Tooltip
                   cursor={{ fill: "hsl(var(--muted))" }}
                   contentStyle={{
@@ -251,13 +253,13 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Body composition</CardTitle>
           </CardHeader>
-          <CardContent className="h-48">
+          <CardContent className="h-44 px-2 sm:h-48 sm:px-6">
             {compositionData.length ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={compositionData} layout="vertical" margin={{ left: 16, right: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                   <XAxis type="number" fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis type="category" dataKey="metric" width={80} fontSize={11} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis type="category" dataKey="metric" width={isMobile ? 62 : 80} fontSize={10} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
                   <Tooltip
                     cursor={{ fill: "hsl(var(--muted))" }}
                     contentStyle={{
