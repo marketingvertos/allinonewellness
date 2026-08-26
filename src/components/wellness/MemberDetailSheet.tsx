@@ -98,19 +98,20 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => checkIn.mutate({ memberId: member.id })} disabled={checkIn.isPending}>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Button onClick={() => checkIn.mutate({ memberId: member.id })} disabled={checkIn.isPending}>
             Check in today
           </Button>
           {!activeTrial && !activeMembership && (
-            <Button size="sm" variant="outline" onClick={() => setTrialOpen(true)}>
+            <Button variant="outline" onClick={() => setTrialOpen(true)}>
               Start trial
             </Button>
           )}
         </div>
 
         <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="flex w-full flex-wrap">
+          <TabsList className="flex w-full justify-start gap-1 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="plan">Plan</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
