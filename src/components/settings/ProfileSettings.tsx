@@ -22,7 +22,7 @@ export function ProfileSettings() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("*").eq("user_id", user.id).single().then(({ data }) => {
+    supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle().then(({ data }) => {
       if (data) {
         setFullName(data.full_name || "");
         setCompany(data.company || "");
