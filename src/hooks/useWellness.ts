@@ -638,6 +638,119 @@ export function useSelfCheckIn() {
   });
 }
 
+/* --------------------------- Check-in approvals --------------------------- */
+
+export interface CheckInRequest {
+  id: string;
+  member_id: string;
+  membership_id: string | null;
+  status: "pending" | "approved" | "rejected" | "expired";
+  request_date: string;
+  requested_at: string;
+  reject_reason: string | null;
+  wellness_members?: {
+    id: string;
+    full_name: string;
+    mobile_number: string;
+    status: string;
+  } | null;
+  wellness_memberships?: {
+    id: string;
+    remaining_servings: number;
+    end_date: string;
+  } | null;
+}
+
+export function usePendingCheckIns() {
+  return useQuery({
+    queryKey: ["wellness-checkin-requests", "pending"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_checkin_requests")
+        .select(
+          "*, wellness_members(id, full_name, mobile_number, status), wellness_memberships(id, remaining_servings, end_date)",
+        )
+        .eq("status", "pending")
+        .order("requested_at", { ascending: true });
+      if (error) throw error;
+      return data as unknown as CheckInRequest[];
+    },
+    refetchInterval: 10000,
+  });
+}
+
+export function useApproveCheckIn() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      const { data, error } = await supabase.rpc("approve_checkin_request", {
+        p_request_id: requestId,
+      } as never);
+      if (error) throw error;
+      return data as unknown as { status: string; message?: string; remaining?: number; mode?: string };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries();
+      if (result?.status === "ok") {
+        toast({
+          title: "Check-in approved",
+          description:
+            result.mode === "trial"
+              ? "Trial visit recorded."
+              : `One serving deducted. ${result.remaining} servings left.`,
+        });
+      } else {
+        toast({
+          title: "Not approved",
+          description: result?.message ?? "Could not approve this check-in.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (e) =>
+      toast({ title: "Error", description: getErrorMessage(e), variant: "destructive" }),
+  });
+}
+
+export function useRejectCheckIn() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (args: { requestId: string; reason?: string }) => {
+      const { error } = await supabase.rpc("reject_checkin_request", {
+        p_request_id: args.requestId,
+        p_reason: args.reason ?? null,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
+      toast({ title: "Check-in rejected", description: "No serving was deducted." });
+    },
+    onError: (e) =>
+      toast({ title: "Error", description: getErrorMessage(e), variant: "destructive" }),
+  });
+}
+
+export function useMyCheckInRequest(requestId: string | null) {
+  return useQuery({
+    queryKey: ["my-checkin-request", requestId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_checkin_requests")
+        .select("*")
+        .eq("id", requestId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as unknown as CheckInRequest | null;
+    },
+    enabled: !!requestId,
+    refetchInterval: (q) =>
+      (q.state.data as CheckInRequest | null)?.status === "pending" ? 5000 : false,
+  });
+}
+
 /* --------------------------- Member portal data --------------------------- */
 
 export function useMyMemberProfile() {
