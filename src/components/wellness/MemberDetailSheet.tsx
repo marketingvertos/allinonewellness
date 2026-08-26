@@ -296,9 +296,9 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
           <TabsContent value="attendance" className="space-y-2 pt-4">
             {attendance?.length ? (
               attendance.map((a) => (
-                <div key={a.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                <div key={a.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
                   <span>{formatDateTime(a.visit_time)}</span>
-                  <span className="text-muted-foreground">
+                  <span className="shrink-0 text-right text-xs text-muted-foreground sm:text-sm">
                     {a.serving_deducted ? `1 serving · ${a.remaining_balance_snapshot} left` : "Trial visit"}
                   </span>
                 </div>
@@ -345,14 +345,14 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
                 Save
               </Button>
             </div>
-            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+            <div className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium">Body measurements</p>
                 <p className="text-xs text-muted-foreground">
                   {measurements?.length ? `${measurements.length} recorded` : "None recorded yet"}
                 </p>
               </div>
-              <Button size="sm" variant="outline" onClick={() => setMeasureOpen(true)}>
+              <Button variant="outline" className="w-full sm:w-auto" onClick={() => setMeasureOpen(true)}>
                 Record measurements
               </Button>
             </div>
@@ -360,9 +360,9 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             {measurements?.length ? (
               <div className="space-y-2">
                 {[...measurements].reverse().map((m) => (
-                  <div key={m.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                  <div key={m.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
                     <span>{formatDate(m.recorded_date)}</span>
-                    <span className="text-muted-foreground">
+                    <span className="text-right text-xs text-muted-foreground sm:text-sm">
                       {[m.waist && `W ${m.waist}`, m.hip && `H ${m.hip}`, m.chest && `C ${m.chest}`,
                         m.body_fat_percentage && `Fat ${m.body_fat_percentage}%`].filter(Boolean).join(" · ")}
                     </span>
