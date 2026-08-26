@@ -116,7 +116,7 @@ export default function WellnessAchievements() {
                     <p className="text-sm text-muted-foreground">No milestones configured yet.</p>
                   )}
                   {rows.map((d) => (
-                    <div key={d.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+                    <div key={d.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
                       <div className="flex items-center gap-3">
                         <span className="text-xl">{d.icon}</span>
                         <div>

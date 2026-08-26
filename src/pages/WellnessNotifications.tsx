@@ -136,7 +136,7 @@ export default function WellnessNotifications() {
                 const mobile = (entry.wellness_members?.mobile_number ?? "").replace(/\D/g, "").slice(-10);
                 return (
                   <Card key={entry.id}>
-                    <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
+                    <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 flex-1">
                         <p className="font-medium">
                           {name}{" "}

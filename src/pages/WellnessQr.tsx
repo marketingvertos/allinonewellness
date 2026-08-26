@@ -53,7 +53,7 @@ export default function WellnessQr() {
         </PageBanner>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[420px_1fr] print:block">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_1fr] print:block">
         <Card className="print:border-0 print:shadow-none">
           <CardContent className="p-6 print:p-0">
             {isLoading || !settings ? (
@@ -89,7 +89,7 @@ export default function WellnessQr() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="break-all rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs">{url || "—"}</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap [&>button]:w-full sm:[&>button]:w-auto">
                 <Button
                   variant="outline"
                   size="sm"

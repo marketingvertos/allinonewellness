@@ -17,7 +17,7 @@ export default function PortalHistory() {
         <CardContent className="space-y-2">
           {visits?.length ? (
             visits.map((v) => (
-              <div key={v.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+              <div key={v.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
                 <div>
                   <p className="font-medium">{formatDate(v.visit_date)}</p>
                   <p className="text-xs text-muted-foreground">{formatDateTime(v.visit_time)}</p>
@@ -43,7 +43,7 @@ export default function PortalHistory() {
               .slice()
               .reverse()
               .map((w) => (
-                <div key={w.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                <div key={w.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
                   <span>{formatDate(w.recorded_date)}</span>
                   <span className="font-medium">{w.weight} kg</span>
                 </div>
