@@ -85,7 +85,9 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
+      <SheetContent className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+
         <SheetHeader>
           <SheetTitle className="flex flex-wrap items-center gap-2">
             {member.full_name}
