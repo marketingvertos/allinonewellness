@@ -192,8 +192,9 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={submit} disabled={!valid || createMember.isPending}>Add member</Button>
+          <Button variant="outline" onClick={() => close(false)}>Cancel</Button>
+          <Button onClick={submit} disabled={!valid || createMember.isPending}>Save & continue</Button>
+
         </DialogFooter>
       </DialogContent>
     </Dialog>
