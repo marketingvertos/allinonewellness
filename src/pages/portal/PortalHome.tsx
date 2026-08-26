@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
 import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory } from "@/hooks/useWellness";
 import { AchievementsPanel } from "@/components/wellness/AchievementsPanel";
+import { PortalPasswordPrompt } from "@/components/wellness/PortalPasswordPrompt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export default function PortalHome() {
 
   return (
     <div className="space-y-4">
+      <PortalPasswordPrompt />
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">My plan</CardTitle>

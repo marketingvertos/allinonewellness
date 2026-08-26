@@ -24,6 +24,7 @@ import { AchievementsPanel } from "./AchievementsPanel";
 import { ReferrerPicker } from "./ReferrerPicker";
 import { BatchPicker } from "./BatchPicker";
 import { StartTrialDialog } from "./StartTrialDialog";
+import { MemberLoginCard } from "./MemberLoginCard";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -148,18 +149,17 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
               </div>
 
               <div className="rounded-lg border p-4 text-sm">
-                <p className="font-medium">Member portal access</p>
-                {(member as { user_id?: string | null }).user_id ? (
-                  <p className="text-muted-foreground">Portal login is active for this member.</p>
-                ) : (
-                  <p className="text-muted-foreground">
-                    Share this activation code so the member can activate the portal at /portal/auth:{" "}
+                <MemberLoginCard memberId={member.id} mobileNumber={member.mobile_number} />
+                {!(member as { user_id?: string | null }).user_id && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Or share this self-activation code:{" "}
                     <span className="font-mono font-semibold text-foreground">
                       {(member as { activation_code?: string }).activation_code ?? "—"}
                     </span>
                   </p>
                 )}
               </div>
+
 
               <div className="rounded-lg border p-4 text-sm sm:col-span-2">
                 <p className="font-medium">Batch</p>

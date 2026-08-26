@@ -15,6 +15,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ReferrerPicker } from "./ReferrerPicker";
 import { BatchPicker } from "./BatchPicker";
+import { MemberLoginCard } from "./MemberLoginCard";
 
 const GOALS = [
   { value: "weight_loss", label: "Weight loss" },
@@ -36,6 +37,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
   const createMember = useCreateWellnessMember();
   const [referrerId, setReferrerId] = useState<string | null>(null);
   const [batchId, setBatchId] = useState<string | null>(null);
+  const [created, setCreated] = useState<{ id: string; mobile: string } | null>(null);
   const [form, setForm] = useState({
     full_name: "",
     mobile_number: "",
@@ -50,10 +52,31 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
 
   const set = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
 
+  const reset = () => {
+    setReferrerId(null);
+    setBatchId(null);
+    setCreated(null);
+    setForm({
+      full_name: "",
+      mobile_number: "",
+      email: "",
+      gender: "",
+      date_of_birth: "",
+      goal: "",
+      initial_weight: "",
+      target_weight: "",
+      height: "",
+    });
+  };
+
+  const close = (next: boolean) => {
+    if (!next) reset();
+    onOpenChange(next);
+  };
 
   const submit = async () => {
     if (!user) return;
-    await createMember.mutateAsync({
+    const member = await createMember.mutateAsync({
       full_name: form.full_name.trim(),
       mobile_number: form.mobile_number.trim(),
       email: form.email.trim() || null,
@@ -69,31 +92,40 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       status: "lead",
       created_by: user.id,
     });
-    setReferrerId(null);
-    setBatchId(null);
-    setForm({
-      full_name: "",
-      mobile_number: "",
-      email: "",
-      gender: "",
-      date_of_birth: "",
-      goal: "",
-      initial_weight: "",
-      target_weight: "",
-      height: "",
-    });
-    onOpenChange(false);
+    setCreated({ id: (member as { id: string }).id, mobile: form.mobile_number.trim() });
   };
 
   const valid = form.full_name.trim().length > 1 && /^[0-9+\s-]{10,15}$/.test(form.mobile_number.trim());
 
+  if (created) {
+    return (
+      <Dialog open={open} onOpenChange={close}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Step 2 — portal login</DialogTitle>
+            <DialogDescription>
+              Create the member's login now, or skip and do it later from their profile.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-lg border p-4">
+            <MemberLoginCard memberId={created.id} mobileNumber={created.mobile} />
+          </div>
+          <DialogFooter>
+            <Button onClick={() => close(false)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Add wellness member</DialogTitle>
-          <DialogDescription>Capture the basics now — plans and progress can be added later.</DialogDescription>
+          <DialogDescription>Step 1 of 2 — capture the basics, then set up their portal login.</DialogDescription>
         </DialogHeader>
+
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2 space-y-2">
@@ -160,8 +192,9 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={submit} disabled={!valid || createMember.isPending}>Add member</Button>
+          <Button variant="outline" onClick={() => close(false)}>Cancel</Button>
+          <Button onClick={submit} disabled={!valid || createMember.isPending}>Save & continue</Button>
+
         </DialogFooter>
       </DialogContent>
     </Dialog>
