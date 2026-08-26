@@ -177,7 +177,7 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
 
               <div className="rounded-lg border p-4 text-sm sm:col-span-2">
                 <p className="font-medium">Referred by / helped by</p>
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
                   <ReferrerPicker
                     value={referrerValue}
                     excludeId={member.id}
