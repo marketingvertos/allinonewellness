@@ -73,50 +73,50 @@ export default function WellnessCheckIn() {
                 <Camera className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Scan</span>
               </Button>
-
-
+            </div>
 
             {query.length > 1 &&
               results.map((m) => {
                 const done = checkedInIds.has(m.id);
                 return (
-                  <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2">
-                    <div className="min-w-0">
-                      <p className="font-medium">{m.full_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {m.mobile_number}
-                        {m.current_weight ? ` · last ${m.current_weight} kg` : ""}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        className="w-24"
-                        inputMode="decimal"
-                        placeholder="kg"
-                        value={weights[m.id] ?? ""}
-                        onChange={(e) => setWeights((w) => ({ ...w, [m.id]: e.target.value }))}
-                      />
-                      {done ? (
-                        <>
-                          <Badge variant="secondary">Checked in</Badge>
+                  <WellnessListRow
+                    key={m.id}
+                    title={m.full_name}
+                    meta={`${m.mobile_number}${m.current_weight ? ` · last ${m.current_weight} kg` : ""}`}
+                    badges={done ? <Badge variant="secondary">Checked in</Badge> : undefined}
+                    actions={
+                      <div className="flex w-full items-center gap-2 sm:w-auto">
+                        <Input
+                          className="w-20 shrink-0"
+                          inputMode="decimal"
+                          placeholder="kg"
+                          value={weights[m.id] ?? ""}
+                          onChange={(e) => setWeights((w) => ({ ...w, [m.id]: e.target.value }))}
+                        />
+                        {done ? (
                           <Button
-                            size="sm"
+                            className="flex-1 sm:flex-none"
                             variant="outline"
                             disabled={!weights[m.id] || checkIn.isPending}
                             onClick={() => submit(m.id, true)}
                           >
                             Save weight
                           </Button>
-                        </>
-                      ) : (
-                        <Button size="sm" disabled={checkIn.isPending} onClick={() => submit(m.id, false)}>
-                          Check in
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                        ) : (
+                          <Button
+                            className="flex-1 sm:flex-none"
+                            disabled={checkIn.isPending}
+                            onClick={() => submit(m.id, false)}
+                          >
+                            Check in
+                          </Button>
+                        )}
+                      </div>
+                    }
+                  />
                 );
               })}
+
           </CardContent>
         </Card>
         <CentreQrCard />
