@@ -22,6 +22,7 @@ export default function PortalHome() {
 
   return (
     <div className="space-y-4">
+      <PortalPasswordPrompt />
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">My plan</CardTitle>
