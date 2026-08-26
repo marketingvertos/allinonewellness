@@ -35,17 +35,19 @@ export function PortalLayout() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="flex items-center justify-between border-b bg-background px-4 py-3">
-        <div className="flex items-center gap-2">
-          <HeartPulse className="h-5 w-5 text-primary" />
-          <span className="font-semibold">{identity?.memberName ?? "Member"}</span>
+      <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b bg-background px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <HeartPulse className="h-5 w-5 shrink-0 text-primary" />
+          <span className="truncate font-semibold">{identity?.memberName ?? "Member"}</span>
         </div>
-        <Button variant="ghost" size="sm" onClick={signOut}>
-          <LogOut className="mr-2 h-4 w-4" /> Sign out
+        <Button variant="ghost" size="sm" className="shrink-0" onClick={signOut}>
+          <LogOut className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Sign out</span>
         </Button>
       </header>
 
-      <nav className="flex border-b bg-background">
+      {/* Desktop / tablet navigation */}
+      <nav className="hidden border-b bg-background sm:flex">
         {tabs.map((t) => (
           <NavLink
             key={t.to}
@@ -64,9 +66,30 @@ export function PortalLayout() {
         ))}
       </nav>
 
-      <main className="mx-auto w-full max-w-2xl p-4">
+      <main className="mx-auto w-full max-w-2xl p-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] sm:pb-6">
         <Outlet />
       </main>
+
+      {/* Thumb-reachable mobile navigation */}
+      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 border-t bg-background pb-[env(safe-area-inset-bottom)] sm:hidden">
+        {tabs.map((t) => (
+          <NavLink
+            key={t.to}
+            to={t.to}
+            end={t.end}
+            className={({ isActive }) =>
+              cn(
+                "flex min-h-[56px] flex-col items-center justify-center gap-1 text-xs",
+                isActive ? "font-medium text-primary" : "text-muted-foreground",
+              )
+            }
+          >
+            <t.icon className="h-5 w-5" />
+            {t.label}
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }
+
