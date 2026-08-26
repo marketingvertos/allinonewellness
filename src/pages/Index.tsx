@@ -35,7 +35,7 @@ export default function Index() {
   const { data: profile } = useQuery({
     queryKey: ["profile-dashboard", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("avatar_url, full_name").eq("user_id", user!.id).single();
+      const { data } = await supabase.from("profiles").select("avatar_url, full_name").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,

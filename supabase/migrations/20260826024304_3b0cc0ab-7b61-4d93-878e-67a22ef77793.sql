@@ -1,0 +1,12 @@
+REVOKE EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.is_team_member(uuid, uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.is_team_member(uuid, uuid) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.seed_default_pipeline(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.seed_default_pipeline(uuid) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.is_wellness_staff(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.is_wellness_staff(uuid) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.is_wellness_manager(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.is_wellness_manager(uuid) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.owns_wellness_member(uuid, uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.owns_wellness_member(uuid, uuid) TO authenticated, service_role;

@@ -138,12 +138,13 @@ export default function WellnessNotifications() {
                   <Card key={entry.id}>
                     <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium">
-                          {name}{" "}
-                          <Badge variant="outline" className="ml-1 align-middle text-xs">
+                        <div className="flex flex-wrap items-center gap-2 font-medium">
+                          <span className="truncate">{name}</span>
+                          <Badge variant="outline" className="text-xs">
                             {entry.trigger_key.replace(/_/g, " ")}
                           </Badge>
-                        </p>
+                        </div>
+
                         <p className="mt-1 text-sm text-muted-foreground">{message}</p>
                         <p className="mt-1 text-xs text-muted-foreground">
                           Queued {formatDateTime(entry.created_at)} · {entry.status}

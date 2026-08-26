@@ -64,7 +64,8 @@ export default function PortalCheckIn() {
 
   const status = request?.status ?? result?.status;
   const waiting = status === "pending";
-  const approved = status === "approved" || result?.status === "duplicate";
+  const duplicate = result?.status === "duplicate";
+  const approved = status === "approved" || duplicate;
   const rejected = status === "rejected" || status === "expired";
   const failed = !waiting && !approved && !rejected && !!result && result.status !== "ok";
   const idle = !running && !result && !error;
@@ -112,26 +113,31 @@ export default function PortalCheckIn() {
               <h2 className="text-xl font-semibold">
                 {waiting
                   ? "Waiting for approval"
-                  : approved
-                    ? "Checked in"
-                    : rejected
-                      ? "Check-in not approved"
-                      : "Check-in not recorded"}
+                  : duplicate
+                    ? "Already checked in today"
+                    : approved
+                      ? "Checked in"
+                      : rejected
+                        ? "Check-in not approved"
+                        : "Check-in not recorded"}
               </h2>
 
               <p className="text-muted-foreground">
                 {error ??
                   (waiting
                     ? "Your request has been sent to the front desk. This screen updates automatically once it is approved."
-                    : approved
-                      ? "Your visit is recorded and one serving has been deducted."
-                      : rejected
-                        ? request?.reject_reason ||
-                          (status === "expired"
-                            ? "This request expired. Please scan again."
-                            : "The front desk did not approve this check-in.")
-                        : result?.message ?? "Please review your plan at the front desk.")}
+                    : duplicate
+                      ? "Your visit for today is already recorded — no extra serving has been deducted."
+                      : approved
+                        ? "Your visit is recorded and one serving has been deducted."
+                        : rejected
+                          ? request?.reject_reason ||
+                            (status === "expired"
+                              ? "This request expired. Please scan again."
+                              : "The front desk did not approve this check-in.")
+                          : result?.message ?? "Please review your plan at the front desk.")}
               </p>
+
 
               {approved && identity?.memberId && !weightSaved && (
                 <div className="mx-auto max-w-xs space-y-2 rounded-lg border p-4 text-left">

@@ -1,0 +1,14 @@
+REVOKE ALL ON FUNCTION public.guard_member_self_update() FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.guard_member_referral() FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.notify_on_deal_insert() FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.queue_serving_threshold_notification() FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.trg_member_achievements() FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.trg_weight_achievements() FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.update_updated_at_column() FROM anon, authenticated, public;
+REVOKE EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_team_member(uuid, uuid) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.seed_default_pipeline(uuid) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_wellness_staff(uuid) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_wellness_manager(uuid) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.owns_wellness_member(uuid, uuid) FROM anon;
