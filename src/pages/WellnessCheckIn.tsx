@@ -11,6 +11,8 @@ import { formatDateTime } from "@/lib/formatters";
 import { Camera, QrCode, Search } from "lucide-react";
 import { CentreQrCard } from "@/components/wellness/CentreQrCard";
 import { QrScannerSheet } from "@/components/wellness/QrScannerSheet";
+import { WellnessListRow } from "@/components/wellness/WellnessListRow";
+
 
 
 export default function WellnessCheckIn() {
