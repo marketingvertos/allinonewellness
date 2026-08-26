@@ -902,6 +902,73 @@ export type Database = {
         }
         Relationships: []
       }
+      wellness_checkin_requests: {
+        Row: {
+          attendance_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          member_id: string
+          membership_id: string | null
+          reject_reason: string | null
+          request_date: string
+          requested_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attendance_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          member_id: string
+          membership_id?: string | null
+          reject_reason?: string | null
+          request_date?: string
+          requested_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attendance_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          member_id?: string
+          membership_id?: string | null
+          reject_reason?: string | null
+          request_date?: string
+          requested_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_checkin_requests_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_checkin_requests_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_checkin_requests_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wellness_members: {
         Row: {
           activation_code: string
@@ -1263,6 +1330,7 @@ export type Database = {
         Args: { p_change: number; p_membership_id: string; p_note?: string }
         Returns: number
       }
+      approve_checkin_request: { Args: { p_request_id: string }; Returns: Json }
       checkin_member: {
         Args: {
           p_member_id: string
@@ -1283,6 +1351,7 @@ export type Database = {
         Returns: string
       }
       delete_wellness_plan: { Args: { p_plan_id: string }; Returns: Json }
+      expire_stale_checkin_requests: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1311,6 +1380,10 @@ export type Database = {
         Returns: undefined
       }
       refresh_wellness_statuses: { Args: never; Returns: undefined }
+      reject_checkin_request: {
+        Args: { p_reason?: string; p_request_id: string }
+        Returns: Json
+      }
       renew_membership: {
         Args: { p_membership_id: string; p_plan_id?: string; p_price?: number }
         Returns: string

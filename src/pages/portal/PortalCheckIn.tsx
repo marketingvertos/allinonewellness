@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useSelfCheckIn, useCheckInWithWeight } from "@/hooks/useWellness";
+import { useSelfCheckIn, useCheckInWithWeight, useMyCheckInRequest } from "@/hooks/useWellness";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QrScannerSheet } from "@/components/wellness/QrScannerSheet";
-import { CheckCircle2, Camera, Loader2, QrCode, XCircle } from "lucide-react";
+import { CheckCircle2, Camera, Clock, Loader2, QrCode, XCircle } from "lucide-react";
 
-type Result = { status: string; message?: string; remaining?: number; mode?: string };
+type Result = {
+  status: string;
+  message?: string;
+  remaining?: number;
+  mode?: string;
+  request_id?: string;
+};
 
 export default function PortalCheckIn() {
   const [params] = useSearchParams();
@@ -25,19 +31,24 @@ export default function PortalCheckIn() {
   const [scanning, setScanning] = useState(false);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const attempted = useRef(false);
+
+  const { data: request } = useMyCheckInRequest(requestId);
 
   const runCheckIn = useCallback(
     async (code: string) => {
       setRunning(true);
       setError(null);
       setResult(null);
+      setRequestId(null);
       try {
-        const r = await selfCheckIn.mutateAsync(code);
-        setResult(r as Result);
+        const r = (await selfCheckIn.mutateAsync(code)) as Result;
+        setResult(r);
+        if (r.status === "pending" && r.request_id) setRequestId(r.request_id);
       } catch {
-        setError("We could not record your check-in. Please ask the front desk.");
+        setError("We could not send your check-in request. Please ask the front desk.");
       } finally {
         setRunning(false);
       }
@@ -51,7 +62,11 @@ export default function PortalCheckIn() {
     void runCheckIn(linkCode);
   }, [linkCode, runCheckIn]);
 
-  const ok = result?.status === "ok";
+  const status = request?.status ?? result?.status;
+  const waiting = status === "pending";
+  const approved = status === "approved" || result?.status === "duplicate";
+  const rejected = status === "rejected" || status === "expired";
+  const failed = !waiting && !approved && !rejected && !!result && result.status !== "ok";
   const idle = !running && !result && !error;
 
   if (idle) {
@@ -64,8 +79,8 @@ export default function PortalCheckIn() {
           <CardContent className="space-y-4 text-sm text-muted-foreground">
             <QrCode className="h-10 w-10 text-primary" />
             <p>
-              Tap below to open your camera and scan the QR poster at the centre. Your visit is recorded instantly
-              and one serving is deducted.
+              Tap below to open your camera and scan the QR poster at the centre. Your request is sent to the
+              front desk — one serving is deducted only after they approve it.
             </p>
             <Button className="w-full" size="lg" onClick={() => setScanning(true)}>
               <Camera className="mr-2 h-5 w-5" /> Scan QR to check in
@@ -82,26 +97,43 @@ export default function PortalCheckIn() {
       <Card>
         <CardContent className="space-y-4 py-10 text-center">
           {running && <Loader2 className="mx-auto h-10 w-10 animate-spin text-primary" />}
-          {running && <p className="text-muted-foreground">Recording your check-in…</p>}
+          {running && <p className="text-muted-foreground">Sending your check-in request…</p>}
 
           {!running && (
             <>
-              {ok ? (
+              {waiting ? (
+                <Clock className="mx-auto h-12 w-12 animate-pulse text-primary" />
+              ) : approved ? (
                 <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
               ) : (
                 <XCircle className="mx-auto h-12 w-12 text-destructive" />
               )}
-              <h2 className="text-xl font-semibold">{ok ? "Checked in" : "Check-in not recorded"}</h2>
+
+              <h2 className="text-xl font-semibold">
+                {waiting
+                  ? "Waiting for approval"
+                  : approved
+                    ? "Checked in"
+                    : rejected
+                      ? "Check-in not approved"
+                      : "Check-in not recorded"}
+              </h2>
+
               <p className="text-muted-foreground">
                 {error ??
-                  (ok
-                    ? result?.mode === "trial"
-                      ? "Trial visit recorded. Enjoy your session!"
-                      : `One serving used. ${result?.remaining} servings left.`
-                    : result?.message ?? "Please review your plan at the front desk.")}
+                  (waiting
+                    ? "Your request has been sent to the front desk. This screen updates automatically once it is approved."
+                    : approved
+                      ? "Your visit is recorded and one serving has been deducted."
+                      : rejected
+                        ? request?.reject_reason ||
+                          (status === "expired"
+                            ? "This request expired. Please scan again."
+                            : "The front desk did not approve this check-in.")
+                        : result?.message ?? "Please review your plan at the front desk.")}
               </p>
 
-              {(ok || result?.status === "duplicate") && identity?.memberId && !weightSaved && (
+              {approved && identity?.memberId && !weightSaved && (
                 <div className="mx-auto max-w-xs space-y-2 rounded-lg border p-4 text-left">
                   <Label htmlFor="portal-weight">Today&apos;s weight (kg)</Label>
                   <div className="flex gap-2">
@@ -142,7 +174,7 @@ export default function PortalCheckIn() {
               {weightSaved && <p className="text-sm text-primary">Weight recorded. Great work!</p>}
 
               <div className="flex flex-wrap justify-center gap-2">
-                {!ok && (
+                {(rejected || failed || error) && (
                   <Button onClick={() => setScanning(true)}>
                     <Camera className="mr-2 h-4 w-4" /> Scan again
                   </Button>
