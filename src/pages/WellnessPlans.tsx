@@ -14,14 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -136,10 +129,10 @@ export default function WellnessPlans() {
                   {usage?.[p.id] ? `Sold to ${usage[p.id]} member(s)` : "Not sold yet"}
                 </p>
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" onClick={() => openEdit(p)}>
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => openEdit(p)}>
                     <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setPendingDelete(p)}>
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => setPendingDelete(p)}>
                     <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
                   </Button>
                 </div>
@@ -151,12 +144,22 @@ export default function WellnessPlans() {
         <p className="py-16 text-center text-muted-foreground">No plans yet — create your first one.</p>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing ? "Edit plan" : "New plan"}</DialogTitle>
-            <DialogDescription>Servings are deducted one per check-in day.</DialogDescription>
-          </DialogHeader>
+      <ResponsiveDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={editing ? "Edit plan" : "New plan"}
+        description="Servings are deducted one per check-in day."
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={submit} disabled={!form.name.trim() || savePlan.isPending}>
+              Save plan
+            </Button>
+          </>
+        }
+      >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2 space-y-2">
               <Label htmlFor="p-name">Name</Label>
@@ -217,16 +220,7 @@ export default function WellnessPlans() {
               <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={submit} disabled={!form.name.trim() || savePlan.isPending}>
-              Save plan
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </ResponsiveDialog>
 
       <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
         <AlertDialogContent>
