@@ -158,7 +158,7 @@ export function QrScannerSheet({ open, onOpenChange, onResult, title, descriptio
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm max-sm:left-0 max-sm:top-0 max-sm:flex max-sm:h-[100svh] max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:gap-4 max-sm:overflow-y-auto max-sm:rounded-none max-sm:pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         <DialogHeader>
           <DialogTitle>{title ?? "Scan check-in QR"}</DialogTitle>
           <DialogDescription>
@@ -166,14 +166,14 @@ export function QrScannerSheet({ open, onOpenChange, onResult, title, descriptio
           </DialogDescription>
         </DialogHeader>
 
-        <div className="relative overflow-hidden rounded-lg border bg-muted aspect-square">
+        <div className="relative aspect-square w-full overflow-hidden rounded-lg border bg-muted max-sm:aspect-auto max-sm:flex-1">
           <video ref={videoRef} className="h-full w-full object-cover" autoPlay muted playsInline />
           {starting && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/70">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           )}
-          <div className="pointer-events-none absolute inset-8 rounded-lg border-2 border-primary/70" />
+          <div className="pointer-events-none absolute inset-8 rounded-2xl border-2 border-primary/70 shadow-[0_0_0_9999px_hsl(var(--background)/0.35)]" />
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
@@ -188,6 +188,7 @@ export function QrScannerSheet({ open, onOpenChange, onResult, title, descriptio
               onChange={(e) => setManual(e.target.value)}
             />
             <Button
+              className="shrink-0"
               disabled={!manual.trim()}
               onClick={() => {
                 const code = extractCheckinCode(manual);

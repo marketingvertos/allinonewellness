@@ -11,6 +11,8 @@ import { formatDateTime } from "@/lib/formatters";
 import { Camera, QrCode, Search } from "lucide-react";
 import { CentreQrCard } from "@/components/wellness/CentreQrCard";
 import { QrScannerSheet } from "@/components/wellness/QrScannerSheet";
+import { WellnessListRow } from "@/components/wellness/WellnessListRow";
+
 
 
 export default function WellnessCheckIn() {
@@ -69,53 +71,54 @@ export default function WellnessCheckIn() {
                   onChange={(e) => setQuery(e.target.value)}
                 />
               </div>
-              <Button variant="outline" onClick={() => setScanning(true)}>
-                <Camera className="mr-2 h-4 w-4" /> Scan
+              <Button variant="outline" className="shrink-0" onClick={() => setScanning(true)}>
+                <Camera className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Scan</span>
               </Button>
             </div>
-
 
             {query.length > 1 &&
               results.map((m) => {
                 const done = checkedInIds.has(m.id);
                 return (
-                  <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2">
-                    <div className="min-w-0">
-                      <p className="font-medium">{m.full_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {m.mobile_number}
-                        {m.current_weight ? ` · last ${m.current_weight} kg` : ""}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        className="w-24"
-                        inputMode="decimal"
-                        placeholder="kg"
-                        value={weights[m.id] ?? ""}
-                        onChange={(e) => setWeights((w) => ({ ...w, [m.id]: e.target.value }))}
-                      />
-                      {done ? (
-                        <>
-                          <Badge variant="secondary">Checked in</Badge>
+                  <WellnessListRow
+                    key={m.id}
+                    title={m.full_name}
+                    meta={`${m.mobile_number}${m.current_weight ? ` · last ${m.current_weight} kg` : ""}`}
+                    badges={done ? <Badge variant="secondary">Checked in</Badge> : undefined}
+                    actions={
+                      <div className="flex w-full items-center gap-2 sm:w-auto">
+                        <Input
+                          className="w-20 shrink-0"
+                          inputMode="decimal"
+                          placeholder="kg"
+                          value={weights[m.id] ?? ""}
+                          onChange={(e) => setWeights((w) => ({ ...w, [m.id]: e.target.value }))}
+                        />
+                        {done ? (
                           <Button
-                            size="sm"
+                            className="flex-1 sm:flex-none"
                             variant="outline"
                             disabled={!weights[m.id] || checkIn.isPending}
                             onClick={() => submit(m.id, true)}
                           >
                             Save weight
                           </Button>
-                        </>
-                      ) : (
-                        <Button size="sm" disabled={checkIn.isPending} onClick={() => submit(m.id, false)}>
-                          Check in
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                        ) : (
+                          <Button
+                            className="flex-1 sm:flex-none"
+                            disabled={checkIn.isPending}
+                            onClick={() => submit(m.id, false)}
+                          >
+                            Check in
+                          </Button>
+                        )}
+                      </div>
+                    }
+                  />
                 );
               })}
+
           </CardContent>
         </Card>
         <CentreQrCard />
@@ -128,15 +131,16 @@ export default function WellnessCheckIn() {
         <CardContent className="space-y-2">
           {today?.length ? (
             today.map((a) => (
-              <div key={a.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                <div>
-                  <p className="font-medium">{a.wellness_members?.full_name}</p>
+              <div key={a.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{a.wellness_members?.full_name}</p>
                   <p className="text-xs text-muted-foreground">{formatDateTime(a.visit_time)}</p>
                 </div>
-                <span className="text-muted-foreground">
+                <span className="shrink-0 text-right text-xs text-muted-foreground sm:text-sm">
                   {a.serving_deducted ? `${a.remaining_balance_snapshot} servings left` : "Trial visit"}
                 </span>
               </div>
+
             ))
           ) : (
             <p className="text-sm text-muted-foreground">No check-ins recorded today.</p>

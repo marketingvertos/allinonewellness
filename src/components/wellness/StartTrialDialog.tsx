@@ -4,14 +4,7 @@ import { useStartTrial, useWellnessPlans, WellnessMember } from "@/hooks/useWell
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Props {
@@ -69,12 +62,22 @@ export function StartTrialDialog({ member, open, onOpenChange }: Props) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Start trial for {member.full_name}</DialogTitle>
-          <DialogDescription>Trial visits are tracked as attendance without deducting servings.</DialogDescription>
-        </DialogHeader>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={`Start trial for ${member.full_name}`}
+      description="Trial visits are tracked as attendance without deducting servings."
+      footer={
+        <>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={submit} disabled={startTrial.isPending}>
+            Start trial
+          </Button>
+        </>
+      }
+    >
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2 space-y-2">
             <Label>Trial plan (optional)</Label>
@@ -105,15 +108,6 @@ export function StartTrialDialog({ member, open, onOpenChange }: Props) {
             <Input id="t-weight" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={submit} disabled={startTrial.isPending}>
-            Start trial
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveDialog>
   );
 }

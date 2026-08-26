@@ -93,7 +93,7 @@ export default function WellnessDashboard() {
           <CardContent className="space-y-2">
             {data?.lowBalance?.length ? (
               data.lowBalance.map((m) => (
-                <div key={m.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                <div key={m.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
                   <div>
                     <p className="font-medium">{m.wellness_members?.full_name}</p>
                     <p className="text-xs text-muted-foreground">Ends {formatDate(m.end_date)}</p>
@@ -120,7 +120,7 @@ export default function WellnessDashboard() {
           <CardContent className="space-y-2">
             {renewals.length ? (
               renewals.map((m) => (
-                <div key={m.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                <div key={m.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
                   <div>
                     <p className="font-medium">{m.wellness_members?.full_name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -143,7 +143,7 @@ export default function WellnessDashboard() {
           <CardContent className="space-y-2">
             {topReferrers?.length ? (
               topReferrers.map((r, i) => (
-                <div key={r.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                <div key={r.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
                   <span className="font-medium">
                     {i + 1}. {r.full_name}
                   </span>

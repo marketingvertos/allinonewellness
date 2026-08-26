@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
+import { WellnessListRow } from "@/components/wellness/WellnessListRow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate } from "@/lib/formatters";
 import { Download, Plus, Search, Users } from "lucide-react";
@@ -107,19 +107,13 @@ export default function WellnessMembers() {
       ) : members?.length ? (
         <div className="space-y-2">
           {members.map((m) => (
-            <Card
+            <WellnessListRow
               key={m.id}
-              className="cursor-pointer transition-colors hover:bg-accent/50"
               onClick={() => setSelected(m)}
-            >
-              <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div>
-                  <p className="font-medium">{m.full_name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {m.mobile_number} · Joined {formatDate(m.joining_date)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
+              title={m.full_name}
+              meta={`${m.mobile_number} · Joined ${formatDate(m.joining_date)}`}
+              badges={
+                <>
                   {m.wellness_batches?.name && <Badge variant="outline">{m.wellness_batches.name}</Badge>}
                   {!!referralCounts?.[m.id] && (
                     <Badge variant="outline" className="gap-1">
@@ -128,11 +122,12 @@ export default function WellnessMembers() {
                   )}
                   {m.current_weight && <span className="text-sm text-muted-foreground">{m.current_weight} kg</span>}
                   <Badge variant={statusVariant(m.status)}>{statusLabel(m.status)}</Badge>
-                </div>
-              </CardContent>
-            </Card>
+                </>
+              }
+            />
           ))}
         </div>
+
       ) : (
         <p className="py-16 text-center text-muted-foreground">No members match this view yet.</p>
       )}

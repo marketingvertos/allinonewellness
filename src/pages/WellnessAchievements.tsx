@@ -15,14 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -123,7 +116,7 @@ export default function WellnessAchievements() {
                     <p className="text-sm text-muted-foreground">No milestones configured yet.</p>
                   )}
                   {rows.map((d) => (
-                    <div key={d.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+                    <div key={d.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
                       <div className="flex items-center gap-3">
                         <span className="text-xl">{d.icon}</span>
                         <div>
@@ -151,14 +144,22 @@ export default function WellnessAchievements() {
         })}
       </Tabs>
 
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing?.def ? "Edit milestone" : "Add milestone"}</DialogTitle>
-            <DialogDescription>
-              Members unlock this milestone once they reach the threshold. Already unlocked badges are never removed.
-            </DialogDescription>
-          </DialogHeader>
+      <ResponsiveDialog
+        open={!!editing}
+        onOpenChange={(o) => !o && setEditing(null)}
+        title={editing?.def ? "Edit milestone" : "Add milestone"}
+        description={<>Members unlock this milestone once they reach the threshold. Already unlocked badges are never removed.</>}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button onClick={submit} disabled={!valid || save.isPending}>
+              Save milestone
+            </Button>
+          </>
+        }
+      >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2 space-y-2">
               <Label htmlFor="ach-name">Title</Label>
@@ -208,16 +209,7 @@ export default function WellnessAchievements() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>
-              Cancel
-            </Button>
-            <Button onClick={submit} disabled={!valid || save.isPending}>
-              Save milestone
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialog>
 
       <AlertDialog open={!!confirmId} onOpenChange={(o) => !o && setConfirmId(null)}>
         <AlertDialogContent>

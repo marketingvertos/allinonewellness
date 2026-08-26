@@ -42,7 +42,7 @@ export default function WellnessTrials() {
             const planId = planByTrial[t.id] ?? "";
             return (
               <Card key={t.id}>
-                <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <button
                     className="text-left"
                     onClick={() => t.wellness_members && setSelected(t.wellness_members as WellnessMember)}

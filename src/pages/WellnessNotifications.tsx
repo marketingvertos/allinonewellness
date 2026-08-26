@@ -18,14 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDateTime } from "@/lib/formatters";
 import { Check, MessageCircle, Pencil, Plus, Trash2, X } from "lucide-react";
@@ -143,7 +136,7 @@ export default function WellnessNotifications() {
                 const mobile = (entry.wellness_members?.mobile_number ?? "").replace(/\D/g, "").slice(-10);
                 return (
                   <Card key={entry.id}>
-                    <CardContent className="flex flex-wrap items-start justify-between gap-3 p-4">
+                    <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 flex-1">
                         <p className="font-medium">
                           {name}{" "}
@@ -230,12 +223,25 @@ export default function WellnessNotifications() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing ? "Edit template" : "New template"}</DialogTitle>
-            <DialogDescription>Use {"{{name}}"} to insert the member's name.</DialogDescription>
-          </DialogHeader>
+      <ResponsiveDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={editing ? "Edit template" : "New template"}
+        description={<>Use {"{{name}}"} to insert the member's name.</>}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={submit}
+              disabled={!form.trigger_key || !form.message_template.trim() || saveTemplate.isPending}
+            >
+              Save template
+            </Button>
+          </>
+        }
+      >
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Trigger</Label>
@@ -282,19 +288,7 @@ export default function WellnessNotifications() {
               <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={submit}
-              disabled={!form.trigger_key || !form.message_template.trim() || saveTemplate.isPending}
-            >
-              Save template
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialog>
     </div>
   );
 }

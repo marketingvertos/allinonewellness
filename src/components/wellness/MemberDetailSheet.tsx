@@ -85,7 +85,9 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
+      <SheetContent className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+
         <SheetHeader>
           <SheetTitle className="flex flex-wrap items-center gap-2">
             {member.full_name}
@@ -96,19 +98,20 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => checkIn.mutate({ memberId: member.id })} disabled={checkIn.isPending}>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Button onClick={() => checkIn.mutate({ memberId: member.id })} disabled={checkIn.isPending}>
             Check in today
           </Button>
           {!activeTrial && !activeMembership && (
-            <Button size="sm" variant="outline" onClick={() => setTrialOpen(true)}>
+            <Button variant="outline" onClick={() => setTrialOpen(true)}>
               Start trial
             </Button>
           )}
         </div>
 
         <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="flex w-full flex-wrap">
+          <TabsList className="flex w-full justify-start gap-1 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="plan">Plan</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
@@ -130,7 +133,8 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-lg border p-4 text-sm">
                 <p className="font-medium">Date of birth</p>
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+
                   <Input
                     type="date"
                     value={dob ?? member.date_of_birth ?? ""}
@@ -173,7 +177,7 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
 
               <div className="rounded-lg border p-4 text-sm sm:col-span-2">
                 <p className="font-medium">Referred by / helped by</p>
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
                   <ReferrerPicker
                     value={referrerValue}
                     excludeId={member.id}
@@ -277,12 +281,13 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
               <div className="space-y-2">
                 <p className="text-sm font-medium">History</p>
                 {memberships.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                    <span>{m.wellness_plans?.name ?? m.membership_code}</span>
-                    <span className="text-muted-foreground">
+                  <div key={m.id} className="flex flex-col gap-1 rounded-md border px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                    <span className="font-medium">{m.wellness_plans?.name ?? m.membership_code}</span>
+                    <span className="text-xs text-muted-foreground sm:text-sm">
                       {formatDate(m.start_date)} → {formatDate(m.end_date)}
                     </span>
                   </div>
+
                 ))}
               </div>
             )}
@@ -291,9 +296,9 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
           <TabsContent value="attendance" className="space-y-2 pt-4">
             {attendance?.length ? (
               attendance.map((a) => (
-                <div key={a.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                <div key={a.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
                   <span>{formatDateTime(a.visit_time)}</span>
-                  <span className="text-muted-foreground">
+                  <span className="shrink-0 text-right text-xs text-muted-foreground sm:text-sm">
                     {a.serving_deducted ? `1 serving · ${a.remaining_balance_snapshot} left` : "Trial visit"}
                   </span>
                 </div>
@@ -340,14 +345,14 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
                 Save
               </Button>
             </div>
-            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+            <div className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium">Body measurements</p>
                 <p className="text-xs text-muted-foreground">
                   {measurements?.length ? `${measurements.length} recorded` : "None recorded yet"}
                 </p>
               </div>
-              <Button size="sm" variant="outline" onClick={() => setMeasureOpen(true)}>
+              <Button variant="outline" className="w-full sm:w-auto" onClick={() => setMeasureOpen(true)}>
                 Record measurements
               </Button>
             </div>
@@ -355,9 +360,9 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             {measurements?.length ? (
               <div className="space-y-2">
                 {[...measurements].reverse().map((m) => (
-                  <div key={m.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                  <div key={m.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
                     <span>{formatDate(m.recorded_date)}</span>
-                    <span className="text-muted-foreground">
+                    <span className="text-right text-xs text-muted-foreground sm:text-sm">
                       {[m.waist && `W ${m.waist}`, m.hip && `H ${m.hip}`, m.chest && `C ${m.chest}`,
                         m.body_fat_percentage && `Fat ${m.body_fat_percentage}%`].filter(Boolean).join(" · ")}
                     </span>
@@ -407,10 +412,12 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             ))}
           </TabsContent>
         </Tabs>
+        </div>
 
         <RecordMeasurementDialog memberId={member.id} open={measureOpen} onOpenChange={setMeasureOpen} />
         <StartTrialDialog member={member} open={trialOpen} onOpenChange={setTrialOpen} />
       </SheetContent>
+
     </Sheet>
   );
 }

@@ -53,22 +53,22 @@ export default function WellnessQr() {
         </PageBanner>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[420px_1fr] print:block">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_1fr] print:block">
         <Card className="print:border-0 print:shadow-none">
-          <CardContent className="p-6 print:p-0">
+          <CardContent className="p-3 sm:p-6 print:p-0">
             {isLoading || !settings ? (
               <Skeleton className="h-80 w-full" />
             ) : (
               <div
                 ref={posterRef}
-                className="flex flex-col items-center gap-4 rounded-xl border p-8 text-center print:border-0"
+                className="flex w-full flex-col items-center gap-4 rounded-xl border p-4 text-center sm:p-8 print:border-0"
               >
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                   Wellness Centre
                 </p>
-                <h2 className="text-2xl font-bold">Scan to mark attendance</h2>
-                <div className="rounded-xl border bg-background p-4">
-                  <QRCodeSVG value={url} size={260} includeMargin={false} />
+                <h2 className="text-xl font-bold sm:text-2xl">Scan to mark attendance</h2>
+                <div className="w-full max-w-[260px] rounded-xl border bg-background p-3 sm:p-4">
+                  <QRCodeSVG value={url} size={260} includeMargin={false} className="h-auto w-full" />
                 </div>
                 <div className="space-y-1 text-sm text-muted-foreground">
                   <p>Open your phone camera, scan the code, sign in once — your visit is recorded instantly.</p>
@@ -89,7 +89,7 @@ export default function WellnessQr() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="break-all rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs">{url || "—"}</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap [&>button]:w-full sm:[&>button]:w-auto">
                 <Button
                   variant="outline"
                   size="sm"

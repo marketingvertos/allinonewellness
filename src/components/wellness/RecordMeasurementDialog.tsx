@@ -4,14 +4,7 @@ import { useAddBodyMeasurement } from "@/hooks/useWellness";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 interface Props {
   memberId: string;
@@ -49,12 +42,18 @@ export function RecordMeasurementDialog({ memberId, open, onOpenChange }: Props)
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Record body measurements</DialogTitle>
-          <DialogDescription>Leave blank anything you did not measure today.</DialogDescription>
-        </DialogHeader>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Record body measurements"
+      description="Leave blank anything you did not measure today."
+      footer={
+        <>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={submit} disabled={add.isPending || !Object.values(form).some(Boolean)}>Save</Button>
+        </>
+      }
+    >
         <div className="grid gap-4 sm:grid-cols-2">
           {fields.map(([key, label]) => (
             <div key={key} className="space-y-2">
@@ -68,11 +67,6 @@ export function RecordMeasurementDialog({ memberId, open, onOpenChange }: Props)
             </div>
           ))}
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={submit} disabled={add.isPending || !Object.values(form).some(Boolean)}>Save</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveDialog>
   );
 }

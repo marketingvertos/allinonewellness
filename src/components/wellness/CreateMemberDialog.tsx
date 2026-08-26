@@ -4,14 +4,8 @@ import { useCreateWellnessMember } from "@/hooks/useWellness";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ReferrerPicker } from "./ReferrerPicker";
 import { BatchPicker } from "./BatchPicker";
@@ -99,35 +93,35 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
 
   if (created) {
     return (
-      <Dialog open={open} onOpenChange={close}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Step 2 — portal login</DialogTitle>
-            <DialogDescription>
-              Create the member's login now, or skip and do it later from their profile.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="rounded-lg border p-4">
-            <MemberLoginCard memberId={created.id} mobileNumber={created.mobile} />
-          </div>
-          <DialogFooter>
-            <Button onClick={() => close(false)}>Done</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ResponsiveDialog
+        open={open}
+        onOpenChange={close}
+        title="Step 2 — portal login"
+        description="Create the member's login now, or skip and do it later from their profile."
+        footer={<Button onClick={() => close(false)}>Done</Button>}
+      >
+        <div className="rounded-lg border p-4">
+          <MemberLoginCard memberId={created.id} mobileNumber={created.mobile} />
+        </div>
+      </ResponsiveDialog>
     );
   }
 
   return (
-    <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Add wellness member</DialogTitle>
-          <DialogDescription>Step 1 of 2 — capture the basics, then set up their portal login.</DialogDescription>
-        </DialogHeader>
-
-
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={close}
+      title="Add wellness member"
+      description="Step 1 of 2 — capture the basics, then set up their portal login."
+      footer={
+        <>
+          <Button variant="outline" onClick={() => close(false)}>Cancel</Button>
+          <Button onClick={submit} disabled={!valid || createMember.isPending}>Save &amp; continue</Button>
+        </>
+      }
+    >
         <div className="grid gap-4 sm:grid-cols-2">
+
           <div className="sm:col-span-2 space-y-2">
             <Label htmlFor="wm-name">Full name</Label>
             <Input id="wm-name" value={form.full_name} onChange={(e) => set("full_name")(e.target.value)} placeholder="Priya Sharma" />
@@ -190,13 +184,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
             </p>
           </div>
         </div>
+    </ResponsiveDialog>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => close(false)}>Cancel</Button>
-          <Button onClick={submit} disabled={!valid || createMember.isPending}>Save & continue</Button>
-
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
