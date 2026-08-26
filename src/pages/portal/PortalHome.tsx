@@ -3,6 +3,7 @@ import { useMemberIdentity } from "@/hooks/useMemberIdentity";
 import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory } from "@/hooks/useWellness";
 import { AchievementsPanel } from "@/components/wellness/AchievementsPanel";
 import { PortalPasswordPrompt } from "@/components/wellness/PortalPasswordPrompt";
+import { InstallAppPrompt } from "@/components/InstallAppPrompt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
