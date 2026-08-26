@@ -133,7 +133,8 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-lg border p-4 text-sm">
                 <p className="font-medium">Date of birth</p>
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+
                   <Input
                     type="date"
                     value={dob ?? member.date_of_birth ?? ""}
