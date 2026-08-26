@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from "@/lib/formatters";
 import { Users, CalendarCheck, BadgeCheck, AlertTriangle, IndianRupee, QrCode, Sparkles, Trophy } from "lucide-react";
 import { BirthdaysCard } from "@/components/wellness/BirthdaysCard";
 import { ServingTrendChart } from "@/components/wellness/ServingTrendChart";
+import { PendingCheckInsCard } from "@/components/wellness/PendingCheckInsCard";
 
 export default function WellnessDashboard() {
   const { data, isLoading } = useWellnessStats();
