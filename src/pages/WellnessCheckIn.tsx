@@ -69,10 +69,11 @@ export default function WellnessCheckIn() {
                   onChange={(e) => setQuery(e.target.value)}
                 />
               </div>
-              <Button variant="outline" onClick={() => setScanning(true)}>
-                <Camera className="mr-2 h-4 w-4" /> Scan
+              <Button variant="outline" className="shrink-0" onClick={() => setScanning(true)}>
+                <Camera className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Scan</span>
               </Button>
-            </div>
+
 
 
             {query.length > 1 &&
