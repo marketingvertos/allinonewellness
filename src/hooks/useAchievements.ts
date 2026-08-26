@@ -160,31 +160,58 @@ export function useMemberSearch(term: string, excludeId?: string) {
 
 /* ------------------------------- Derivation ------------------------------ */
 
+export interface LadderMilestone {
+  def: AchievementDefinition;
+  unlocked: boolean;
+}
+
 export interface LadderState {
   category: AchievementCategory;
   progress: number;
   unit: string;
-  milestones: { def: AchievementDefinition; unlocked: boolean }[];
+  /** Every active milestone in the ladder. */
+  milestones: LadderMilestone[];
+  /** Milestones relevant to this member's own goal (plus one stretch step). */
+  visible: LadderMilestone[];
+  hiddenCount: number;
   current: AchievementDefinition | null;
   next: AchievementDefinition | null;
   remaining: number;
   pct: number;
 }
 
+/** Weight ladders always show at least this much of the journey. */
+const BASE_VISIBLE_KG = 20;
+
 export function buildLadder(
   category: AchievementCategory,
   defs: AchievementDefinition[],
   unlockedIds: Set<string>,
   progress: number,
+  /** Total kg the member aims to lose/gain. Ignored for referral ladders. */
+  goal?: number | null,
 ): LadderState {
   const list = defs
     .filter((d) => d.category === category && d.is_active)
     .sort((a, b) => Number(a.threshold) - Number(b.threshold));
 
-  const milestones = list.map((def) => ({
+  const milestones: LadderMilestone[] = list.map((def) => ({
     def,
     unlocked: unlockedIds.has(def.id) || progress >= Number(def.threshold),
   }));
+
+  let visible = milestones;
+  if (category !== "referral") {
+    const target = Math.max(goal && goal > 0 ? goal : 0, BASE_VISIBLE_KG);
+    // Include every milestone up to the first one that meets the goal, plus one stretch step.
+    let lastIdx = -1;
+    for (let i = 0; i < milestones.length; i++) {
+      lastIdx = i;
+      if (Number(milestones[i].def.threshold) >= target) break;
+    }
+    const cutoff = Math.min(lastIdx + 1, milestones.length - 1);
+    visible = milestones.filter((m, i) => i <= cutoff || m.unlocked || progress >= Number(m.def.threshold));
+  }
 
   const unlocked = milestones.filter((m) => m.unlocked);
   const current = unlocked.length ? unlocked[unlocked.length - 1].def : null;
@@ -199,9 +226,12 @@ export function buildLadder(
     progress,
     unit: list[0]?.unit ?? (category === "referral" ? "people" : "kg"),
     milestones,
+    visible,
+    hiddenCount: milestones.length - visible.length,
     current,
     next,
     remaining,
     pct,
   };
 }
+
