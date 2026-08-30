@@ -1,13 +1,13 @@
 {
-  "name": "Vertos Wellness",
-  "short_name": "Vertos",
+  "name": "All In One Wellness — Family Health Club",
+  "short_name": "All In One",
   "description": "Wellness centre check-ins, plans, servings and progress tracking.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1c1c1e",
-  "theme_color": "#f47b20",
+  "background_color": "#F4F2EC",
+  "theme_color": "#014E4E",
   "icons": [
     { "src": "/app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

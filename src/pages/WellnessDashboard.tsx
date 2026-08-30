@@ -39,10 +39,10 @@ export default function WellnessDashboard() {
       <PageBanner title="Wellness overview" description="Members, attendance and serving balances at a glance.">
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
           <Button asChild className="w-full sm:w-auto">
-            <Link to="/wellness/checkin">Open check-in</Link>
+            <Link to="/checkin">Open check-in</Link>
           </Button>
           <Button asChild variant="secondary" className="w-full sm:w-auto">
-            <Link to="/wellness/qr">
+            <Link to="/qr">
               <QrCode className="mr-2 h-4 w-4" /> Check-in QR
             </Link>
           </Button>

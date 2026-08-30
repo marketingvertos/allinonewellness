@@ -3,18 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
-  Kanban,
   Users,
-  Activity,
-  Building2,
-  TrendingUp,
-  BarChart3,
   Settings,
   LogOut,
-  FileSpreadsheet,
-  CheckSquare,
-  CalendarDays,
-  HeartPulse,
   ScanLine,
   ClipboardList,
   QrCode,
@@ -30,38 +21,24 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { NavLink } from "react-router-dom";
-import { DMark } from "@/components/DMark";
+import { BrandLogo } from "@/components/BrandLogo";
 
 const mainNav = [
-  { title: "Dashboard", icon: LayoutDashboard, to: "/dashboard" },
-  { title: "Pipeline", icon: Kanban, to: "/pipeline" },
-  { title: "Contacts", icon: Users, to: "/contacts" },
-  { title: "Companies", icon: Building2, to: "/companies" },
-  { title: "Activities", icon: Activity, to: "/activities" },
-  { title: "Tasks", icon: CheckSquare, to: "/tasks" },
-  { title: "Calendar", icon: CalendarDays, to: "/calendar" },
-  { title: "Forecast", icon: TrendingUp, to: "/forecast" },
-  { title: "Reports", icon: BarChart3, to: "/reports" },
-  { title: "Import/Export", icon: FileSpreadsheet, to: "/data" },
-];
-
-const wellnessNav = [
-  { title: "Overview", icon: HeartPulse, to: "/wellness" },
-  { title: "Members", icon: Users, to: "/wellness/members" },
-  { title: "Check-in", icon: ScanLine, to: "/wellness/checkin" },
-  { title: "Plans", icon: ClipboardList, to: "/wellness/plans" },
-  { title: "Check-in QR", icon: QrCode, to: "/wellness/qr" },
-  { title: "Trials", icon: Sparkles, to: "/wellness/trials" },
-  { title: "Batches", icon: Layers, to: "/wellness/batches" },
-  { title: "Notifications", icon: Bell, to: "/wellness/notifications" },
-  { title: "Achievements", icon: Trophy, to: "/wellness/achievements" },
+  { title: "Dashboard", icon: LayoutDashboard, to: "/dashboard", end: true },
+  { title: "Members", icon: Users, to: "/members", end: false },
+  { title: "Check-in", icon: ScanLine, to: "/checkin", end: false },
+  { title: "Plans", icon: ClipboardList, to: "/plans", end: false },
+  { title: "Check-in QR", icon: QrCode, to: "/qr", end: false },
+  { title: "Trials", icon: Sparkles, to: "/trials", end: false },
+  { title: "Batches", icon: Layers, to: "/batches", end: false },
+  { title: "Notifications", icon: Bell, to: "/notifications", end: false },
+  { title: "Achievements", icon: Trophy, to: "/achievements", end: false },
 ];
 
 export function AppSidebar() {
@@ -79,10 +56,15 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <NavLink to="/" className="flex items-center gap-2">
-          <DMark className="h-7 w-7 text-sidebar-foreground" />
-          <span className="text-lg font-bold tracking-tight text-sidebar-foreground">
-            Dealflow
+        <NavLink to="/dashboard" className="flex items-center gap-3">
+          <BrandLogo className="h-10 w-10" />
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate font-display text-base font-semibold text-sidebar-foreground">
+              All In One Wellness
+            </span>
+            <span className="block truncate text-[11px] uppercase tracking-[0.14em] text-sidebar-foreground/60">
+              Shri Chatap
+            </span>
           </span>
         </NavLink>
       </SidebarHeader>
@@ -96,30 +78,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.to}
-                      className={({ isActive }) =>
-                        isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : ""
-                      }
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Wellness</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {wellnessNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.to}
-                      end={item.to === "/wellness"}
+                      end={item.end}
                       className={({ isActive }) =>
                         isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : ""
                       }

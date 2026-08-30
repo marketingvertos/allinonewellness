@@ -45,7 +45,7 @@ export function CentreQrCard() {
                 <RefreshCw className="mr-2 h-4 w-4" /> New code
               </Button>
               <Button asChild variant="outline" size="sm">
-                <Link to="/wellness/qr">
+                <Link to="/qr">
                   <Maximize2 className="mr-2 h-4 w-4" /> Poster
                 </Link>
               </Button>

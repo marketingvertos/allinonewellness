@@ -14,9 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Outfit", "sans-serif"],
-        display: ["Outfit", "sans-serif"],
+        sans: ["Inter", "sans-serif"],
+        display: ["Fraunces", "Georgia", "serif"],
       },
+
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -75,6 +76,12 @@ export default {
         },
         "teal-data": "hsl(var(--teal-data))",
         "teal-dark": "hsl(var(--teal-dark))",
+        gold: {
+          DEFAULT: "hsl(var(--brand-gold))",
+          foreground: "hsl(var(--brand-gold-foreground))",
+        },
+        "brand-brown": "hsl(var(--brand-brown))",
+
       },
       borderRadius: {
         lg: "var(--radius)",

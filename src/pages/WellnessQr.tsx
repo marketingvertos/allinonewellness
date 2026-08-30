@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import { useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useCentreSettings, useRotateCheckinCode } from "@/hooks/useWellness";
@@ -45,7 +46,7 @@ export default function WellnessQr() {
       <div className="print:hidden">
         <PageBanner
           title="Check-in QR code"
-          description="Print this poster and place it at the front desk. Members scan it and their attendance is recorded with one serving deducted automatically."
+          description="Print this poster and place it at the front desk. Members scan it and their request appears in the approval queue — a serving is deducted only after your team approves it."
         >
           <Button className="w-full sm:w-auto" onClick={() => window.print()}>
             <Printer className="mr-2 h-4 w-4" /> Print poster
@@ -63,10 +64,11 @@ export default function WellnessQr() {
                 ref={posterRef}
                 className="flex w-full flex-col items-center gap-4 rounded-xl border p-4 text-center sm:p-8 print:border-0"
               >
+                <BrandLogo className="h-16 w-16" />
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  Wellness Centre
+                  All In One Wellness · Family Health Club
                 </p>
-                <h2 className="text-xl font-bold sm:text-2xl">Scan to mark attendance</h2>
+                <h2 className="font-display text-xl font-bold sm:text-2xl">Scan to mark attendance</h2>
                 <div className="w-full max-w-[260px] rounded-xl border bg-background p-3 sm:p-4">
                   <QRCodeSVG value={url} size={260} includeMargin={false} className="h-auto w-full" />
                 </div>
@@ -120,7 +122,7 @@ export default function WellnessQr() {
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>1. Member scans the poster with their phone camera.</p>
               <p>2. First time only, they activate the portal with their mobile number and activation code.</p>
-              <p>3. Attendance is recorded for today and one serving is deducted automatically.</p>
+              <p>3. Your team approves the request — attendance is recorded and one serving is deducted.</p>
               <p>4. Members can only check in — plans, balances and records stay staff-controlled.</p>
             </CardContent>
           </Card>

@@ -18,13 +18,13 @@ export function NotificationCenter() {
     if (!n.read) markRead.mutate(n.id);
     if (n.reference_type && n.reference_id) {
       const routes: Record<string, string> = {
-        deal: "/pipeline",
-        contact: "/contacts",
-        company: "/companies",
-        activity: "/activities",
+        member: "/members",
+        checkin: "/checkin",
+        plan: "/plans",
+        batch: "/batches",
       };
       const route = routes[n.reference_type];
-      if (route) navigate(`${route}?open=${n.reference_id}`);
+      if (route) navigate(route);
     }
   };
 
