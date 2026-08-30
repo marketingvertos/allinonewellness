@@ -68,7 +68,7 @@ export interface WellnessMembership {
   total_servings: number;
   used_servings: number;
   remaining_servings: number;
-  status: "active" | "expiring_soon" | "expired" | "cancelled";
+  status: "active" | "expiring_soon" | "expired" | "cancelled" | "queued";
   price_paid: number;
   wellness_plans?: { id: string; name: string } | null;
 }
