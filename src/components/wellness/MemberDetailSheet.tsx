@@ -98,10 +98,16 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Button onClick={() => checkIn.mutate({ memberId: member.id })} disabled={checkIn.isPending}>
-            Check in today
-          </Button>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          {todayVisit ? (
+            <Badge variant="secondary" className="w-fit py-1.5">
+              Checked in today · {formatDateTime(todayVisit.visit_time)}
+            </Badge>
+          ) : (
+            <Button onClick={() => checkIn.mutate({ memberId: member.id })} disabled={checkIn.isPending}>
+              Check in today
+            </Button>
+          )}
           {!activeTrial && !activeMembership && (
             <Button variant="outline" onClick={() => setTrialOpen(true)}>
               Start trial
