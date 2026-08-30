@@ -38,6 +38,7 @@ export interface WellnessMember {
   category_id?: string | null;
   referred_by_member_id?: string | null;
   contact_id: string | null;
+  is_guest?: boolean;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -101,6 +102,7 @@ export function useWellnessMembers(search?: string, status?: WellnessStatus | "a
       let q = supabase
         .from("wellness_members")
         .select("*, wellness_batches(id, name), member_categories(id, name, direction)")
+        .eq("is_guest", false)
         .order("created_at", { ascending: false });
       if (status && status !== "all") q = q.eq("status", status);
       if (categoryId && categoryId !== "all") q = q.eq("category_id", categoryId);
@@ -555,7 +557,7 @@ export function useWellnessStats() {
       const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
       const [members, checkins, memberships, lowBalance] = await Promise.all([
-        supabase.from("wellness_members").select("status"),
+        supabase.from("wellness_members").select("status").eq("is_guest", false),
         supabase.from("wellness_attendance").select("id", { count: "exact", head: true }).eq("visit_date", today),
         supabase.from("wellness_memberships").select("status, end_date, remaining_servings, price_paid, start_date"),
         supabase
@@ -1580,5 +1582,111 @@ export function useCheckInReport(from: string, to: string) {
         milestones: milestones.sort((a, b) => a.away - b.away),
       };
     },
+  });
+}
+
+
+/* ------------------------------ Trials: eligibility & guests ---------------------------- */
+
+export interface TrialCandidate extends WellnessMember {
+  blockedReason: string | null;
+}
+
+export function useTrialCandidates(search: string) {
+  const term = search.trim();
+  return useQuery({
+    queryKey: ["wellness-trial-candidates", term],
+    enabled: term.length > 1,
+    queryFn: async (): Promise<TrialCandidate[]> => {
+      const { data, error } = await supabase
+        .from("wellness_members")
+        .select("*")
+        .eq("is_guest", false)
+        .or(`full_name.ilike.%${term}%,mobile_number.ilike.%${term}%`)
+        .limit(10);
+      if (error) throw error;
+      const members = (data ?? []) as unknown as WellnessMember[];
+      if (!members.length) return [];
+      const ids = members.map((m) => m.id);
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+
+      const [memberships, trials] = await Promise.all([
+        supabase
+          .from("wellness_memberships")
+          .select("member_id, status")
+          .in("member_id", ids)
+          .in("status", ["active", "expiring_soon", "queued"]),
+        supabase
+          .from("wellness_trials")
+          .select("member_id, end_date")
+          .in("member_id", ids)
+          .eq("status", "active")
+          .gte("end_date", today),
+      ]);
+
+      const withPlan = new Set((memberships.data ?? []).map((m) => m.member_id as string));
+      const onTrial = new Set((trials.data ?? []).map((t) => t.member_id as string));
+
+      return members.map((m) => ({
+        ...m,
+        blockedReason: withPlan.has(m.id)
+          ? "Already on a membership"
+          : onTrial.has(m.id)
+            ? "Already on an active trial"
+            : null,
+      }));
+    },
+  });
+}
+
+export function useStartGuestTrial() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: {
+      full_name: string;
+      mobile_number: string;
+      email?: string | null;
+      start_date: string;
+      created_by: string;
+      duration_days?: number;
+    }) => {
+      const duration = args.duration_days ?? 3;
+      const end = new Date(`${args.start_date}T00:00:00`);
+      end.setDate(end.getDate() + duration);
+
+      const code = `GT-${Math.floor(100000 + Math.random() * 900000)}`;
+      const { data: member, error } = await supabase
+        .from("wellness_members")
+        .insert({
+          full_name: args.full_name.trim(),
+          mobile_number: args.mobile_number.trim(),
+          email: args.email?.trim() || null,
+          joining_date: args.start_date,
+          status: "trial",
+          is_guest: true,
+          activation_code: code,
+          created_by: args.created_by,
+        } as never)
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      const { error: e2 } = await supabase.from("wellness_trials").insert({
+        member_id: (member as { id: string }).id,
+        start_date: args.start_date,
+        duration_days: duration,
+        end_date: end.toLocaleDateString("en-CA"),
+        status: "active",
+        created_by: args.created_by,
+      } as never);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wellness-trials-active"] });
+      qc.invalidateQueries({ queryKey: ["wellness-trial-candidates"] });
+      t.success("Guest trial started");
+    },
+    onError: t.onError,
   });
 }
