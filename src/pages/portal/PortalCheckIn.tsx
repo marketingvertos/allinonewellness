@@ -61,6 +61,7 @@ export default function PortalCheckIn() {
   const duplicate = result?.status === "duplicate";
   const approved = status === "approved" || duplicate;
   const rejected = status === "rejected" || status === "expired";
+  const needsRenewal = result?.status === "renew_required" || result?.status === "trial_ended";
   const failed = !waiting && !approved && !rejected && !!result && result.status !== "ok";
   const idle = !running && !result && !error;
 
@@ -166,9 +167,13 @@ export default function PortalCheckIn() {
                     ? "Already checked in today"
                     : approved
                       ? "Checked in"
-                      : rejected
-                        ? "Check-in not approved"
-                        : "Check-in not recorded"}
+                      : needsRenewal
+                        ? result?.status === "trial_ended"
+                          ? "Free trial finished"
+                          : "Membership renewal needed"
+                        : rejected
+                          ? "Check-in not approved"
+                          : "Check-in not recorded"}
               </h2>
 
               <p className="text-muted-foreground">

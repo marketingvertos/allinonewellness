@@ -293,6 +293,7 @@ export function useCreateMembership() {
   return useMutation({
     mutationFn: async (args: { memberId: string; planId: string; price?: number; trialId?: string }) => {
       if (args.trialId) {
+        await supabase.from("wellness_members").update({ is_guest: false } as never).eq("id", args.memberId);
         const { error } = await supabase.rpc("convert_trial_to_membership", {
           p_trial_id: args.trialId,
           p_plan_id: args.planId,
@@ -1190,7 +1191,7 @@ export function useActiveTrials() {
       const { data, error } = await supabase
         .from("wellness_trials")
         .select(
-          "*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight)",
+          "*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight, is_guest)",
         )
         .eq("status", "active")
         .order("end_date");
