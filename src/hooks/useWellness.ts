@@ -94,15 +94,16 @@ function useToastedMutation() {
 
 /* ------------------------------- Members ------------------------------- */
 
-export function useWellnessMembers(search?: string, status?: WellnessStatus | "all") {
+export function useWellnessMembers(search?: string, status?: WellnessStatus | "all", categoryId?: string | "all") {
   return useQuery({
-    queryKey: ["wellness-members", search ?? "", status ?? "all"],
+    queryKey: ["wellness-members", search ?? "", status ?? "all", categoryId ?? "all"],
     queryFn: async () => {
       let q = supabase
         .from("wellness_members")
-        .select("*, wellness_batches(id, name)")
+        .select("*, wellness_batches(id, name), member_categories(id, name, direction)")
         .order("created_at", { ascending: false });
       if (status && status !== "all") q = q.eq("status", status);
+      if (categoryId && categoryId !== "all") q = q.eq("category_id", categoryId);
       if (search)
         q = q.or(
           `full_name.ilike.%${search}%,mobile_number.ilike.%${search}%,activation_code.ilike.%${search}%,email.ilike.%${search}%`,
@@ -113,6 +114,7 @@ export function useWellnessMembers(search?: string, status?: WellnessStatus | "a
     },
   });
 }
+
 
 export function useWellnessMember(id: string | undefined) {
   return useQuery({
