@@ -1276,3 +1276,309 @@ export function useTopReferrers(limit = 10) {
     },
   });
 }
+
+/* ---------------------------- Member categories --------------------------- */
+
+export interface MemberCategory {
+  id: string;
+  name: string;
+  slug: string;
+  direction: "loss" | "gain";
+  active: boolean;
+  sort_order: number;
+}
+
+export function useMemberCategories(activeOnly = true) {
+  return useQuery({
+    queryKey: ["member-categories", activeOnly],
+    queryFn: async () => {
+      let q = supabase.from("member_categories").select("*").order("sort_order");
+      if (activeOnly) q = q.eq("active", true);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data as unknown as MemberCategory[];
+    },
+  });
+}
+
+export function useSaveMemberCategory() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async ({ id, ...category }: { id?: string } & Record<string, unknown>) => {
+      if (id) {
+        const { error } = await supabase.from("member_categories").update(category as never).eq("id", id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("member_categories").insert(category as never);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["member-categories"] });
+      qc.invalidateQueries({ queryKey: ["wellness-members"] });
+      t.success("Category saved");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useDeleteMemberCategory() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("member_categories").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["member-categories"] });
+      t.success("Category removed");
+    },
+    onError: t.onError,
+  });
+}
+
+/* --------------------------- Renewals & switching -------------------------- */
+
+export type RenewMode = "queue" | "extend" | "replace";
+
+export function useRenewPlan() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: {
+      membershipId: string;
+      planId: string;
+      servings?: number | null;
+      price?: number | null;
+      mode: RenewMode;
+      note?: string | null;
+    }) => {
+      const { error } = await supabase.rpc("renew_membership_v2", {
+        p_membership_id: args.membershipId,
+        p_plan_id: args.planId,
+        p_servings: args.servings ?? null,
+        p_price: args.price ?? null,
+        p_mode: args.mode,
+        p_note: args.note ?? null,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries();
+      t.success(
+        vars.mode === "queue"
+          ? "Renewal queued — it starts once the current servings run out"
+          : vars.mode === "extend"
+            ? "Servings added to the current plan"
+            : "Plan replaced",
+      );
+    },
+    onError: t.onError,
+  });
+}
+
+export function useSwitchPlan() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: {
+      membershipId: string;
+      planId: string;
+      carryServings: boolean;
+      price?: number | null;
+    }) => {
+      const { error } = await supabase.rpc("switch_membership_plan", {
+        p_membership_id: args.membershipId,
+        p_new_plan_id: args.planId,
+        p_carry_servings: args.carryServings,
+        p_price: args.price ?? null,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
+      t.success("Plan switched");
+    },
+    onError: t.onError,
+  });
+}
+
+/* ---------------------------- Upcoming renewals ---------------------------- */
+
+export function useUpcomingRenewals(servingThreshold = 7, dayThreshold = 7) {
+  return useQuery({
+    queryKey: ["wellness-upcoming-renewals", servingThreshold, dayThreshold],
+    queryFn: async () => {
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      const { data, error } = await supabase
+        .from("wellness_memberships")
+        .select("*, wellness_plans(id, name), wellness_members(id, full_name, mobile_number)")
+        .in("status", ["active", "expiring_soon"])
+        .order("remaining_servings");
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as (WellnessMembership & {
+        wellness_members?: { id: string; full_name: string; mobile_number: string } | null;
+      })[];
+      const todayMs = new Date(`${today}T00:00:00`).getTime();
+      return rows
+        .map((m) => ({
+          ...m,
+          daysLeft: Math.round((new Date(`${m.end_date}T00:00:00`).getTime() - todayMs) / 86400000),
+        }))
+        .filter((m) => m.remaining_servings <= servingThreshold || m.daysLeft <= dayThreshold);
+    },
+  });
+}
+
+/* ------------------------------ Check-in report ---------------------------- */
+
+export interface CheckInReportRow {
+  memberId: string;
+  name: string;
+  visits: number;
+  weight: number | null;
+  previousWeight: number | null;
+  delta: number | null;
+  lastVisit: string;
+}
+
+export function useCheckInReport(from: string, to: string) {
+  return useQuery({
+    queryKey: ["wellness-checkin-report", from, to],
+    queryFn: async () => {
+      const [attendance, weights, requests, definitions, members] = await Promise.all([
+        supabase
+          .from("wellness_attendance")
+          .select("id, member_id, visit_date, visit_time, serving_deducted, wellness_members(id, full_name)")
+          .gte("visit_date", from)
+          .lte("visit_date", to)
+          .order("visit_time", { ascending: false }),
+        supabase
+          .from("weight_tracking")
+          .select("member_id, recorded_date, weight")
+          .lte("recorded_date", to)
+          .order("recorded_date", { ascending: true }),
+        supabase
+          .from("wellness_checkin_requests")
+          .select("status, request_date")
+          .gte("request_date", from)
+          .lte("request_date", to),
+        supabase.from("achievement_definitions").select("*").eq("is_active", true),
+        supabase
+          .from("wellness_members")
+          .select("id, full_name, initial_weight, current_weight, goal, category_id, member_categories(direction)"),
+      ]);
+      if (attendance.error) throw attendance.error;
+      if (weights.error) throw weights.error;
+      if (requests.error) throw requests.error;
+
+      const attRows = (attendance.data ?? []) as unknown as {
+        id: string;
+        member_id: string;
+        visit_date: string;
+        visit_time: string;
+        serving_deducted: boolean;
+        wellness_members?: { id: string; full_name: string } | null;
+      }[];
+
+      const weightRows = (weights.data ?? []) as unknown as {
+        member_id: string;
+        recorded_date: string;
+        weight: number;
+      }[];
+
+      const byMember: Record<string, CheckInReportRow> = {};
+      for (const a of attRows) {
+        const key = a.member_id;
+        if (!byMember[key]) {
+          byMember[key] = {
+            memberId: key,
+            name: a.wellness_members?.full_name ?? "Member",
+            visits: 0,
+            weight: null,
+            previousWeight: null,
+            delta: null,
+            lastVisit: a.visit_time,
+          };
+        }
+        byMember[key].visits += 1;
+      }
+
+      for (const row of Object.values(byMember)) {
+        const history = weightRows.filter((w) => w.member_id === row.memberId);
+        const inRange = history.filter((w) => w.recorded_date >= from && w.recorded_date <= to);
+        const latest = inRange[inRange.length - 1];
+        if (latest) {
+          row.weight = Number(latest.weight);
+          const before = history.filter((w) => w.recorded_date < latest.recorded_date);
+          const prev = before[before.length - 1];
+          row.previousWeight = prev ? Number(prev.weight) : null;
+          row.delta = prev ? Number((Number(latest.weight) - Number(prev.weight)).toFixed(1)) : null;
+        }
+      }
+
+      const days: Record<string, number> = {};
+      for (const a of attRows) days[a.visit_date] = (days[a.visit_date] ?? 0) + 1;
+
+      const reqRows = (requests.data ?? []) as unknown as { status: string }[];
+
+      // Milestone watch
+      const defs = ((definitions.data ?? []) as unknown as {
+        id: string;
+        category: string;
+        name: string;
+        threshold: number;
+      }[]).filter((d) => d.category === "weight_loss" || d.category === "weight_gain");
+      const memberRows = (members.data ?? []) as unknown as {
+        id: string;
+        full_name: string;
+        initial_weight: number | null;
+        current_weight: number | null;
+        goal: string | null;
+        member_categories?: { direction: string } | null;
+      }[];
+
+      const milestones: { id: string; name: string; label: string; away: number; achieved: boolean }[] = [];
+      for (const m of memberRows) {
+        if (!m.initial_weight || !m.current_weight) continue;
+        const direction = m.member_categories?.direction ?? (m.goal === "weight_gain" ? "gain" : "loss");
+        const delta =
+          direction === "gain" ? m.current_weight - m.initial_weight : m.initial_weight - m.current_weight;
+        if (delta <= 0) continue;
+        const cat = direction === "gain" ? "weight_gain" : "weight_loss";
+        const sorted = defs.filter((d) => d.category === cat).sort((a, b) => a.threshold - b.threshold);
+        const next = sorted.find((d) => d.threshold > delta);
+        const justHit = sorted.filter((d) => d.threshold <= delta).pop();
+        if (next && next.threshold - delta <= 1) {
+          milestones.push({
+            id: m.id,
+            name: m.full_name,
+            label: next.name,
+            away: Number((next.threshold - delta).toFixed(1)),
+            achieved: false,
+          });
+        } else if (justHit && delta - justHit.threshold <= 0.5) {
+          milestones.push({ id: m.id, name: m.full_name, label: justHit.name, away: 0, achieved: true });
+        }
+      }
+
+      return {
+        totals: {
+          checkins: attRows.length,
+          servings: attRows.filter((a) => a.serving_deducted).length,
+          uniqueMembers: Object.keys(byMember).length,
+          approved: reqRows.filter((r) => r.status === "approved").length,
+          rejected: reqRows.filter((r) => r.status === "rejected").length,
+          pending: reqRows.filter((r) => r.status === "pending").length,
+        },
+        days: Object.entries(days)
+          .map(([date, count]) => ({ date, count }))
+          .sort((a, b) => a.date.localeCompare(b.date)),
+        members: Object.values(byMember).sort((a, b) => b.visits - a.visits || a.name.localeCompare(b.name)),
+        milestones: milestones.sort((a, b) => a.away - b.away),
+      };
+    },
+  });
+}
