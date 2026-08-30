@@ -119,7 +119,12 @@ export function PendingCheckInsCard() {
                   <Button
                     className="flex-1"
                     disabled={approve.isPending}
-                    onClick={() => approve.mutate(r.id)}
+                    onClick={() =>
+                      approve.mutate({
+                        requestId: r.id,
+                        weight: enteredNum != null && !Number.isNaN(enteredNum) ? enteredNum : null,
+                      })
+                    }
                   >
                     <Check className="mr-2 h-4 w-4" /> Approve
                   </Button>
