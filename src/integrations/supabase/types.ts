@@ -1023,6 +1023,7 @@ export type Database = {
           height: number | null
           id: string
           initial_weight: number | null
+          is_guest: boolean
           joining_date: string
           mobile_number: string
           referred_by_member_id: string | null
@@ -1048,6 +1049,7 @@ export type Database = {
           height?: number | null
           id?: string
           initial_weight?: number | null
+          is_guest?: boolean
           joining_date?: string
           mobile_number: string
           referred_by_member_id?: string | null
@@ -1073,6 +1075,7 @@ export type Database = {
           height?: number | null
           id?: string
           initial_weight?: number | null
+          is_guest?: boolean
           joining_date?: string
           mobile_number?: string
           referred_by_member_id?: string | null

@@ -13,7 +13,6 @@ import WellnessDashboard from "./pages/WellnessDashboard";
 import WellnessMembers from "./pages/WellnessMembers";
 import WellnessCheckIn from "./pages/WellnessCheckIn";
 import WellnessPlans from "./pages/WellnessPlans";
-import WellnessQr from "./pages/WellnessQr";
 import WellnessAchievements from "./pages/WellnessAchievements";
 import WellnessBatches from "./pages/WellnessBatches";
 import WellnessTrials from "./pages/WellnessTrials";
@@ -43,7 +42,7 @@ const App = () => (
                 <Route path="/members" element={<WellnessMembers />} />
                 <Route path="/checkin" element={<WellnessCheckIn />} />
                 <Route path="/plans" element={<WellnessPlans />} />
-                <Route path="/qr" element={<WellnessQr />} />
+                <Route path="/qr" element={<Navigate to="/checkin?tab=qr" replace />} />
                 <Route path="/achievements" element={<WellnessAchievements />} />
                 <Route path="/batches" element={<WellnessBatches />} />
                 <Route path="/trials" element={<WellnessTrials />} />
@@ -55,7 +54,7 @@ const App = () => (
               <Route path="/wellness/members" element={<Navigate to="/members" replace />} />
               <Route path="/wellness/checkin" element={<Navigate to="/checkin" replace />} />
               <Route path="/wellness/plans" element={<Navigate to="/plans" replace />} />
-              <Route path="/wellness/qr" element={<Navigate to="/qr" replace />} />
+              <Route path="/wellness/qr" element={<Navigate to="/checkin?tab=qr" replace />} />
               <Route path="/wellness/achievements" element={<Navigate to="/achievements" replace />} />
               <Route path="/wellness/batches" element={<Navigate to="/batches" replace />} />
               <Route path="/wellness/trials" element={<Navigate to="/trials" replace />} />

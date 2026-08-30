@@ -41,6 +41,7 @@ export function GlobalSearch() {
       supabase
         .from("wellness_members")
         .select("id, full_name, mobile_number, status")
+        .eq("is_guest", false)
         .or(`full_name.ilike.${pattern},mobile_number.ilike.${pattern}`)
         .limit(6),
       supabase.from("wellness_plans").select("id, name, plan_type").ilike("name", pattern).limit(5),
