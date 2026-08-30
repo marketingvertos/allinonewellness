@@ -35,13 +35,16 @@ export interface WellnessMember {
   height: number | null;
   activity_level: string | null;
   batch_id: string | null;
+  category_id?: string | null;
   referred_by_member_id?: string | null;
   contact_id: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
   wellness_batches?: { id: string; name: string } | null;
+  member_categories?: { id: string; name: string; direction: string } | null;
 }
+
 
 export interface WellnessPlan {
   id: string;
