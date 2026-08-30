@@ -1372,6 +1372,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_next_membership: {
+        Args: { p_member_id: string }
+        Returns: string
+      }
       adjust_servings: {
         Args: { p_change: number; p_membership_id: string; p_note?: string }
         Returns: number
@@ -1440,8 +1444,28 @@ export type Database = {
         Args: { p_membership_id: string; p_plan_id?: string; p_price?: number }
         Returns: string
       }
+      renew_membership_v2: {
+        Args: {
+          p_membership_id: string
+          p_mode?: string
+          p_note?: string
+          p_plan_id: string
+          p_price?: number
+          p_servings?: number
+        }
+        Returns: string
+      }
       rotate_checkin_code: { Args: never; Returns: string }
       seed_default_pipeline: { Args: { p_user_id: string }; Returns: string }
+      switch_membership_plan: {
+        Args: {
+          p_carry_servings?: boolean
+          p_membership_id: string
+          p_new_plan_id: string
+          p_price?: number
+        }
+        Returns: string
+      }
       wellness_plan_usage: {
         Args: never
         Returns: {
