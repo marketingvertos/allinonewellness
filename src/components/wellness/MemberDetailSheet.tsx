@@ -430,6 +430,12 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
 
         <RecordMeasurementDialog memberId={member.id} open={measureOpen} onOpenChange={setMeasureOpen} />
         <StartTrialDialog member={member} open={trialOpen} onOpenChange={setTrialOpen} />
+        {activeMembership && (
+          <>
+            <RenewPlanDialog membership={activeMembership} open={renewOpen} onOpenChange={setRenewOpen} />
+            <SwitchPlanDialog membership={activeMembership} open={switchOpen} onOpenChange={setSwitchOpen} />
+          </>
+        )}
       </SheetContent>
 
     </Sheet>
