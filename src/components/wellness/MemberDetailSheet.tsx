@@ -239,8 +239,11 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
                   {activeMembership.total_servings} servings remaining
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => renewMembership.mutate({ membershipId: activeMembership.id })}>
+                  <Button size="sm" onClick={() => setRenewOpen(true)}>
                     Renew
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setSwitchOpen(true)}>
+                    Switch plan
                   </Button>
                   <Button
                     size="sm"
