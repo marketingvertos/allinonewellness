@@ -914,6 +914,7 @@ export type Database = {
           reject_reason: string | null
           request_date: string
           requested_at: string
+          requested_weight: number | null
           status: string
           updated_at: string
         }
@@ -928,6 +929,7 @@ export type Database = {
           reject_reason?: string | null
           request_date?: string
           requested_at?: string
+          requested_weight?: number | null
           status?: string
           updated_at?: string
         }
@@ -942,6 +944,7 @@ export type Database = {
           reject_reason?: string | null
           request_date?: string
           requested_at?: string
+          requested_weight?: number | null
           status?: string
           updated_at?: string
         }
@@ -1330,7 +1333,10 @@ export type Database = {
         Args: { p_change: number; p_membership_id: string; p_note?: string }
         Returns: number
       }
-      approve_checkin_request: { Args: { p_request_id: string }; Returns: Json }
+      approve_checkin_request: {
+        Args: { p_request_id: string; p_weight?: number }
+        Returns: Json
+      }
       checkin_member: {
         Args: {
           p_member_id: string
@@ -1369,7 +1375,10 @@ export type Database = {
         Args: { p_error?: string; p_log_id: string; p_status?: string }
         Returns: undefined
       }
-      member_self_checkin: { Args: { p_code: string }; Returns: Json }
+      member_self_checkin: {
+        Args: { p_code: string; p_weight?: number }
+        Returns: Json
+      }
       owns_wellness_member: {
         Args: { _member_id: string; _user_id: string }
         Returns: boolean

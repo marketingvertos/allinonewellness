@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useSelfCheckIn, useCheckInWithWeight, useMyCheckInRequest } from "@/hooks/useWellness";
-import { useMemberIdentity } from "@/hooks/useMemberIdentity";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSelfCheckIn, useMyCheckInRequest } from "@/hooks/useWellness";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QrScannerSheet } from "@/components/wellness/QrScannerSheet";
 import { CheckCircle2, Camera, Clock, Loader2, QrCode, XCircle } from "lucide-react";
@@ -22,12 +20,8 @@ export default function PortalCheckIn() {
   const [params] = useSearchParams();
   const linkCode = params.get("c");
   const selfCheckIn = useSelfCheckIn();
-  const { user } = useAuth();
-  const { data: identity } = useMemberIdentity();
-  const logWeight = useCheckInWithWeight();
   const [weight, setWeight] = useState("");
-  const [weightSaved, setWeightSaved] = useState(false);
-  const [weightError, setWeightError] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -38,13 +32,13 @@ export default function PortalCheckIn() {
   const { data: request } = useMyCheckInRequest(requestId);
 
   const runCheckIn = useCallback(
-    async (code: string) => {
+    async (scannedCode: string, enteredWeight: number | null) => {
       setRunning(true);
       setError(null);
       setResult(null);
       setRequestId(null);
       try {
-        const r = (await selfCheckIn.mutateAsync(code)) as Result;
+        const r = (await selfCheckIn.mutateAsync({ code: scannedCode, weight: enteredWeight })) as Result;
         setResult(r);
         if (r.status === "pending" && r.request_id) setRequestId(r.request_id);
       } catch {
@@ -59,8 +53,8 @@ export default function PortalCheckIn() {
   useEffect(() => {
     if (!linkCode || attempted.current) return;
     attempted.current = true;
-    void runCheckIn(linkCode);
-  }, [linkCode, runCheckIn]);
+    setCode(linkCode);
+  }, [linkCode]);
 
   const status = request?.status ?? result?.status;
   const waiting = status === "pending";
@@ -70,25 +64,80 @@ export default function PortalCheckIn() {
   const failed = !waiting && !approved && !rejected && !!result && result.status !== "ok";
   const idle = !running && !result && !error;
 
+  const resetFlow = () => {
+    setCode(null);
+    setResult(null);
+    setRequestId(null);
+    setError(null);
+    setWeight("");
+  };
+
   if (idle) {
+    const weightNum = weight ? Number(weight) : null;
+    const weightInvalid = weightNum != null && (Number.isNaN(weightNum) || weightNum <= 0 || weightNum > 400);
+
     return (
       <>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Check in</CardTitle>
+            <CardTitle className="text-base">{code ? "Request attendance" : "Check in"}</CardTitle>
+            <CardDescription>
+              {code
+                ? "Enter today's weight, then send your attendance request to the front desk."
+                : "Scan the QR poster at the centre to start."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <QrCode className="h-10 w-10 text-primary" />
-            <p>
-              Tap below to open your camera and scan the QR poster at the centre. Your request is sent to the
-              front desk — one serving is deducted only after they approve it.
-            </p>
-            <Button className="w-full" size="lg" onClick={() => setScanning(true)}>
-              <Camera className="mr-2 h-5 w-5" /> Scan QR to check in
-            </Button>
+            {code ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="request-weight">Today&apos;s weight (kg)</Label>
+                  <Input
+                    id="request-weight"
+                    inputMode="decimal"
+                    placeholder="e.g. 75.6"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                  />
+                  {weightInvalid ? (
+                    <p className="text-xs text-destructive">Enter a weight between 1 and 400 kg.</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Optional — the team verifies it before approving your attendance.
+                    </p>
+                  )}
+                </div>
+                <p>
+                  Your request goes to the front desk. Attendance is punched and one serving is deducted
+                  only after they approve it.
+                </p>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  disabled={weightInvalid}
+                  onClick={() => void runCheckIn(code, weightInvalid ? null : weightNum)}
+                >
+                  Request attendance
+                </Button>
+                <Button variant="outline" className="w-full" onClick={() => setScanning(true)}>
+                  <Camera className="mr-2 h-4 w-4" /> Scan a different code
+                </Button>
+              </>
+            ) : (
+              <>
+                <QrCode className="h-10 w-10 text-primary" />
+                <p>
+                  Tap below to open your camera and scan the QR poster at the centre. You can add today&apos;s
+                  weight before sending the request.
+                </p>
+                <Button className="w-full" size="lg" onClick={() => setScanning(true)}>
+                  <Camera className="mr-2 h-5 w-5" /> Scan QR to check in
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
-        <QrScannerSheet open={scanning} onOpenChange={setScanning} onResult={runCheckIn} />
+        <QrScannerSheet open={scanning} onOpenChange={setScanning} onResult={(c) => setCode(c)} />
       </>
     );
   }
@@ -129,7 +178,7 @@ export default function PortalCheckIn() {
                     : duplicate
                       ? "Your visit for today is already recorded — no extra serving has been deducted."
                       : approved
-                        ? "Your visit is recorded and one serving has been deducted."
+                        ? "Your visit is recorded, your weight is saved and one serving has been deducted."
                         : rejected
                           ? request?.reject_reason ||
                             (status === "expired"
@@ -138,50 +187,20 @@ export default function PortalCheckIn() {
                           : result?.message ?? "Please review your plan at the front desk.")}
               </p>
 
-
-              {approved && identity?.memberId && !weightSaved && (
-                <div className="mx-auto max-w-xs space-y-2 rounded-lg border p-4 text-left">
-                  <Label htmlFor="portal-weight">Today&apos;s weight (kg)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="portal-weight"
-                      inputMode="decimal"
-                      placeholder="e.g. 75.6"
-                      value={weight}
-                      onChange={(e) => setWeight(e.target.value)}
-                    />
-                    <Button
-                      disabled={!weight || logWeight.isPending}
-                      onClick={async () => {
-                        setWeightError(null);
-                        try {
-                          await logWeight.mutateAsync({
-                            memberId: identity.memberId!,
-                            skipCheckIn: true,
-                            weight: Number(weight),
-                            recordedBy: user?.id ?? null,
-                          });
-                          setWeightSaved(true);
-                        } catch {
-                          setWeightError("Your visit is recorded, but we could not save the weight. Tell the front desk.");
-                        }
-                      }}
-                    >
-                      Save
-                    </Button>
-                  </div>
-                  {weightError ? (
-                    <p className="text-xs text-destructive">{weightError}</p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">Optional — helps your coach track progress.</p>
-                  )}
-                </div>
+              {waiting && request?.requested_weight != null && (
+                <p className="text-sm text-muted-foreground">
+                  Weight submitted: <span className="font-medium">{request.requested_weight} kg</span>
+                </p>
               )}
-              {weightSaved && <p className="text-sm text-primary">Weight recorded. Great work!</p>}
 
               <div className="flex flex-wrap justify-center gap-2">
                 {(rejected || failed || error) && (
-                  <Button onClick={() => setScanning(true)}>
+                  <Button
+                    onClick={() => {
+                      resetFlow();
+                      setScanning(true);
+                    }}
+                  >
                     <Camera className="mr-2 h-4 w-4" /> Scan again
                   </Button>
                 )}
@@ -193,7 +212,14 @@ export default function PortalCheckIn() {
           )}
         </CardContent>
       </Card>
-      <QrScannerSheet open={scanning} onOpenChange={setScanning} onResult={runCheckIn} />
+      <QrScannerSheet
+        open={scanning}
+        onOpenChange={setScanning}
+        onResult={(c) => {
+          resetFlow();
+          setCode(c);
+        }}
+      />
     </>
   );
 }
