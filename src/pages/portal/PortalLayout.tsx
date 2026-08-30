@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
 import { Button } from "@/components/ui/button";
 import { HeartPulse, History, Loader2, LogOut, QrCode } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -37,7 +38,7 @@ export function PortalLayout() {
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b bg-background px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
-          <HeartPulse className="h-5 w-5 shrink-0 text-primary" />
+          <BrandLogo className="h-8 w-8" />
           <span className="truncate font-semibold">{identity?.memberName ?? "Member"}</span>
         </div>
         <Button variant="ghost" size="sm" className="shrink-0" onClick={signOut}>

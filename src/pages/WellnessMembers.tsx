@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useReferralCounts, useWellnessMembers, WellnessMember, WellnessStatus } from "@/hooks/useWellness";
 import { PageBanner } from "@/components/PageBanner";
 import { CreateMemberDialog } from "@/components/wellness/CreateMemberDialog";
@@ -24,7 +25,8 @@ const STATUSES: (WellnessStatus | "all")[] = [
 ];
 
 export default function WellnessMembers() {
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [status, setStatus] = useState<WellnessStatus | "all">("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<WellnessMember | null>(null);

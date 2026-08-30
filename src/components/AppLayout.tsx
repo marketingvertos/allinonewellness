@@ -1,9 +1,6 @@
-import { useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
-import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { GlobalSearch } from "./GlobalSearch";
@@ -13,11 +10,9 @@ import { Loader2 } from "lucide-react";
 
 export function AppLayout() {
   const { session, loading } = useAuth();
-  const { data: onboardingStatus, isLoading: onboardingLoading } = useOnboardingStatus();
   const { data: identity, isLoading: identityLoading } = useMemberIdentity();
-  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
 
-  if (loading || onboardingLoading || (session && identityLoading)) {
+  if (loading || (session && identityLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -29,10 +24,6 @@ export function AppLayout() {
 
   // Wellness members without a staff role belong in the member portal.
   if (identity && !identity.isStaff && identity.memberId) return <Navigate to="/portal" replace />;
-
-  if (onboardingStatus?.needsOnboarding && !onboardingDismissed) {
-    return <OnboardingWizard onComplete={() => setOnboardingDismissed(true)} />;
-  }
 
   return (
     <SidebarProvider>

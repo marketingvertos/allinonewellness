@@ -48,7 +48,7 @@ export default function WellnessCheckIn() {
         description="Scan or search a member, record today's weight, then check them in. One serving is deducted automatically."
       >
         <Button asChild variant="secondary" className="w-full sm:w-auto">
-          <Link to="/wellness/qr">
+          <Link to="/qr">
             <QrCode className="mr-2 h-4 w-4" /> Print check-in QR
           </Link>
         </Button>

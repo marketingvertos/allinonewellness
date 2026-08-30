@@ -2,139 +2,133 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/*
+ * All In One Wellness — Family Health Club (Shri Chatap)
+ * Deep teal + warm gold on ivory.
+ *   Primary   #014E4E  deep teal
+ *   Secondary #0D3B3E  dark teal
+ *   Gold      #F9D67B
+ *   Brown     #4D3619
+ *   Ivory     #F4F2EC
+ */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 170 15% 12%;
+    --background: 45 26% 94%;
+    --foreground: 185 40% 14%;
 
     --card: 0 0% 100%;
-    --card-foreground: 170 15% 12%;
+    --card-foreground: 185 40% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 170 15% 12%;
+    --popover-foreground: 185 40% 14%;
 
-    --primary: 14 98% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 180 97% 15%;
+    --primary-foreground: 45 40% 97%;
 
-    --brand-orange: 14 98% 60%;
-    --brand-orange-foreground: 0 0% 100%;
+    --brand-gold: 41 90% 73%;
+    --brand-gold-foreground: 185 40% 14%;
+    --brand-brown: 34 52% 20%;
 
-    --secondary: 170 22% 95%;
-    --secondary-foreground: 170 15% 12%;
+    --secondary: 45 22% 90%;
+    --secondary-foreground: 185 40% 14%;
 
-    --muted: 170 20% 95%;
-    --muted-foreground: 170 12% 46%;
+    --muted: 45 20% 91%;
+    --muted-foreground: 185 12% 40%;
 
-    --accent: 170 22% 95%;
-    --accent-foreground: 170 15% 12%;
+    --accent: 41 90% 73%;
+    --accent-foreground: 185 40% 14%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 170 10% 89%;
-    --input: 170 10% 89%;
-    --ring: 14 98% 60%;
+    --border: 45 16% 85%;
+    --input: 45 16% 85%;
+    --ring: 180 97% 15%;
 
     --radius: 0.625rem;
 
-    /* Landing page surface colors */
-    --surface-mint: 170 25% 94%;
-    --surface-mint-strong: 170 32% 82%;
-    --teal-data: 170 50% 45%;
-    --teal-dark: 170 15% 15%;
+    /* Surfaces */
+    --surface-mint: 180 22% 92%;
+    --surface-mint-strong: 180 28% 80%;
+    --teal-data: 180 45% 30%;
+    --teal-dark: 186 63% 14%;
 
-    /* Pipeline stage colors */
-    --stage-prospect: 210 70% 55%;
-    --stage-qualified: 262 60% 55%;
-    --stage-proposal: 14 98% 60%;
-    --stage-negotiation: 40 85% 52%;
-    --stage-won: 170 50% 45%;
-    --stage-lost: 0 65% 50%;
+    /* Status / chart colours */
+    --stage-prospect: 195 45% 40%;
+    --stage-qualified: 180 45% 30%;
+    --stage-proposal: 41 90% 55%;
+    --stage-negotiation: 34 52% 35%;
+    --stage-won: 160 50% 32%;
+    --stage-lost: 0 60% 45%;
 
-    /* Sidebar — mint surface with dark text */
-    --sidebar-background: 170 25% 94%;
-    --sidebar-foreground: 170 15% 12%;
-    --sidebar-primary: 14 98% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 170 20% 88%;
-    --sidebar-accent-foreground: 170 15% 12%;
-    --sidebar-border: 170 15% 88%;
-    --sidebar-ring: 14 98% 60%;
+    /* Sidebar — deep teal surface, ivory text */
+    --sidebar-background: 186 63% 14%;
+    --sidebar-foreground: 45 30% 92%;
+    --sidebar-primary: 41 90% 73%;
+    --sidebar-primary-foreground: 185 40% 14%;
+    --sidebar-accent: 180 45% 20%;
+    --sidebar-accent-foreground: 41 90% 78%;
+    --sidebar-border: 180 35% 22%;
+    --sidebar-ring: 41 90% 73%;
   }
 
   .dark {
-    --background: 170 12% 7%;
-    --foreground: 170 10% 93%;
+    --background: 186 45% 8%;
+    --foreground: 45 26% 92%;
 
-    --card: 170 10% 11%;
-    --card-foreground: 170 10% 93%;
+    --card: 186 40% 12%;
+    --card-foreground: 45 26% 92%;
 
-    --popover: 170 10% 11%;
-    --popover-foreground: 170 10% 93%;
+    --popover: 186 40% 12%;
+    --popover-foreground: 45 26% 92%;
 
-    --primary: 14 98% 65%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 41 90% 73%;
+    --primary-foreground: 186 63% 12%;
 
-    --brand-orange: 14 98% 65%;
-    --brand-orange-foreground: 0 0% 100%;
+    --brand-gold: 41 90% 73%;
+    --brand-gold-foreground: 186 63% 12%;
+    --brand-brown: 34 45% 55%;
 
-    --secondary: 170 8% 16%;
-    --secondary-foreground: 170 10% 93%;
+    --secondary: 186 30% 17%;
+    --secondary-foreground: 45 26% 92%;
 
-    --muted: 170 8% 16%;
-    --muted-foreground: 170 6% 50%;
+    --muted: 186 30% 17%;
+    --muted-foreground: 45 12% 65%;
 
-    --accent: 170 8% 16%;
-    --accent-foreground: 170 10% 93%;
+    --accent: 186 30% 20%;
+    --accent-foreground: 41 90% 78%;
 
-    --destructive: 0 62% 30%;
+    --destructive: 0 55% 40%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 170 8% 18%;
-    --input: 170 8% 18%;
-    --ring: 14 98% 65%;
+    --border: 186 25% 20%;
+    --input: 186 25% 20%;
+    --ring: 41 90% 73%;
 
-    --surface-mint: 170 10% 14%;
-    --surface-mint-strong: 170 12% 20%;
-    --teal-data: 170 50% 50%;
-    --teal-dark: 170 15% 80%;
+    --surface-mint: 186 30% 15%;
+    --surface-mint-strong: 186 30% 22%;
+    --teal-data: 180 45% 50%;
+    --teal-dark: 45 26% 88%;
 
-    --sidebar-background: 170 10% 11%;
-    --sidebar-foreground: 170 8% 82%;
-    --sidebar-primary: 14 98% 65%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 170 10% 16%;
-    --sidebar-accent-foreground: 170 8% 82%;
-    --sidebar-border: 170 8% 16%;
-    --sidebar-ring: 14 98% 65%;
+    --stage-prospect: 195 45% 55%;
+    --stage-qualified: 180 45% 50%;
+    --stage-proposal: 41 90% 70%;
+    --stage-negotiation: 34 52% 55%;
+    --stage-won: 160 45% 50%;
+    --stage-lost: 0 55% 55%;
+
+    --sidebar-background: 186 50% 10%;
+    --sidebar-foreground: 45 20% 88%;
+    --sidebar-primary: 41 90% 73%;
+    --sidebar-primary-foreground: 186 63% 12%;
+    --sidebar-accent: 186 35% 17%;
+    --sidebar-accent-foreground: 41 90% 78%;
+    --sidebar-border: 186 30% 18%;
+    --sidebar-ring: 41 90% 73%;
   }
-}
-
-/* Force light theme on landing page regardless of dark mode */
-.force-light {
-  --background: 150 20% 95%;
-  --foreground: 180 10% 10%;
-  --card: 0 0% 100%;
-  --card-foreground: 180 10% 10%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 180 10% 10%;
-  --primary: 14 98% 60%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 170 14% 90%;
-  --secondary-foreground: 170 15% 12%;
-  --muted: 170 12% 90%;
-  --muted-foreground: 170 8% 46%;
-  --accent: 170 14% 90%;
-  --accent-foreground: 170 15% 12%;
-  --border: 170 10% 86%;
-  --input: 170 10% 86%;
-  --ring: 14 98% 60%;
-  --surface-mint: 170 25% 94%;
-  --surface-mint-strong: 170 32% 82%;
-  --teal-data: 170 50% 45%;
-  --teal-dark: 170 15% 15%;
 }
 
 @layer base {
@@ -144,13 +138,13 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', sans-serif;
-    letter-spacing: -0.02em;
+    font-family: 'Fraunces', Georgia, serif;
+    letter-spacing: -0.01em;
   }
 }
