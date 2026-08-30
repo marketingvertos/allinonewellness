@@ -629,8 +629,11 @@ export function useRotateCheckinCode() {
 export function useSelfCheckIn() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (code: string) => {
-      const { data, error } = await supabase.rpc("member_self_checkin", { p_code: code } as never);
+    mutationFn: async (args: { code: string; weight?: number | null }) => {
+      const { data, error } = await supabase.rpc("member_self_checkin", {
+        p_code: args.code,
+        p_weight: args.weight ?? null,
+      } as never);
       if (error) throw error;
       return data as unknown as { status: string; message?: string; remaining?: number; mode?: string };
     },
