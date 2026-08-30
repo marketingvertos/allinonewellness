@@ -24,14 +24,14 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
   const [servings, setServings] = useState<number>(0);
   const [price, setPrice] = useState<string>("");
   const [note, setNote] = useState("");
-  const [mode, setMode] = useState<RenewMode>(membership.remaining_servings > 0 ? "queue" : "replace");
+  const [mode, setMode] = useState<RenewMode>("extend");
 
   const plan = membershipPlans.find((p) => p.id === planId);
 
   useEffect(() => {
     if (!open) return;
     setPlanId(membership.plan_id);
-    setMode(membership.remaining_servings > 0 ? "queue" : "replace");
+    setMode("extend");
     setNote("");
   }, [open, membership]);
 
@@ -107,6 +107,31 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
             <Label htmlFor="rp-price">Amount collected</Label>
             <Input id="rp-price" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
           </div>
+        </div>
+
+        <div className="rounded-md border bg-muted/40 p-3 text-sm">
+          {mode === "extend" && (
+            <p>
+              <span className="font-medium">{membership.remaining_servings} left</span> + {servings} new ={" "}
+              <span className="font-semibold">{membership.remaining_servings + servings} servings</span>
+              {plan ? ` · plan extended by ${plan.duration_days} days` : ""}
+            </p>
+          )}
+          {mode === "queue" && (
+            <p>
+              The current {membership.remaining_servings} serving
+              {membership.remaining_servings === 1 ? "" : "s"} are used first, then {servings} more start
+              automatically.
+            </p>
+          )}
+          {mode === "replace" && (
+            <p>
+              New balance will be <span className="font-semibold">{servings} servings</span>
+              {membership.remaining_servings > 0
+                ? ` — ${membership.remaining_servings} unused serving${membership.remaining_servings === 1 ? "" : "s"} dropped.`
+                : "."}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">

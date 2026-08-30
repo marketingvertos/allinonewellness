@@ -11,7 +11,7 @@ import {
   useAdjustServings,
   useCheckIn,
   useCreateMembership,
-  useRenewMembership,
+
   useServingLedger,
   useWeightHistory,
   useWellnessPlans,
@@ -24,6 +24,8 @@ import { AchievementsPanel } from "./AchievementsPanel";
 import { ReferrerPicker } from "./ReferrerPicker";
 import { BatchPicker } from "./BatchPicker";
 import { StartTrialDialog } from "./StartTrialDialog";
+import { RenewPlanDialog } from "./RenewPlanDialog";
+import { SwitchPlanDialog } from "./SwitchPlanDialog";
 import { MemberLoginCard } from "./MemberLoginCard";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,7 +60,6 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const updateMember = useUpdateWellnessMember();
 
   const createMembership = useCreateMembership();
-  const renewMembership = useRenewMembership();
   const adjustServings = useAdjustServings();
   const checkIn = useCheckIn();
   const addWeight = useAddWeight();
@@ -71,11 +72,16 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const [measureOpen, setMeasureOpen] = useState(false);
   const [referrerDraft, setReferrerDraft] = useState<string | null | undefined>(undefined);
   const [trialOpen, setTrialOpen] = useState(false);
+  const [renewOpen, setRenewOpen] = useState(false);
+  const [switchOpen, setSwitchOpen] = useState(false);
 
   if (!member) return null;
 
   const currentReferrer = (member as { referred_by_member_id?: string | null }).referred_by_member_id ?? null;
   const referrerValue = referrerDraft === undefined ? currentReferrer : referrerDraft;
+
+  const istToday = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const todayVisit = attendance?.find((a) => a.visit_date === istToday);
 
   const activeTrial = trials?.find((t) => t.status === "active");
   const activeMembership = memberships?.find((m) => m.status === "active" || m.status === "expiring_soon");
@@ -98,10 +104,16 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Button onClick={() => checkIn.mutate({ memberId: member.id })} disabled={checkIn.isPending}>
-            Check in today
-          </Button>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          {todayVisit ? (
+            <Badge variant="secondary" className="w-fit py-1.5">
+              Checked in today · {formatDateTime(todayVisit.visit_time)}
+            </Badge>
+          ) : (
+            <Button onClick={() => checkIn.mutate({ memberId: member.id })} disabled={checkIn.isPending}>
+              Check in today
+            </Button>
+          )}
           {!activeTrial && !activeMembership && (
             <Button variant="outline" onClick={() => setTrialOpen(true)}>
               Start trial
@@ -230,8 +242,11 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
                   {activeMembership.total_servings} servings remaining
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => renewMembership.mutate({ membershipId: activeMembership.id })}>
+                  <Button size="sm" onClick={() => setRenewOpen(true)}>
                     Renew
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setSwitchOpen(true)}>
+                    Switch plan
                   </Button>
                   <Button
                     size="sm"
@@ -416,6 +431,12 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
 
         <RecordMeasurementDialog memberId={member.id} open={measureOpen} onOpenChange={setMeasureOpen} />
         <StartTrialDialog member={member} open={trialOpen} onOpenChange={setTrialOpen} />
+        {activeMembership && (
+          <>
+            <RenewPlanDialog membership={activeMembership} open={renewOpen} onOpenChange={setRenewOpen} />
+            <SwitchPlanDialog membership={activeMembership} open={switchOpen} onOpenChange={setSwitchOpen} />
+          </>
+        )}
       </SheetContent>
 
     </Sheet>
