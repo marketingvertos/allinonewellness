@@ -77,6 +77,9 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const currentReferrer = (member as { referred_by_member_id?: string | null }).referred_by_member_id ?? null;
   const referrerValue = referrerDraft === undefined ? currentReferrer : referrerDraft;
 
+  const istToday = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const todayVisit = attendance?.find((a) => a.visit_date === istToday);
+
   const activeTrial = trials?.find((t) => t.status === "active");
   const activeMembership = memberships?.find((m) => m.status === "active" || m.status === "expiring_soon");
   const usedPct = activeMembership
