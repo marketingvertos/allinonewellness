@@ -71,6 +71,8 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const [measureOpen, setMeasureOpen] = useState(false);
   const [referrerDraft, setReferrerDraft] = useState<string | null | undefined>(undefined);
   const [trialOpen, setTrialOpen] = useState(false);
+  const [renewOpen, setRenewOpen] = useState(false);
+  const [switchOpen, setSwitchOpen] = useState(false);
 
   if (!member) return null;
 
