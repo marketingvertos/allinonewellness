@@ -142,7 +142,7 @@ export default function WellnessCheckIn() {
         </TabsContent>
 
         <TabsContent value="pending" className="pt-4">
-          <PendingCheckInsCard alwaysShow />
+          <PendingCheckInsCard />
         </TabsContent>
 
         <TabsContent value="today" className="pt-4">
