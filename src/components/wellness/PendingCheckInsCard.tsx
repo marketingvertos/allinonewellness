@@ -37,6 +37,13 @@ export function PendingCheckInsCard() {
 
         {pending.map((r) => {
           const remaining = r.wellness_memberships?.remaining_servings;
+          const previous = r.wellness_members?.current_weight ?? null;
+          const entered = weights[r.id] ?? (r.requested_weight != null ? String(r.requested_weight) : "");
+          const enteredNum = entered ? Number(entered) : null;
+          const delta =
+            previous != null && enteredNum != null && !Number.isNaN(enteredNum)
+              ? enteredNum - previous
+              : null;
           return (
             <div key={r.id} className="rounded-lg border p-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -56,6 +63,29 @@ export function PendingCheckInsCard() {
                   )}
                 </div>
               </div>
+
+              <div className="mt-3 space-y-1">
+                <Label htmlFor={`weight-${r.id}`} className="text-xs text-muted-foreground">
+                  Weight submitted by member (kg)
+                </Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    id={`weight-${r.id}`}
+                    className="w-24"
+                    inputMode="decimal"
+                    placeholder={r.requested_weight == null ? "Not entered" : "kg"}
+                    value={entered}
+                    onChange={(e) => setWeights((w) => ({ ...w, [r.id]: e.target.value }))}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {previous != null ? `Last recorded ${previous} kg` : "No previous weight"}
+                    {delta != null && Math.abs(delta) > 0
+                      ? ` · ${delta > 0 ? "+" : "−"}${Math.abs(delta).toFixed(1)} kg`
+                      : ""}
+                  </span>
+                </div>
+              </div>
+
 
               {rejecting === r.id ? (
                 <div className="mt-3 space-y-2">

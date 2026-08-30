@@ -657,6 +657,7 @@ export interface CheckInRequest {
     full_name: string;
     mobile_number: string;
     status: string;
+    current_weight: number | null;
   } | null;
   wellness_memberships?: {
     id: string;
