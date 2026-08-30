@@ -11,7 +11,7 @@ import {
   useAdjustServings,
   useCheckIn,
   useCreateMembership,
-  useRenewMembership,
+
   useServingLedger,
   useWeightHistory,
   useWellnessPlans,
@@ -60,7 +60,6 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const updateMember = useUpdateWellnessMember();
 
   const createMembership = useCreateMembership();
-  const renewMembership = useRenewMembership();
   const adjustServings = useAdjustServings();
   const checkIn = useCheckIn();
   const addWeight = useAddWeight();
