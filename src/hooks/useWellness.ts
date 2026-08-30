@@ -651,6 +651,7 @@ export interface CheckInRequest {
   request_date: string;
   requested_at: string;
   reject_reason: string | null;
+  requested_weight: number | null;
   wellness_members?: {
     id: string;
     full_name: string;
@@ -671,7 +672,7 @@ export function usePendingCheckIns() {
       const { data, error } = await supabase
         .from("wellness_checkin_requests")
         .select(
-          "*, wellness_members(id, full_name, mobile_number, status), wellness_memberships(id, remaining_servings, end_date)",
+          "*, wellness_members(id, full_name, mobile_number, status, current_weight), wellness_memberships(id, remaining_servings, end_date)",
         )
         .eq("status", "pending")
         .order("requested_at", { ascending: true });
@@ -686,9 +687,10 @@ export function useApproveCheckIn() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async (requestId: string) => {
+    mutationFn: async (args: { requestId: string; weight?: number | null }) => {
       const { data, error } = await supabase.rpc("approve_checkin_request", {
-        p_request_id: requestId,
+        p_request_id: args.requestId,
+        p_weight: args.weight ?? null,
       } as never);
       if (error) throw error;
       return data as unknown as { status: string; message?: string; remaining?: number; mode?: string };
