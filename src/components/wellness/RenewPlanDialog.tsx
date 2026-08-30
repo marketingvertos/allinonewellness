@@ -31,7 +31,7 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
   useEffect(() => {
     if (!open) return;
     setPlanId(membership.plan_id);
-    setMode(membership.remaining_servings > 0 ? "queue" : "replace");
+    setMode("extend");
     setNote("");
   }, [open, membership]);
 
