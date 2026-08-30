@@ -1187,16 +1187,21 @@ export function useActiveTrials() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("wellness_trials")
-        .select("*, wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight)")
+        .select(
+          "*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight)",
+        )
         .eq("status", "active")
         .order("end_date");
       if (error) throw error;
       return data as unknown as (WellnessTrial & {
+        plan_id?: string | null;
+        wellness_plans?: { id: string; name: string; price: number } | null;
         wellness_members?: WellnessMember | null;
       })[];
     },
   });
 }
+
 
 /* --------------------------- Serving consumption -------------------------- */
 
