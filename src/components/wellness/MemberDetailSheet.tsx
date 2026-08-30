@@ -24,6 +24,8 @@ import { AchievementsPanel } from "./AchievementsPanel";
 import { ReferrerPicker } from "./ReferrerPicker";
 import { BatchPicker } from "./BatchPicker";
 import { StartTrialDialog } from "./StartTrialDialog";
+import { RenewPlanDialog } from "./RenewPlanDialog";
+import { SwitchPlanDialog } from "./SwitchPlanDialog";
 import { MemberLoginCard } from "./MemberLoginCard";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
