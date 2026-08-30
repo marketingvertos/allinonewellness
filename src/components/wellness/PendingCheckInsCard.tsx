@@ -13,6 +13,7 @@ export function PendingCheckInsCard() {
   const reject = useRejectCheckIn();
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [weights, setWeights] = useState<Record<string, string>>({});
 
   const pending = requests ?? [];
 
