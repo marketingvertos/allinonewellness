@@ -374,6 +374,39 @@ export type Database = {
           },
         ]
       }
+      member_categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          direction: string
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          direction: string
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          direction?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       member_notes: {
         Row: {
           created_at: string
@@ -977,6 +1010,7 @@ export type Database = {
           activation_code: string
           activity_level: string | null
           batch_id: string | null
+          category_id: string | null
           contact_id: string | null
           created_at: string
           created_by: string
@@ -1001,6 +1035,7 @@ export type Database = {
           activation_code?: string
           activity_level?: string | null
           batch_id?: string | null
+          category_id?: string | null
           contact_id?: string | null
           created_at?: string
           created_by: string
@@ -1025,6 +1060,7 @@ export type Database = {
           activation_code?: string
           activity_level?: string | null
           batch_id?: string | null
+          category_id?: string | null
           contact_id?: string | null
           created_at?: string
           created_by?: string
@@ -1051,6 +1087,13 @@ export type Database = {
             columns: ["batch_id"]
             isOneToOne: false
             referencedRelation: "wellness_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_members_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "member_categories"
             referencedColumns: ["id"]
           },
           {
@@ -1329,6 +1372,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_next_membership: {
+        Args: { p_member_id: string }
+        Returns: string
+      }
       adjust_servings: {
         Args: { p_change: number; p_membership_id: string; p_note?: string }
         Returns: number
@@ -1397,8 +1444,28 @@ export type Database = {
         Args: { p_membership_id: string; p_plan_id?: string; p_price?: number }
         Returns: string
       }
+      renew_membership_v2: {
+        Args: {
+          p_membership_id: string
+          p_mode?: string
+          p_note?: string
+          p_plan_id: string
+          p_price?: number
+          p_servings?: number
+        }
+        Returns: string
+      }
       rotate_checkin_code: { Args: never; Returns: string }
       seed_default_pipeline: { Args: { p_user_id: string }; Returns: string }
+      switch_membership_plan: {
+        Args: {
+          p_carry_servings?: boolean
+          p_membership_id: string
+          p_new_plan_id: string
+          p_price?: number
+        }
+        Returns: string
+      }
       wellness_plan_usage: {
         Args: never
         Returns: {
@@ -1415,7 +1482,12 @@ export type Database = {
         | "barcode_scan"
         | "admin_manual"
         | "staff_entry"
-      membership_status: "active" | "expiring_soon" | "expired" | "cancelled"
+      membership_status:
+        | "active"
+        | "expiring_soon"
+        | "expired"
+        | "cancelled"
+        | "queued"
       serving_txn_type:
         | "membership_allocation"
         | "daily_deduction"
@@ -1578,7 +1650,13 @@ export const Constants = {
         "admin_manual",
         "staff_entry",
       ],
-      membership_status: ["active", "expiring_soon", "expired", "cancelled"],
+      membership_status: [
+        "active",
+        "expiring_soon",
+        "expired",
+        "cancelled",
+        "queued",
+      ],
       serving_txn_type: [
         "membership_allocation",
         "daily_deduction",
