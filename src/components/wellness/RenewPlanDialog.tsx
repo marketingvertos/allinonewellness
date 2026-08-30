@@ -24,7 +24,7 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
   const [servings, setServings] = useState<number>(0);
   const [price, setPrice] = useState<string>("");
   const [note, setNote] = useState("");
-  const [mode, setMode] = useState<RenewMode>(membership.remaining_servings > 0 ? "queue" : "replace");
+  const [mode, setMode] = useState<RenewMode>("extend");
 
   const plan = membershipPlans.find((p) => p.id === planId);
 
