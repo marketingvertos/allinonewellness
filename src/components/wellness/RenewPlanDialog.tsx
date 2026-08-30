@@ -109,6 +109,31 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
           </div>
         </div>
 
+        <div className="rounded-md border bg-muted/40 p-3 text-sm">
+          {mode === "extend" && (
+            <p>
+              <span className="font-medium">{membership.remaining_servings} left</span> + {servings} new ={" "}
+              <span className="font-semibold">{membership.remaining_servings + servings} servings</span>
+              {plan ? ` · plan extended by ${plan.duration_days} days` : ""}
+            </p>
+          )}
+          {mode === "queue" && (
+            <p>
+              The current {membership.remaining_servings} serving
+              {membership.remaining_servings === 1 ? "" : "s"} are used first, then {servings} more start
+              automatically.
+            </p>
+          )}
+          {mode === "replace" && (
+            <p>
+              New balance will be <span className="font-semibold">{servings} servings</span>
+              {membership.remaining_servings > 0
+                ? ` — ${membership.remaining_servings} unused serving${membership.remaining_servings === 1 ? "" : "s"} dropped.`
+                : "."}
+            </p>
+          )}
+        </div>
+
         <div className="space-y-2">
           <Label>How should it apply?</Label>
           <RadioGroup value={mode} onValueChange={(v) => setMode(v as RenewMode)} className="space-y-2">
