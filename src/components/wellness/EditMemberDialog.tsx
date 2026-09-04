@@ -140,16 +140,16 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
           </div>
         )}
         <div className="space-y-2">
-          <Label htmlFor="em-start">Starting bait (kg)</Label>
+          <Label htmlFor="em-start">Starting weight (kg)</Label>
           <Input id="em-start" inputMode="decimal" value={form.initial_weight} onChange={(e) => set("initial_weight")(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="em-current">Current bait (kg)</Label>
+          <Label htmlFor="em-current">Current weight (kg)</Label>
           <Input id="em-current" inputMode="decimal" value={form.current_weight} onChange={(e) => set("current_weight")(e.target.value)} />
           <p className="text-xs text-muted-foreground">Normally updated automatically by the latest recorded reading.</p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="em-target">Target bait (kg)</Label>
+          <Label htmlFor="em-target">Target weight (kg)</Label>
           <Input id="em-target" inputMode="decimal" value={form.target_weight} onChange={(e) => set("target_weight")(e.target.value)} />
         </div>
         <div className="space-y-2">

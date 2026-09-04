@@ -51,7 +51,7 @@ export function EditWeightEntryDialog({ memberId, entry, open, onOpenChange }: P
       open={open}
       onOpenChange={onOpenChange}
       title="Edit reading"
-      description="Correct a mistaken bait reading or its date."
+      description="Correct a mistaken weight reading or its date."
       footer={
         <>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -65,7 +65,7 @@ export function EditWeightEntryDialog({ memberId, entry, open, onOpenChange }: P
           <Input id="ew-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="ew-weight">Bait (kg)</Label>
+          <Label htmlFor="ew-weight">Weight (kg)</Label>
           <Input id="ew-weight" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
         </div>
         <div className="space-y-2 sm:col-span-2">
