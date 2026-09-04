@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   WellnessMember,
@@ -17,6 +17,7 @@ import {
   useWellnessPlans,
   useBodyMeasurements,
   useUpdateWellnessMember,
+  useWellnessMember,
 } from "@/hooks/useWellness";
 import { MemberDashboard } from "./MemberDashboard";
 import { RecordMeasurementDialog } from "./RecordMeasurementDialog";
@@ -45,9 +46,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
+export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Props) {
   const { user } = useAuth();
-  const memberId = member?.id;
+  const memberId = memberProp?.id;
+  const { data: liveMember } = useWellnessMember(memberId);
+  const member = liveMember ?? memberProp;
+
 
   const { data: plans } = useWellnessPlans();
   const { data: trials } = useMemberTrials(memberId);
@@ -74,6 +78,11 @@ export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
   const [trialOpen, setTrialOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
+
+  // Clear any pending referrer selection when the panel switches member.
+  useEffect(() => {
+    setReferrerDraft(undefined);
+  }, [memberId]);
 
   if (!member) return null;
 
