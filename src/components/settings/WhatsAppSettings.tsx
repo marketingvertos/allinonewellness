@@ -89,14 +89,31 @@ export function WhatsAppSettings() {
     setForm((f) => {
       const url = (f.whatsapp_api_url || "").trim();
       const isDefaultUrl = !url || url === META_DEFAULT_URL || url === WACHAT_DEFAULT_URL;
+      // Also reset when the saved URL clearly belongs to the other provider,
+      // even if it is a custom URL (e.g. console.wachatsender.in).
+      const belongsToOtherProvider =
+        provider === "meta" ? /wachatsender/i.test(url) : /graph\.facebook\.com/i.test(url);
       return {
         ...f,
         whatsapp_provider: provider,
-        whatsapp_api_url: isDefaultUrl
+        whatsapp_api_url: isDefaultUrl || belongsToOtherProvider
           ? provider === "wachat" ? WACHAT_DEFAULT_URL : META_DEFAULT_URL
           : f.whatsapp_api_url,
       };
     });
+
+  // One-tap repair when a test reports the provider/URL mismatch: set the
+  // correct default URL for the current provider and save immediately.
+  const fixUrlAndSave = () => {
+    const next = {
+      ...form,
+      whatsapp_api_url: form.whatsapp_provider === "wachat" ? WACHAT_DEFAULT_URL : META_DEFAULT_URL,
+    };
+    setForm(next);
+    save.mutate(next, { onSuccess: () => setSavedSnapshot(next) });
+  };
+  const testShowUrlFix =
+    !!test.data && !test.data.success && /points at .+ but the provider is set to/i.test(test.data.error || "");
 
   const problems = useMemo(() => {
     const out: string[] = [];
@@ -340,6 +357,12 @@ export function WhatsAppSettings() {
                 <p className="text-sm text-destructive">
                   {test.data.error || "The provider rejected the message."}
                 </p>
+              )}
+              {testShowUrlFix && (
+                <Button size="sm" variant="secondary" onClick={fixUrlAndSave} disabled={save.isPending}>
+                  {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Fix automatically (use the correct URL for {isWachat ? "WachatSender" : "Meta Cloud API"})
+                </Button>
               )}
               {test.data.details && (
                 <p className="text-xs text-muted-foreground">{test.data.details}</p>

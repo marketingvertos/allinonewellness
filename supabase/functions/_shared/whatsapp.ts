@@ -79,8 +79,16 @@ export async function loadWhatsAppConfig(
     provider = vendorUid ? "wachat" : "meta";
   }
 
-  const apiUrl = apiUrlRaw ||
-    (provider === "wachat" ? WACHAT_DEFAULT_API_URL : META_DEFAULT_API_URL);
+  // Safety net: if an explicit provider is stored but the saved URL clearly
+  // belongs to the other provider (e.g. a WachatSender URL left over after
+  // switching to Meta), ignore it and use the provider's default endpoint.
+  const urlBelongsToOtherProvider =
+    provider === "meta"
+      ? /wachatsender/i.test(apiUrlRaw)
+      : /graph\.facebook\.com/i.test(apiUrlRaw);
+  const apiUrl = !apiUrlRaw || urlBelongsToOtherProvider
+    ? provider === "wachat" ? WACHAT_DEFAULT_API_URL : META_DEFAULT_API_URL
+    : apiUrlRaw;
 
   return {
     provider,
