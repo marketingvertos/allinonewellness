@@ -4,11 +4,17 @@ import { useToast } from "@/hooks/use-toast";
 import { sanitizeErrorMessage } from "@/lib/sanitize";
 
 function getErrorMessage(error: unknown): string {
-  const raw = (error as { message?: string })?.message ?? "";
+  const e = error as { message?: string; details?: string; hint?: string } | null;
+  const raw = (e?.message ?? "").trim();
   // Domain rules raised by the database are already user-safe.
   if (/[.!]$/.test(raw) && raw.length < 160 && !raw.toLowerCase().includes("relation")) return raw;
-  return sanitizeErrorMessage(raw);
+  const mapped = sanitizeErrorMessage(raw);
+  if (mapped !== "Something went wrong. Please try again.") return mapped;
+  // Surface the real reason instead of a blank generic message.
+  const detail = [raw, e?.details?.trim(), e?.hint?.trim()].filter(Boolean).join(" — ");
+  return detail || mapped;
 }
+
 
 export type WellnessStatus =
   | "lead"
