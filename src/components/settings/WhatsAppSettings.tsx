@@ -85,29 +85,30 @@ export function WhatsAppSettings() {
 
   const isWachat = form.whatsapp_provider === "wachat";
 
-  const changeProvider = (provider: string) =>
-    setForm((f) => {
-      const url = (f.whatsapp_api_url || "").trim();
-      const isDefaultUrl = !url || url === META_DEFAULT_URL || url === WACHAT_DEFAULT_URL;
-      // Also reset when the saved URL clearly belongs to the other provider,
-      // even if it is a custom URL (e.g. console.wachatsender.in).
-      const belongsToOtherProvider =
-        provider === "meta" ? /wachatsender/i.test(url) : /graph\.facebook\.com/i.test(url);
-      return {
-        ...f,
-        whatsapp_provider: provider,
-        whatsapp_api_url: isDefaultUrl || belongsToOtherProvider
-          ? provider === "wachat" ? WACHAT_DEFAULT_URL : META_DEFAULT_URL
-          : f.whatsapp_api_url,
-      };
-    });
+  // A custom panel address that already matches the chosen provider is kept
+  // as-is; only an empty address or one belonging to the other provider is
+  // replaced with that provider's default.
+  const urlForProvider = (provider: string, url: string) => {
+    const trimmed = (url || "").trim();
+    const fitsProvider = provider === "wachat"
+      ? /wachatsender/i.test(trimmed)
+      : /graph\.facebook\.com/i.test(trimmed);
+    if (trimmed && fitsProvider) return trimmed;
+    return provider === "wachat" ? WACHAT_DEFAULT_URL : META_DEFAULT_URL;
+  };
 
-  // One-tap repair when a test reports the provider/URL mismatch: set the
-  // correct default URL for the current provider and save immediately.
+  const changeProvider = (provider: string) =>
+    setForm((f) => ({
+      ...f,
+      whatsapp_provider: provider,
+      whatsapp_api_url: urlForProvider(provider, f.whatsapp_api_url),
+    }));
+
+  // One-tap repair when a test reports the provider/URL mismatch.
   const fixUrlAndSave = () => {
     const next = {
       ...form,
-      whatsapp_api_url: form.whatsapp_provider === "wachat" ? WACHAT_DEFAULT_URL : META_DEFAULT_URL,
+      whatsapp_api_url: urlForProvider(form.whatsapp_provider, form.whatsapp_api_url),
     };
     setForm(next);
     save.mutate(next, { onSuccess: () => setSavedSnapshot(next) });
