@@ -8,7 +8,7 @@ import {
   toE164,
   validateConfig,
 } from "../_shared/whatsapp.ts";
-import { sendWhatsApp } from "../_shared/whatsappService.ts";
+import { redactSecrets, sendWhatsApp } from "../_shared/whatsappService.ts";
 
 interface Payload {
   phone?: string;
@@ -97,8 +97,8 @@ Deno.serve(async (req) => {
       conversation_id: result.conversationId,
       provider_message_id: result.providerMessageId,
       latency_ms: Date.now() - started,
-      error: result.error,
-      details: result.errorDetails,
+      error: redactSecrets(result.error),
+      details: redactSecrets(result.errorDetails),
     }, 200);
   } catch (e) {
     console.error("whatsapp-test-connection error", e);
