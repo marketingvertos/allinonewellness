@@ -296,36 +296,16 @@ export default function Auth() {
                 Check in with the centre QR and follow your plan.
               </p>
 
-              <Tabs defaultValue="signin">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="signin">Sign in</TabsTrigger>
-                  <TabsTrigger value="activate">Activate account</TabsTrigger>
-                </TabsList>
-                <TabsContent value="signin" className="space-y-4 pt-4">
-                  {memberFields("in")}
-                  <Button className="w-full" disabled={!memberValid || busy} onClick={memberSignIn}>
-                    {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Sign in
-                  </Button>
-                </TabsContent>
-                <TabsContent value="activate" className="space-y-4 pt-4">
-                  {memberFields("up")}
-                  <div className="space-y-2">
-                    <Label htmlFor="up-code">Activation code</Label>
-                    <Input
-                      id="up-code"
-                      placeholder="6-character code from the front desk"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Use the mobile number you gave at the centre along with the activation code the front desk shares with you.
-                  </p>
-                  <Button className="w-full" disabled={!memberValid || code.trim().length < 4 || busy} onClick={memberActivate}>
-                    {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Activate
-                  </Button>
-                </TabsContent>
-              </Tabs>
+              <div className="space-y-4">
+                {memberFields("in")}
+                <Button className="w-full" disabled={!memberValid || busy} onClick={memberSignIn}>
+                  {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Sign in
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Your login is created by the centre front desk. Ask them for your password if you do not have it yet.
+                </p>
+              </div>
+
             </>
           ) : (
             <>
