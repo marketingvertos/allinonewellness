@@ -3,6 +3,7 @@ import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { TeamSettings } from "@/components/settings/TeamSettings";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
 import { ConnectorSettings } from "@/components/settings/ConnectorSettings";
+import { WhatsAppSettings } from "@/components/settings/WhatsAppSettings";
 
 export default function Settings() {
   return (
@@ -17,12 +18,14 @@ export default function Settings() {
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
           <TabsTrigger value="connectors">Connectors</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile"><ProfileSettings /></TabsContent>
         <TabsContent value="team"><TeamSettings /></TabsContent>
         <TabsContent value="notifications"><NotificationSettings /></TabsContent>
+        <TabsContent value="whatsapp"><WhatsAppSettings /></TabsContent>
         <TabsContent value="connectors"><ConnectorSettings /></TabsContent>
       </Tabs>
     </div>
