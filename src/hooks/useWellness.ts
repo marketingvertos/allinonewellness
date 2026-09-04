@@ -733,6 +733,7 @@ export function useApproveCheckIn() {
     onSuccess: (result) => {
       qc.invalidateQueries();
       if (result?.status === "ok") {
+        runNotificationsNow();
         toast({
           title: "Check-in approved",
           description:
@@ -1062,6 +1063,12 @@ export function useUpcomingBirthdays(windowDays = 30) {
 
 /* --------------------- Check-in with optional weight --------------------- */
 
+/** Nudge the WhatsApp queue so the confirmation goes out immediately (cron is the fallback). */
+function runNotificationsNow() {
+  void supabase.functions.invoke("whatsapp-notification-runner", { body: { source: "checkin" } }).catch(() => {});
+}
+
+
 export function useCheckInWithWeight() {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -1115,6 +1122,7 @@ export function useCheckInWithWeight() {
         return;
       }
       if (result.status === "ok") {
+        runNotificationsNow();
         toast({
           title: "Checked in",
           description:

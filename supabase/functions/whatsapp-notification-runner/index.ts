@@ -120,7 +120,22 @@ Deno.serve(async (req) => {
       if (!memberships.has(m.member_id)) memberships.set(m.member_id, m);
     }
 
-    // latest approved check-in weight per member (falls back to profile weight)
+    // today's recorded weight per member (IST), then the latest approved check-in weight
+    const istToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" })
+      .format(new Date());
+    const { data: todayWeightRows } = await supabase
+      .from("weight_tracking")
+      .select("member_id, weight, created_at")
+      .in("member_id", memberIds)
+      .eq("recorded_date", istToday)
+      .order("created_at", { ascending: false });
+    const latestWeights = new Map<string, number>();
+    for (const w of todayWeightRows || []) {
+      if (!latestWeights.has(w.member_id) && w.weight !== null) {
+        latestWeights.set(w.member_id, Number(w.weight));
+      }
+    }
+
     const { data: checkinRows } = await supabase
       .from("wellness_checkin_requests")
       .select("member_id, requested_weight, decided_at")
@@ -129,7 +144,6 @@ Deno.serve(async (req) => {
       .not("requested_weight", "is", null)
       .order("decided_at", { ascending: false })
       .limit(200);
-    const latestWeights = new Map<string, number>();
     for (const c of checkinRows || []) {
       if (!latestWeights.has(c.member_id) && c.requested_weight !== null) {
         latestWeights.set(c.member_id, Number(c.requested_weight));
