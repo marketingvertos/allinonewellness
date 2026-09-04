@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTabParam } from "@/hooks/useTabParam";
 import {
   AchievementCategory,
   AchievementDefinition,
@@ -88,7 +89,7 @@ export default function WellnessAchievements() {
         </Button>
       </div>
 
-      <Tabs defaultValue="referral">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           {CATEGORIES.map((c) => (
             <TabsTrigger key={c.value} value={c.value}>
