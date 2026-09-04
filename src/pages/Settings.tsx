@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { TeamSettings } from "@/components/settings/TeamSettings";
