@@ -733,6 +733,7 @@ export function useApproveCheckIn() {
     onSuccess: (result) => {
       qc.invalidateQueries();
       if (result?.status === "ok") {
+        runNotificationsNow();
         toast({
           title: "Check-in approved",
           description:
