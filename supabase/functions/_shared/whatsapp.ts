@@ -175,8 +175,9 @@ export interface SendInput {
 }
 
 export function isWachat(cfg: WhatsAppConfig): boolean {
-  return Boolean(cfg.vendorUid) || /wachatsender/i.test(cfg.apiUrl);
+  return cfg.provider === "wachat";
 }
+
 
 /** Builds the provider URL + JSON body for a send. */
 export function buildSendRequest(
