@@ -358,6 +358,12 @@ export function WhatsAppSettings() {
                   {test.data.error || "The provider rejected the message."}
                 </p>
               )}
+              {testShowUrlFix && (
+                <Button size="sm" variant="secondary" onClick={fixUrlAndSave} disabled={save.isPending}>
+                  {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Fix automatically (use the correct URL for {isWachat ? "WachatSender" : "Meta Cloud API"})
+                </Button>
+              )}
               {test.data.details && (
                 <p className="text-xs text-muted-foreground">{test.data.details}</p>
               )}
