@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTabParam } from "@/hooks/useTabParam";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ function statusTone(status: string) {
 }
 
 export default function WhatsAppLogs() {
+  const [tab, setTab] = useTabParam(["messages", "queue", "api", "webhook"]);
   const [search, setSearch] = useState("");
   const { data: messages = [] } = useWhatsAppMessages({ search });
   const { data: apiLogs = [] } = useWhatsAppApiLogs();
@@ -58,7 +60,7 @@ export default function WhatsAppLogs() {
         </Button>
       </div>
 
-      <Tabs defaultValue="messages" className="space-y-4">
+      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
         <TabsList className="flex w-full flex-wrap justify-start">
           <TabsTrigger value="messages">Messages</TabsTrigger>
           <TabsTrigger value="queue">Queue</TabsTrigger>

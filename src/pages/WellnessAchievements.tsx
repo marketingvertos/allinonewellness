@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTabParam } from "@/hooks/useTabParam";
 import {
   AchievementCategory,
   AchievementDefinition,
@@ -37,6 +38,7 @@ const CATEGORIES: { value: AchievementCategory; label: string; unit: string }[] 
 const ICONS = ["🏅", "🥈", "🥇", "🏆", "🎖️", "⭐", "❤️", "🟠", "💚", "💙", "💎", "👑", "🔥"];
 
 export default function WellnessAchievements() {
+  const [tab, setTab] = useTabParam(CATEGORIES.map((c) => c.value));
   const { data: defs, isLoading } = useAchievementDefinitions(false);
   const save = useSaveAchievementDefinition();
   const remove = useDeleteAchievementDefinition();
@@ -88,7 +90,7 @@ export default function WellnessAchievements() {
         </Button>
       </div>
 
-      <Tabs defaultValue="referral">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           {CATEGORIES.map((c) => (
             <TabsTrigger key={c.value} value={c.value}>

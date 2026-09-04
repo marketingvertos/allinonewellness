@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTabParam } from "@/hooks/useTabParam";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   NotificationTemplate,
@@ -45,6 +46,7 @@ function renderMessage(template: string, name: string) {
 }
 
 export default function WellnessNotifications() {
+  const [tab, setTab] = useTabParam(["queue", "templates"]);
   const { user } = useAuth();
   const { data: templates, isLoading } = useNotificationTemplates();
   const saveTemplate = useSaveNotificationTemplate();
@@ -100,7 +102,7 @@ export default function WellnessNotifications() {
         </Button>
       </PageBanner>
 
-      <Tabs defaultValue="queue">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="queue">Queue</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
