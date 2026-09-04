@@ -23,14 +23,20 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setLoading(false);
+        // Never reuse a stale access answer across sign-in / sign-out.
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+          queryClient.removeQueries({ queryKey: ["member-identity"] });
+        }
       }
     );
+
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
