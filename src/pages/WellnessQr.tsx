@@ -121,7 +121,7 @@ export default function WellnessQr() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>1. Member scans the poster with their phone camera.</p>
-              <p>2. First time only, they activate the portal with their mobile number and activation code.</p>
+              <p>2. They sign in with the mobile number and password the front desk gave them.</p>
               <p>3. Your team approves the request — attendance is recorded and one serving is deducted.</p>
               <p>4. Members can only check in — plans, balances and records stay staff-controlled.</p>
             </CardContent>

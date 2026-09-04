@@ -115,7 +115,7 @@ export function QrPosterPanel() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>1. Member scans the poster with their phone camera.</p>
-              <p>2. First time only, they activate the portal with their mobile number and activation code.</p>
+              <p>2. They sign in with the mobile number and password the front desk gave them.</p>
               <p>3. They enter today&apos;s weight and request attendance.</p>
               <p>4. Your team approves it — attendance is recorded and one serving is deducted.</p>
             </CardContent>
