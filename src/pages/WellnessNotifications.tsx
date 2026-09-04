@@ -46,6 +46,7 @@ function renderMessage(template: string, name: string) {
 }
 
 export default function WellnessNotifications() {
+  const [tab, setTab] = useTabParam(["queue", "templates"]);
   const { user } = useAuth();
   const { data: templates, isLoading } = useNotificationTemplates();
   const saveTemplate = useSaveNotificationTemplate();

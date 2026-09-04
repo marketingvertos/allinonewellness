@@ -38,6 +38,7 @@ const CATEGORIES: { value: AchievementCategory; label: string; unit: string }[] 
 const ICONS = ["🏅", "🥈", "🥇", "🏆", "🎖️", "⭐", "❤️", "🟠", "💚", "💙", "💎", "👑", "🔥"];
 
 export default function WellnessAchievements() {
+  const [tab, setTab] = useTabParam(CATEGORIES.map((c) => c.value));
   const { data: defs, isLoading } = useAchievementDefinitions(false);
   const save = useSaveAchievementDefinition();
   const remove = useDeleteAchievementDefinition();

@@ -33,6 +33,7 @@ function statusTone(status: string) {
 }
 
 export default function WhatsAppLogs() {
+  const [tab, setTab] = useTabParam(["messages", "queue", "api", "webhook"]);
   const [search, setSearch] = useState("");
   const { data: messages = [] } = useWhatsAppMessages({ search });
   const { data: apiLogs = [] } = useWhatsAppApiLogs();
