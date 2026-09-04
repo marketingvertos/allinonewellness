@@ -97,15 +97,41 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
         open={open}
         onOpenChange={close}
         title="Step 2 — portal login"
-        description="Create the member's login now, or skip and do it later from their profile."
+        description={
+          loginError
+            ? "The login could not be created automatically. You can create it manually below."
+            : "The member's portal login has been created. Share these details with them."
+        }
         footer={<Button onClick={() => close(false)}>Done</Button>}
       >
         <div className="rounded-lg border p-4">
-          <MemberLoginCard memberId={created.id} mobileNumber={created.mobile} />
+          {creatingLogin ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Creating portal login…
+            </div>
+          ) : loginError ? (
+            <div className="space-y-3">
+              <p className="text-sm text-destructive">{loginError}</p>
+              <MemberLoginCard memberId={created.id} mobileNumber={created.mobile} />
+            </div>
+          ) : (
+            <div className="space-y-3 text-sm">
+              <p className="font-medium">Portal login created</p>
+              <p className="text-xs text-muted-foreground">
+                The member is asked to set their own password the first time they sign in.
+              </p>
+              <p className="font-mono">Login ID / Mobile: {created.mobile}</p>
+              <p className="font-mono">Password: {DEFAULT_MEMBER_PASSWORD}</p>
+              <Button size="sm" variant="outline" onClick={copyCredentials}>
+                <Copy className="mr-2 h-4 w-4" /> Copy credentials
+              </Button>
+            </div>
+          )}
         </div>
       </ResponsiveDialog>
     );
   }
+
 
   return (
     <ResponsiveDialog
