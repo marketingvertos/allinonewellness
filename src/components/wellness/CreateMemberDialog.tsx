@@ -46,6 +46,8 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
     email: "",
     gender: "",
     date_of_birth: "",
+    marital_status: "",
+    anniversary_date: "",
     goal: "",
     initial_weight: "",
     target_weight: "",
@@ -66,6 +68,8 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       email: "",
       gender: "",
       date_of_birth: "",
+      marital_status: "",
+      anniversary_date: "",
       goal: "",
       initial_weight: "",
       target_weight: "",
@@ -86,6 +90,8 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       email: form.email.trim() || null,
       gender: form.gender || null,
       date_of_birth: form.date_of_birth || null,
+      marital_status: form.marital_status || null,
+      anniversary_date: form.marital_status === "married" ? form.anniversary_date || null : null,
       goal: form.goal || null,
       initial_weight: form.initial_weight ? Number(form.initial_weight) : null,
       current_weight: form.initial_weight ? Number(form.initial_weight) : null,
@@ -204,6 +210,23 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
             <Label htmlFor="wm-dob">Date of birth</Label>
             <Input id="wm-dob" type="date" value={form.date_of_birth} onChange={(e) => set("date_of_birth")(e.target.value)} />
           </div>
+          <div className="space-y-2">
+            <Label>Relationship status</Label>
+            <Select value={form.marital_status} onValueChange={set("marital_status")}>
+              <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="single">Single</SelectItem>
+                <SelectItem value="married">Married</SelectItem>
+                <SelectItem value="prefer_not_say">Prefer not to say</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {form.marital_status === "married" && (
+            <div className="space-y-2">
+              <Label htmlFor="wm-anniv">Anniversary date</Label>
+              <Input id="wm-anniv" type="date" value={form.anniversary_date} onChange={(e) => set("anniversary_date")(e.target.value)} />
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Goal</Label>
             <Select value={form.goal} onValueChange={set("goal")}>

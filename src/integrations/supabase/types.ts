@@ -1009,6 +1009,7 @@ export type Database = {
         Row: {
           activation_code: string
           activity_level: string | null
+          anniversary_date: string | null
           batch_id: string | null
           category_id: string | null
           contact_id: string | null
@@ -1025,6 +1026,7 @@ export type Database = {
           initial_weight: number | null
           is_guest: boolean
           joining_date: string
+          marital_status: string | null
           mobile_number: string
           referred_by_member_id: string | null
           status: Database["public"]["Enums"]["wellness_status"]
@@ -1035,6 +1037,7 @@ export type Database = {
         Insert: {
           activation_code?: string
           activity_level?: string | null
+          anniversary_date?: string | null
           batch_id?: string | null
           category_id?: string | null
           contact_id?: string | null
@@ -1051,6 +1054,7 @@ export type Database = {
           initial_weight?: number | null
           is_guest?: boolean
           joining_date?: string
+          marital_status?: string | null
           mobile_number: string
           referred_by_member_id?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
@@ -1061,6 +1065,7 @@ export type Database = {
         Update: {
           activation_code?: string
           activity_level?: string | null
+          anniversary_date?: string | null
           batch_id?: string | null
           category_id?: string | null
           contact_id?: string | null
@@ -1077,6 +1082,7 @@ export type Database = {
           initial_weight?: number | null
           is_guest?: boolean
           joining_date?: string
+          marital_status?: string | null
           mobile_number?: string
           referred_by_member_id?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]

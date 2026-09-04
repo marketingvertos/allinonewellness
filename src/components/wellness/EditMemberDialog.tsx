@@ -25,7 +25,10 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
     email: member.email ?? "",
     gender: member.gender ?? "",
     date_of_birth: member.date_of_birth ?? "",
+    marital_status: member.marital_status ?? "",
+    anniversary_date: member.anniversary_date ?? "",
     initial_weight: member.initial_weight?.toString() ?? "",
+    current_weight: member.current_weight?.toString() ?? "",
     target_weight: member.target_weight?.toString() ?? "",
     height: member.height?.toString() ?? "",
     status: member.status as WellnessStatus,
@@ -41,7 +44,10 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
       email: member.email ?? "",
       gender: member.gender ?? "",
       date_of_birth: member.date_of_birth ?? "",
+      marital_status: member.marital_status ?? "",
+      anniversary_date: member.anniversary_date ?? "",
       initial_weight: member.initial_weight?.toString() ?? "",
+      current_weight: member.current_weight?.toString() ?? "",
       target_weight: member.target_weight?.toString() ?? "",
       height: member.height?.toString() ?? "",
       status: member.status,
@@ -62,7 +68,10 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
       email: form.email.trim() || null,
       gender: form.gender || null,
       date_of_birth: form.date_of_birth || null,
+      marital_status: form.marital_status || null,
+      anniversary_date: form.marital_status === "married" ? form.anniversary_date || null : null,
       initial_weight: form.initial_weight ? Number(form.initial_weight) : null,
+      current_weight: form.current_weight ? Number(form.current_weight) : null,
       target_weight: form.target_weight ? Number(form.target_weight) : null,
       height: form.height ? Number(form.height) : null,
       status: form.status,
@@ -114,11 +123,33 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
           <Input id="em-dob" type="date" value={form.date_of_birth} onChange={(e) => set("date_of_birth")(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="em-start">Starting weight (kg)</Label>
+          <Label>Relationship status</Label>
+          <Select value={form.marital_status} onValueChange={set("marital_status")}>
+            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="single">Single</SelectItem>
+              <SelectItem value="married">Married</SelectItem>
+              <SelectItem value="prefer_not_say">Prefer not to say</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {form.marital_status === "married" && (
+          <div className="space-y-2">
+            <Label htmlFor="em-anniv">Anniversary date</Label>
+            <Input id="em-anniv" type="date" value={form.anniversary_date} onChange={(e) => set("anniversary_date")(e.target.value)} />
+          </div>
+        )}
+        <div className="space-y-2">
+          <Label htmlFor="em-start">Starting bait (kg)</Label>
           <Input id="em-start" inputMode="decimal" value={form.initial_weight} onChange={(e) => set("initial_weight")(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="em-target">Target weight (kg)</Label>
+          <Label htmlFor="em-current">Current bait (kg)</Label>
+          <Input id="em-current" inputMode="decimal" value={form.current_weight} onChange={(e) => set("current_weight")(e.target.value)} />
+          <p className="text-xs text-muted-foreground">Normally updated automatically by the latest recorded reading.</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="em-target">Target bait (kg)</Label>
           <Input id="em-target" inputMode="decimal" value={form.target_weight} onChange={(e) => set("target_weight")(e.target.value)} />
         </div>
         <div className="space-y-2">

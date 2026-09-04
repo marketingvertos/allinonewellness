@@ -18,9 +18,14 @@ import {
   useBodyMeasurements,
   useUpdateWellnessMember,
   useWellnessMember,
+  useDeleteWeightEntry,
+  useDeleteBodyMeasurement,
+  useIsWellnessManager,
+  BodyMeasurement,
 } from "@/hooks/useWellness";
 import { MemberDashboard } from "./MemberDashboard";
 import { RecordMeasurementDialog } from "./RecordMeasurementDialog";
+import { EditWeightEntryDialog, WeightEntry } from "./EditWeightEntryDialog";
 import { AchievementsPanel } from "./AchievementsPanel";
 import { ReferrerPicker } from "./ReferrerPicker";
 import { BatchPicker } from "./BatchPicker";
@@ -38,6 +43,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/formatters";
+import { Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { statusLabel, statusVariant } from "./status";
 
 interface Props {
@@ -67,6 +83,9 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const adjustServings = useAdjustServings();
   const checkIn = useCheckIn();
   const addWeight = useAddWeight();
+  const deleteWeight = useDeleteWeightEntry();
+  const deleteMeasurement = useDeleteBodyMeasurement();
+  const isManager = useIsWellnessManager();
   const addNote = useAddMemberNote();
 
   const [planId, setPlanId] = useState("");
@@ -74,6 +93,10 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [note, setNote] = useState("");
   const [dob, setDob] = useState<string | null>(null);
   const [measureOpen, setMeasureOpen] = useState(false);
+  const [editMeasurement, setEditMeasurement] = useState<BodyMeasurement | null>(null);
+  const [editWeight, setEditWeight] = useState<WeightEntry | null>(null);
+  const [weightDate, setWeightDate] = useState(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }));
+  const [confirmDelete, setConfirmDelete] = useState<{ kind: "weight" | "measurement"; id: string } | null>(null);
   const [referrerDraft, setReferrerDraft] = useState<string | null | undefined>(undefined);
   const [trialOpen, setTrialOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
@@ -348,27 +371,34 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           </TabsContent>
 
           <TabsContent value="progress" className="space-y-4 pt-4">
-            <div className="flex items-end gap-2">
+            <div className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-2">
-                <Label htmlFor="wm-new-weight">Record weight (kg)</Label>
+                <Label htmlFor="wm-new-weight">Record bait (kg)</Label>
                 <Input id="wm-new-weight" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
               </div>
+              <div className="space-y-2 sm:w-44">
+                <Label htmlFor="wm-new-weight-date">Date</Label>
+                <Input id="wm-new-weight-date" type="date" value={weightDate} onChange={(e) => setWeightDate(e.target.value)} />
+              </div>
               <Button
-                disabled={!weight || !user}
+                className="w-full sm:w-auto"
+                disabled={!weight || !weightDate || !user}
                 onClick={async () => {
                   if (!user) return;
                   await addWeight.mutateAsync({
                     member_id: member.id,
                     weight: Number(weight),
-                    recorded_date: new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }),
+                    recorded_date: weightDate,
                     recorded_by: user.id,
                   });
                   setWeight("");
+                  setWeightDate(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }));
                 }}
               >
                 Save
               </Button>
             </div>
+
             <div className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium">Body measurements</p>
@@ -376,7 +406,14 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   {measurements?.length ? `${measurements.length} recorded` : "None recorded yet"}
                 </p>
               </div>
-              <Button variant="outline" className="w-full sm:w-auto" onClick={() => setMeasureOpen(true)}>
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  setEditMeasurement(null);
+                  setMeasureOpen(true);
+                }}
+              >
                 Record measurements
               </Button>
             </div>
@@ -386,10 +423,37 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                 {[...measurements].reverse().map((m) => (
                   <div key={m.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
                     <span>{formatDate(m.recorded_date)}</span>
-                    <span className="text-right text-xs text-muted-foreground sm:text-sm">
-                      {[m.waist && `W ${m.waist}`, m.hip && `H ${m.hip}`, m.chest && `C ${m.chest}`,
-                        m.body_fat_percentage && `Fat ${m.body_fat_percentage}%`].filter(Boolean).join(" · ")}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-right text-xs text-muted-foreground sm:text-sm">
+                        {[m.waist && `W ${m.waist}`, m.hip && `H ${m.hip}`, m.chest && `C ${m.chest}`,
+                          m.body_fat_percentage && `Fat ${m.body_fat_percentage}%`].filter(Boolean).join(" · ")}
+                      </span>
+                      {isManager && (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            aria-label="Edit measurements"
+                            onClick={() => {
+                              setEditMeasurement(m);
+                              setMeasureOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive"
+                            aria-label="Delete measurements"
+                            onClick={() => setConfirmDelete({ kind: "measurement", id: m.id })}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -398,14 +462,43 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
             {weights?.length ? (
               <div className="space-y-2">
                 {[...weights].reverse().map((w) => (
-                  <div key={w.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                  <div key={w.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
                     <span>{formatDate(w.recorded_date)}</span>
-                    <span className="font-medium">{w.weight} kg</span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">{w.weight} kg</span>
+                      {isManager && (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            aria-label="Edit reading"
+                            onClick={() => setEditWeight(w)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive"
+                            aria-label="Delete reading"
+                            onClick={() => setConfirmDelete({ kind: "weight", id: w.id })}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No weight entries yet.</p>
+              <p className="text-sm text-muted-foreground">No bait readings yet.</p>
+            )}
+            {!isManager && (
+              <p className="text-xs text-muted-foreground">
+                Only admins and managers can correct or remove existing records.
+              </p>
             )}
           </TabsContent>
 
@@ -438,7 +531,47 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
         </Tabs>
         </div>
 
-        <RecordMeasurementDialog memberId={member.id} open={measureOpen} onOpenChange={setMeasureOpen} />
+        <RecordMeasurementDialog
+        memberId={member.id}
+        entry={editMeasurement}
+        open={measureOpen}
+        onOpenChange={(o) => {
+          setMeasureOpen(o);
+          if (!o) setEditMeasurement(null);
+        }}
+      />
+      <EditWeightEntryDialog
+        memberId={member.id}
+        entry={editWeight}
+        open={!!editWeight}
+        onOpenChange={(o) => !o && setEditWeight(null)}
+      />
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this record?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the record permanently and recalculates the member's progress and badges.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!confirmDelete) return;
+                if (confirmDelete.kind === "weight") {
+                  await deleteWeight.mutateAsync({ id: confirmDelete.id, member_id: member.id });
+                } else {
+                  await deleteMeasurement.mutateAsync(confirmDelete.id);
+                }
+                setConfirmDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
         <StartTrialDialog member={member} open={trialOpen} onOpenChange={setTrialOpen} />
         {activeMembership && (
           <>

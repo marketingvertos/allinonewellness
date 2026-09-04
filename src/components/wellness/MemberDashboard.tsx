@@ -17,7 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatters";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowDownRight, ArrowUpRight, Cake, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Cake, Heart, Minus } from "lucide-react";
 
 interface Props {
   member: WellnessMember;
@@ -107,6 +107,7 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
     : [];
 
   const memberAge = age(member.date_of_birth);
+  const anniversaryYears = age(member.anniversary_date ?? null);
 
   const tiles = [
     { label: "Current weight", value: current != null ? `${current} kg` : "—", sub: start != null ? `Start ${start} kg` : "" },
@@ -141,11 +142,20 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
             </p>
           </div>
         </div>
-        {(member.date_of_birth || member.goal) && (
+        {(member.date_of_birth || member.goal || member.marital_status) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {member.date_of_birth && (
               <Badge variant="outline" className="gap-1">
                 <Cake className="h-3 w-3" /> {formatDate(member.date_of_birth)}
+              </Badge>
+            )}
+            {member.marital_status && (
+              <Badge variant="outline" className="gap-1 capitalize">
+                <Heart className="h-3 w-3" />
+                {member.marital_status.replace(/_/g, " ")}
+                {member.marital_status === "married" && member.anniversary_date
+                  ? ` · ${formatDate(member.anniversary_date)}${anniversaryYears != null ? ` (${anniversaryYears} yrs)` : ""}`
+                  : ""}
               </Badge>
             )}
             {member.goal && <Badge variant="secondary" className="capitalize">{member.goal.replace(/_/g, " ")}</Badge>}

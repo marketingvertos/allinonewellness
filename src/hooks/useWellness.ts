@@ -32,6 +32,8 @@ export interface WellnessMember {
   email: string | null;
   gender: string | null;
   date_of_birth: string | null;
+  marital_status?: string | null;
+  anniversary_date?: string | null;
   joining_date: string;
   status: WellnessStatus;
   goal: string | null;
@@ -97,6 +99,24 @@ function useToastedMutation() {
       toast({ title: "Something went wrong", description: getErrorMessage(error), variant: "destructive" }),
     success: (title: string) => toast({ title }),
   };
+}
+
+/* -------------------------------- Roles -------------------------------- */
+
+/** True when the signed-in user is an admin or manager (can correct/delete records). */
+export function useIsWellnessManager() {
+  const { data } = useQuery({
+    queryKey: ["wellness-manager-role"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (!uid) return false;
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
+      return (roles ?? []).some((r) => r.role === "admin" || r.role === "manager");
+    },
+  });
+  return data ?? false;
 }
 
 /* ------------------------------- Members ------------------------------- */
@@ -872,7 +892,110 @@ export function useAddBodyMeasurement() {
   });
 }
 
-/* ------------------------------ Birthdays ------------------------------ */
+/** Recomputes a member's current weight from the latest remaining reading. */
+async function syncCurrentWeight(memberId: string) {
+  const { data } = await supabase
+    .from("weight_tracking")
+    .select("weight")
+    .eq("member_id", memberId)
+    .order("recorded_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const latest = (data as { weight: number }[] | null)?.[0]?.weight ?? null;
+  if (latest != null) {
+    await supabase.from("wellness_members").update({ current_weight: latest } as never).eq("id", memberId);
+    return;
+  }
+  const { data: member } = await supabase
+    .from("wellness_members")
+    .select("initial_weight")
+    .eq("id", memberId)
+    .maybeSingle();
+  await supabase
+    .from("wellness_members")
+    .update({ current_weight: (member as { initial_weight: number | null } | null)?.initial_weight ?? null } as never)
+    .eq("id", memberId);
+}
+
+function useProgressInvalidation() {
+  const qc = useQueryClient();
+  return () => {
+    qc.invalidateQueries({ queryKey: ["weight-tracking"] });
+    qc.invalidateQueries({ queryKey: ["body-measurements"] });
+    qc.invalidateQueries({ queryKey: ["wellness-members"] });
+    qc.invalidateQueries({ queryKey: ["wellness-member"] });
+    qc.invalidateQueries({ queryKey: ["member-achievements"] });
+  };
+}
+
+export function useUpdateWeightEntry() {
+  const t = useToastedMutation();
+  const invalidate = useProgressInvalidation();
+  return useMutation({
+    mutationFn: async (entry: { id: string; member_id: string; weight: number; recorded_date: string; notes?: string | null }) => {
+      const { id, member_id, ...updates } = entry;
+      const { error } = await supabase.from("weight_tracking").update(updates as never).eq("id", id);
+      if (error) throw error;
+      await syncCurrentWeight(member_id);
+    },
+    onSuccess: () => {
+      invalidate();
+      t.success("Reading updated");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useDeleteWeightEntry() {
+  const t = useToastedMutation();
+  const invalidate = useProgressInvalidation();
+  return useMutation({
+    mutationFn: async ({ id, member_id }: { id: string; member_id: string }) => {
+      const { error } = await supabase.from("weight_tracking").delete().eq("id", id);
+      if (error) throw error;
+      await syncCurrentWeight(member_id);
+    },
+    onSuccess: () => {
+      invalidate();
+      t.success("Reading deleted");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useUpdateBodyMeasurement() {
+  const t = useToastedMutation();
+  const invalidate = useProgressInvalidation();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Record<string, unknown>) => {
+      const { error } = await supabase.from("body_measurements").update(updates as never).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidate();
+      t.success("Measurements updated");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useDeleteBodyMeasurement() {
+  const t = useToastedMutation();
+  const invalidate = useProgressInvalidation();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("body_measurements").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidate();
+      t.success("Measurements deleted");
+    },
+    onError: t.onError,
+  });
+}
+
+/* ------------------------------ Celebrations ------------------------------ */
 
 export interface BirthdayEntry {
   id: string;
@@ -884,39 +1007,57 @@ export interface BirthdayEntry {
   turningAge: number;
 }
 
-export function useUpcomingBirthdays(windowDays = 30) {
+export interface CelebrationEntry extends BirthdayEntry {
+  kind: "birthday" | "anniversary";
+  years: number;
+}
+
+export function useUpcomingCelebrations(windowDays = 30) {
   return useQuery({
-    queryKey: ["wellness-birthdays", windowDays],
-    queryFn: async (): Promise<BirthdayEntry[]> => {
+    queryKey: ["wellness-celebrations", windowDays],
+    queryFn: async (): Promise<CelebrationEntry[]> => {
       const { data, error } = await supabase
         .from("wellness_members")
-        .select("id, full_name, mobile_number, date_of_birth")
-        .not("date_of_birth", "is", null);
+        .select("id, full_name, mobile_number, date_of_birth, anniversary_date")
+        .eq("is_guest", false);
       if (error) throw error;
 
       const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       const today = new Date(`${todayStr}T00:00:00`);
 
-      return (data ?? [])
-        .map((m) => {
-          const dob = new Date(`${m.date_of_birth as string}T00:00:00`);
-          let next = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
-          if (next < today) next = new Date(today.getFullYear() + 1, dob.getMonth(), dob.getDate());
-          const daysAway = Math.round((next.getTime() - today.getTime()) / 86400000);
-          return {
-            id: m.id as string,
-            full_name: m.full_name as string,
-            mobile_number: m.mobile_number as string,
-            date_of_birth: m.date_of_birth as string,
-            nextDate: next,
-            daysAway,
-            turningAge: next.getFullYear() - dob.getFullYear(),
-          };
-        })
-        .filter((b) => b.daysAway <= windowDays)
-        .sort((a, b) => a.daysAway - b.daysAway);
+      const build = (m: Record<string, unknown>, dateStr: string, kind: "birthday" | "anniversary"): CelebrationEntry => {
+        const src = new Date(`${dateStr}T00:00:00`);
+        let next = new Date(today.getFullYear(), src.getMonth(), src.getDate());
+        if (next < today) next = new Date(today.getFullYear() + 1, src.getMonth(), src.getDate());
+        const years = next.getFullYear() - src.getFullYear();
+        return {
+          id: `${m.id as string}-${kind}`,
+          full_name: m.full_name as string,
+          mobile_number: m.mobile_number as string,
+          date_of_birth: dateStr,
+          nextDate: next,
+          daysAway: Math.round((next.getTime() - today.getTime()) / 86400000),
+          turningAge: years,
+          kind,
+          years,
+        };
+      };
+
+      const entries: CelebrationEntry[] = [];
+      for (const m of data ?? []) {
+        const row = m as Record<string, unknown>;
+        if (row.date_of_birth) entries.push(build(row, row.date_of_birth as string, "birthday"));
+        if (row.anniversary_date) entries.push(build(row, row.anniversary_date as string, "anniversary"));
+      }
+      return entries.filter((e) => e.daysAway <= windowDays).sort((a, b) => a.daysAway - b.daysAway);
     },
   });
+}
+
+/** Kept for compatibility: birthdays only. */
+export function useUpcomingBirthdays(windowDays = 30) {
+  const q = useUpcomingCelebrations(windowDays);
+  return { ...q, data: q.data?.filter((e) => e.kind === "birthday") };
 }
 
 /* --------------------- Check-in with optional weight --------------------- */
