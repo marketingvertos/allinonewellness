@@ -101,6 +101,24 @@ function useToastedMutation() {
   };
 }
 
+/* -------------------------------- Roles -------------------------------- */
+
+/** True when the signed-in user is an admin or manager (can correct/delete records). */
+export function useIsWellnessManager() {
+  const { data } = useQuery({
+    queryKey: ["wellness-manager-role"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (!uid) return false;
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
+      return (roles ?? []).some((r) => r.role === "admin" || r.role === "manager");
+    },
+  });
+  return data ?? false;
+}
+
 /* ------------------------------- Members ------------------------------- */
 
 export function useWellnessMembers(search?: string, status?: WellnessStatus | "all", categoryId?: string | "all") {
