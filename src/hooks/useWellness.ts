@@ -1677,10 +1677,10 @@ export function useStartGuestTrial() {
         member_id: (member as { id: string }).id,
         start_date: args.start_date,
         duration_days: duration,
-        end_date: end.toLocaleDateString("en-CA"),
         status: "active",
         created_by: args.created_by,
       } as never);
+
       if (e2) throw e2;
     },
     onSuccess: () => {
