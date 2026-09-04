@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   WellnessMember,
@@ -78,6 +78,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [trialOpen, setTrialOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
+
+  // Clear any pending referrer selection when the panel switches member.
+  useEffect(() => {
+    setReferrerDraft(undefined);
+  }, [memberId]);
 
   if (!member) return null;
 
