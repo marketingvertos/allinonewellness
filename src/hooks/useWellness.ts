@@ -989,39 +989,57 @@ export interface BirthdayEntry {
   turningAge: number;
 }
 
-export function useUpcomingBirthdays(windowDays = 30) {
+export interface CelebrationEntry extends BirthdayEntry {
+  kind: "birthday" | "anniversary";
+  years: number;
+}
+
+export function useUpcomingCelebrations(windowDays = 30) {
   return useQuery({
-    queryKey: ["wellness-birthdays", windowDays],
-    queryFn: async (): Promise<BirthdayEntry[]> => {
+    queryKey: ["wellness-celebrations", windowDays],
+    queryFn: async (): Promise<CelebrationEntry[]> => {
       const { data, error } = await supabase
         .from("wellness_members")
-        .select("id, full_name, mobile_number, date_of_birth")
-        .not("date_of_birth", "is", null);
+        .select("id, full_name, mobile_number, date_of_birth, anniversary_date")
+        .eq("is_guest", false);
       if (error) throw error;
 
       const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       const today = new Date(`${todayStr}T00:00:00`);
 
-      return (data ?? [])
-        .map((m) => {
-          const dob = new Date(`${m.date_of_birth as string}T00:00:00`);
-          let next = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
-          if (next < today) next = new Date(today.getFullYear() + 1, dob.getMonth(), dob.getDate());
-          const daysAway = Math.round((next.getTime() - today.getTime()) / 86400000);
-          return {
-            id: m.id as string,
-            full_name: m.full_name as string,
-            mobile_number: m.mobile_number as string,
-            date_of_birth: m.date_of_birth as string,
-            nextDate: next,
-            daysAway,
-            turningAge: next.getFullYear() - dob.getFullYear(),
-          };
-        })
-        .filter((b) => b.daysAway <= windowDays)
-        .sort((a, b) => a.daysAway - b.daysAway);
+      const build = (m: Record<string, unknown>, dateStr: string, kind: "birthday" | "anniversary"): CelebrationEntry => {
+        const src = new Date(`${dateStr}T00:00:00`);
+        let next = new Date(today.getFullYear(), src.getMonth(), src.getDate());
+        if (next < today) next = new Date(today.getFullYear() + 1, src.getMonth(), src.getDate());
+        const years = next.getFullYear() - src.getFullYear();
+        return {
+          id: `${m.id as string}-${kind}`,
+          full_name: m.full_name as string,
+          mobile_number: m.mobile_number as string,
+          date_of_birth: dateStr,
+          nextDate: next,
+          daysAway: Math.round((next.getTime() - today.getTime()) / 86400000),
+          turningAge: years,
+          kind,
+          years,
+        };
+      };
+
+      const entries: CelebrationEntry[] = [];
+      for (const m of data ?? []) {
+        const row = m as Record<string, unknown>;
+        if (row.date_of_birth) entries.push(build(row, row.date_of_birth as string, "birthday"));
+        if (row.anniversary_date) entries.push(build(row, row.anniversary_date as string, "anniversary"));
+      }
+      return entries.filter((e) => e.daysAway <= windowDays).sort((a, b) => a.daysAway - b.daysAway);
     },
   });
+}
+
+/** Kept for compatibility: birthdays only. */
+export function useUpcomingBirthdays(windowDays = 30) {
+  const q = useUpcomingCelebrations(windowDays);
+  return { ...q, data: q.data?.filter((e) => e.kind === "birthday") };
 }
 
 /* --------------------- Check-in with optional weight --------------------- */
