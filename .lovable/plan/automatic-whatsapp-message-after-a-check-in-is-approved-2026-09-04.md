@@ -5,17 +5,17 @@ Right now an approved check-in already drops an item into the notification queue
 ## What you get
 
 1. **Message on approval** — the moment the team approves a check-in, the member receives a WhatsApp greeting with:
-   - their name and today's date
-   - the weight they recorded today and the change since their starting weight
-   - servings used today and servings left in their plan
-   - plan validity date
+  - their name and today's date
+  - the weight they recorded today and the change since their starting weight
+  - servings used today and servings left in their plan
+  - plan validity date
 2. **Two more automatic reminders** using the same numbers: a low-balance nudge (5 / 3 / 1 servings left) and a plan-expiry reminder — these queues already exist, they just get proper text.
 3. **Editable text** on the Notifications page, plus the approved template name and its variable order so the same message can go out as a Meta-approved template once WhatsApp approves it.
 4. **Manual "Run now"** on the Notifications page stays, so you can push the queue without waiting for the 10-minute cycle.
 
-## Template to submit for approval
+## Template to submit for approval  
 
-Name: `checkin_confirmation` — Category: **Utility** — Language: English
+Name: `checkin_confirmation` — Category: **Utility** — Language: English  (got approved )
 
 ```text
 Hi {{1}}, your attendance at All In One Wellness on {{2}} is confirmed.

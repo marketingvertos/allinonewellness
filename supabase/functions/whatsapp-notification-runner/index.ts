@@ -28,6 +28,32 @@ function render(tpl: string, vars: Record<string, string>): string {
   return tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, k: string) => vars[k] ?? "");
 }
 
+/** 2026-09-04 -> 04 Sep 2026 (IST) */
+function fmtDate(value: string | null | undefined): string {
+  if (!value) return "";
+  const d = new Date(value.length <= 10 ? `${value}T00:00:00+05:30` : value);
+  if (isNaN(d.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  }).format(d);
+}
+
+function fmtWeight(value: number | null | undefined): string {
+  return value === null || value === undefined ? "" : Number(value).toFixed(1);
+}
+
+/** signed change, e.g. "-7.1 kg" / "+1.4 kg" */
+function fmtChange(latest: number | null, start: number | null): string {
+  if (latest === null || start === null) return "";
+  const diff = Number(latest) - Number(start);
+  const sign = diff > 0 ? "+" : diff < 0 ? "-" : "";
+  return `${sign}${Math.abs(diff).toFixed(1)} kg`;
+}
+
+
 /** serving_balance_3 falls back to the serving_balance template. */
 function pickTemplate(
   templates: TemplateRow[],
@@ -78,7 +104,7 @@ Deno.serve(async (req) => {
     const memberIds = [...new Set(queue.map((q) => q.member_id))];
     const { data: memberRows } = await supabase
       .from("wellness_members")
-      .select("id, full_name, mobile_number")
+      .select("id, full_name, mobile_number, initial_weight, current_weight")
       .in("id", memberIds);
     const members = new Map(
       (memberRows || []).map((m) => [m.id, m]),
@@ -93,6 +119,23 @@ Deno.serve(async (req) => {
     for (const m of membershipRows || []) {
       if (!memberships.has(m.member_id)) memberships.set(m.member_id, m);
     }
+
+    // latest approved check-in weight per member (falls back to profile weight)
+    const { data: checkinRows } = await supabase
+      .from("wellness_checkin_requests")
+      .select("member_id, requested_weight, decided_at")
+      .in("member_id", memberIds)
+      .eq("status", "approved")
+      .not("requested_weight", "is", null)
+      .order("decided_at", { ascending: false })
+      .limit(200);
+    const latestWeights = new Map<string, number>();
+    for (const c of checkinRows || []) {
+      if (!latestWeights.has(c.member_id) && c.requested_weight !== null) {
+        latestWeights.set(c.member_id, Number(c.requested_weight));
+      }
+    }
+
 
     let sent = 0;
     let failed = 0;
@@ -125,15 +168,28 @@ Deno.serve(async (req) => {
 
       const tpl = pickTemplate(templates, item.trigger_key);
       const membership = memberships.get(item.member_id);
+      const latestWeight = latestWeights.get(item.member_id) ??
+        (member.current_weight !== null && member.current_weight !== undefined
+          ? Number(member.current_weight)
+          : null);
+      const startWeight = member.initial_weight !== null &&
+          member.initial_weight !== undefined
+        ? Number(member.initial_weight)
+        : null;
       const vars: Record<string, string> = {
         name: (member.full_name || "").split(" ")[0] || member.full_name || "",
         full_name: member.full_name || "",
         code: membership?.membership_code || "",
-        end_date: membership?.end_date || "",
+        end_date: fmtDate(membership?.end_date),
         remaining: String(membership?.remaining_servings ?? ""),
         servings: String(membership?.remaining_servings ?? ""),
-        date: new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }),
+        used_today: "1",
+        weight: fmtWeight(latestWeight),
+        start_weight: fmtWeight(startWeight),
+        weight_change: fmtChange(latestWeight, startWeight),
+        date: fmtDate(new Date().toISOString()),
       };
+
 
       const text = item.message?.trim() ||
         (tpl ? render(tpl.message_template, vars) : null);
