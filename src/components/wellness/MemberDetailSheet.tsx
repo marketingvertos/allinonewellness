@@ -45,9 +45,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-export function MemberDetailSheet({ member, open, onOpenChange }: Props) {
+export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Props) {
   const { user } = useAuth();
-  const memberId = member?.id;
+  const memberId = memberProp?.id;
+  const { data: liveMember } = useWellnessMember(memberId);
+  const member = liveMember ?? memberProp;
+
 
   const { data: plans } = useWellnessPlans();
   const { data: trials } = useMemberTrials(memberId);

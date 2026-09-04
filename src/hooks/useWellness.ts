@@ -130,7 +130,7 @@ export function useWellnessMember(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("wellness_members")
-        .select("*, wellness_batches(id, name)")
+        .select("*, wellness_batches(id, name), member_categories(id, name, direction)")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
