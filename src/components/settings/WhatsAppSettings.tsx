@@ -36,14 +36,43 @@ export function WhatsAppSettings() {
   const [testPhone, setTestPhone] = useState("");
   const [testMessage, setTestMessage] = useState("Test message from All In One Wellness.");
 
+  // Hydrate from the server only once (and again right after a save), so a
+  // background refresh never overwrites what is being typed.
+  const hydratedRef = useRef(false);
+  const [savedSnapshot, setSavedSnapshot] = useState<WhatsAppSettingsValues>(EMPTY);
+
   useEffect(() => {
-    if (data) setForm({ ...EMPTY, ...data });
+    if (!data || hydratedRef.current) return;
+    hydratedRef.current = true;
+    const next = { ...EMPTY, ...data };
+    setForm(next);
+    setSavedSnapshot(next);
   }, [data]);
+
+  const isDirty = useMemo(
+    () => (Object.keys(EMPTY) as (keyof WhatsAppSettingsValues)[]).some((k) => form[k] !== savedSnapshot[k]),
+    [form, savedSnapshot],
+  );
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`;
 
   const set = (key: keyof WhatsAppSettingsValues, value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  const handleSave = () =>
+    save.mutate(form, {
+      onSuccess: () => setSavedSnapshot(form),
+    });
 
   if (!isManager) {
     return (
