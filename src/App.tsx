@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
 
@@ -18,13 +18,19 @@ import WellnessBatches from "./pages/WellnessBatches";
 import WellnessTrials from "./pages/WellnessTrials";
 import WellnessNotifications from "./pages/WellnessNotifications";
 import { PortalLayout } from "./pages/portal/PortalLayout";
-import PortalAuth from "./pages/portal/PortalAuth";
 import PortalHome from "./pages/portal/PortalHome";
 import PortalCheckIn from "./pages/portal/PortalCheckIn";
 import PortalHistory from "./pages/portal/PortalHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+/** Legacy member login path — the unified /auth page handles both roles now. */
+function LegacyPortalAuthRedirect() {
+  const [params] = useSearchParams();
+  const next = params.get("next");
+  return <Navigate to={next ? `/auth?next=${encodeURIComponent(next)}` : "/auth"} replace />;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -59,7 +65,7 @@ const App = () => (
               <Route path="/wellness/batches" element={<Navigate to="/batches" replace />} />
               <Route path="/wellness/trials" element={<Navigate to="/trials" replace />} />
               <Route path="/wellness/notifications" element={<Navigate to="/notifications" replace />} />
-              <Route path="/portal/auth" element={<PortalAuth />} />
+              <Route path="/portal/auth" element={<LegacyPortalAuthRedirect />} />
               <Route element={<PortalLayout />}>
                 <Route path="/portal" element={<PortalHome />} />
                 <Route path="/portal/checkin" element={<PortalCheckIn />} />
