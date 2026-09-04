@@ -26,7 +26,8 @@ const signupSchema = loginSchema.extend({
 
 export default function Auth() {
   const { session, loading, signOut } = useAuth();
-  const { data: identity, isLoading: identityLoading } = useMemberIdentity();
+  const { data: identity, isLoading: identityLoading, isError: identityError, refetch: refetchIdentity } = useMemberIdentity();
+
   const [params, setParams] = useSearchParams();
   const { toast } = useToast();
 
