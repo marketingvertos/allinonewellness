@@ -373,7 +373,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <TabsContent value="progress" className="space-y-4 pt-4">
             <div className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-2">
-                <Label htmlFor="wm-new-weight">Record bait (kg)</Label>
+                <Label htmlFor="wm-new-weight">Record weight (kg)</Label>
                 <Input id="wm-new-weight" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
               </div>
               <div className="space-y-2 sm:w-44">
@@ -493,7 +493,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No bait readings yet.</p>
+              <p className="text-sm text-muted-foreground">No weight readings yet.</p>
             )}
             {!isManager && (
               <p className="text-xs text-muted-foreground">
