@@ -28,6 +28,32 @@ function render(tpl: string, vars: Record<string, string>): string {
   return tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, k: string) => vars[k] ?? "");
 }
 
+/** 2026-09-04 -> 04 Sep 2026 (IST) */
+function fmtDate(value: string | null | undefined): string {
+  if (!value) return "";
+  const d = new Date(value.length <= 10 ? `${value}T00:00:00+05:30` : value);
+  if (isNaN(d.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  }).format(d);
+}
+
+function fmtWeight(value: number | null | undefined): string {
+  return value === null || value === undefined ? "" : Number(value).toFixed(1);
+}
+
+/** signed change, e.g. "-7.1 kg" / "+1.4 kg" */
+function fmtChange(latest: number | null, start: number | null): string {
+  if (latest === null || start === null) return "";
+  const diff = Number(latest) - Number(start);
+  const sign = diff > 0 ? "+" : diff < 0 ? "-" : "";
+  return `${sign}${Math.abs(diff).toFixed(1)} kg`;
+}
+
+
 /** serving_balance_3 falls back to the serving_balance template. */
 function pickTemplate(
   templates: TemplateRow[],
