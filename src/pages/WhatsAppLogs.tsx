@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Play } from "lucide-react";
+import { Loader2, Play, RotateCcw } from "lucide-react";
 import {
   useNotificationQueue,
   useRunNotificationQueue,
   useWhatsAppApiLogs,
   useWhatsAppMessages,
+  useRetryWhatsAppMessage,
   useWhatsAppWebhookLogs,
 } from "@/hooks/useWhatsApp";
 
@@ -40,6 +41,7 @@ export default function WhatsAppLogs() {
   const { data: webhookLogs = [] } = useWhatsAppWebhookLogs();
   const { data: queue = [] } = useNotificationQueue();
   const run = useRunNotificationQueue();
+  const retry = useRetryWhatsAppMessage();
 
   return (
     <div className="space-y-6">
@@ -98,6 +100,24 @@ export default function WhatsAppLogs() {
                     {m.error_message && (
                       <p className="mt-1 text-xs text-destructive">{m.error_message}</p>
                     )}
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      {m.delivered_at && <span>Delivered {when(m.delivered_at)}</span>}
+                      {m.read_at && <span>Read {when(m.read_at)}</span>}
+                      {m.direction === "outbound" && !m.delivered_at && m.status === "sent" && (
+                        <span>Waiting for delivery receipt</span>
+                      )}
+                      {m.direction === "outbound" && m.status === "failed" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7"
+                          disabled={retry.isPending}
+                          onClick={() => retry.mutate(m)}
+                        >
+                          <RotateCcw className="mr-1 h-3 w-3" /> Retry
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </ScrollArea>
