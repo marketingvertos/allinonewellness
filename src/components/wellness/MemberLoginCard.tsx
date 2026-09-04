@@ -31,7 +31,7 @@ export function MemberLoginCard({ memberId, mobileNumber }: Props) {
   const copy = () => {
     if (!issued) return;
     navigator.clipboard.writeText(
-      `Login ID: ${issued.loginId}\nMobile: ${mobileNumber}\nPassword: ${issued.password}\nPortal: ${window.location.origin}/portal/auth`,
+      `Login ID: ${issued.loginId}\nMobile: ${mobileNumber}\nPassword: ${issued.password}\nPortal: ${window.location.origin}/auth`,
     );
     toast({ title: "Credentials copied" });
   };
@@ -49,7 +49,7 @@ export function MemberLoginCard({ memberId, mobileNumber }: Props) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        The member signs in at <span className="font-mono">/portal/auth</span> with their mobile number{" "}
+        The member signs in at <span className="font-mono">/auth</span> with their mobile number{" "}
         <span className="font-mono">{mobileNumber}</span>. They are asked to set their own password on first sign in.
       </p>
 

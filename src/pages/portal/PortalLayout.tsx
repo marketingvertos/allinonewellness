@@ -27,7 +27,7 @@ export function PortalLayout() {
 
   if (!session) {
     const next = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/portal/auth?next=${next}`} replace />;
+    return <Navigate to={`/auth?next=${next}`} replace />;
   }
 
   if (identity && !identity.memberId) {
