@@ -17,6 +17,7 @@ import {
   useWellnessPlans,
   useBodyMeasurements,
   useUpdateWellnessMember,
+  useWellnessMember,
 } from "@/hooks/useWellness";
 import { MemberDashboard } from "./MemberDashboard";
 import { RecordMeasurementDialog } from "./RecordMeasurementDialog";
