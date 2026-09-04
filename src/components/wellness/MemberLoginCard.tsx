@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, KeyRound, Loader2 } from "lucide-react";
+import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
 
 interface Props {
   memberId: string;
@@ -54,12 +55,12 @@ export function MemberLoginCard({ memberId, mobileNumber }: Props) {
       </p>
 
       <div className="space-y-2">
-        <Label htmlFor={`pw-${memberId}`}>Password (leave blank to auto-generate)</Label>
+        <Label htmlFor={`pw-${memberId}`}>Password (leave blank to use the default {DEFAULT_MEMBER_PASSWORD})</Label>
         <Input
           id={`pw-${memberId}`}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="At least 8 characters"
+          placeholder={DEFAULT_MEMBER_PASSWORD}
         />
       </div>
 

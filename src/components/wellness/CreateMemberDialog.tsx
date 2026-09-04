@@ -10,6 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ReferrerPicker } from "./ReferrerPicker";
 import { BatchPicker } from "./BatchPicker";
 import { MemberLoginCard } from "./MemberLoginCard";
+import { useManageMemberLogin } from "@/hooks/useMemberAccess";
+import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
+import { useToast } from "@/hooks/use-toast";
+import { Copy, Loader2 } from "lucide-react";
 
 const GOALS = [
   { value: "weight_loss", label: "Weight loss" },
@@ -29,6 +33,10 @@ interface Props {
 export function CreateMemberDialog({ open, onOpenChange }: Props) {
   const { user } = useAuth();
   const createMember = useCreateWellnessMember();
+  const manageLogin = useManageMemberLogin();
+  const { toast } = useToast();
+  const [creatingLogin, setCreatingLogin] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [referrerId, setReferrerId] = useState<string | null>(null);
   const [batchId, setBatchId] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: string; mobile: string } | null>(null);
@@ -50,6 +58,8 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
     setReferrerId(null);
     setBatchId(null);
     setCreated(null);
+    setLoginError(null);
+    setCreatingLogin(false);
     setForm({
       full_name: "",
       mobile_number: "",
@@ -86,7 +96,26 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       status: "lead",
       created_by: user.id,
     });
-    setCreated({ id: (member as { id: string }).id, mobile: form.mobile_number.trim() });
+    const memberId = (member as { id: string }).id;
+    const mobile = form.mobile_number.trim();
+    setCreated({ id: memberId, mobile });
+    setCreatingLogin(true);
+    setLoginError(null);
+    try {
+      await manageLogin.mutateAsync({ memberId, action: "create", password: DEFAULT_MEMBER_PASSWORD });
+    } catch (error) {
+      setLoginError((error as Error).message || "Could not create the portal login.");
+    } finally {
+      setCreatingLogin(false);
+    }
+  };
+
+  const copyCredentials = () => {
+    if (!created) return;
+    navigator.clipboard.writeText(
+      `Login ID: ${created.mobile}\nPassword: ${DEFAULT_MEMBER_PASSWORD}\nPortal: ${window.location.origin}/auth`,
+    );
+    toast({ title: "Credentials copied" });
   };
 
   const valid = form.full_name.trim().length > 1 && /^[0-9+\s-]{10,15}$/.test(form.mobile_number.trim());

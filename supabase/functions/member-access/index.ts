@@ -23,12 +23,8 @@ const normalizeMobile = (m: string) => {
 };
 const mobileToEmail = (m: string) => `${normalizeMobile(m)}@members.vertos.in`;
 
-const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-function generatePassword() {
-  const bytes = crypto.getRandomValues(new Uint8Array(10));
-  const core = Array.from(bytes, (b) => CHARS[b % CHARS.length]).join("");
-  return `Well@${core}`;
-}
+/** Default password handed to new members by the front desk. */
+const DEFAULT_MEMBER_PASSWORD = "Shri@@1008";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -76,7 +72,7 @@ Deno.serve(async (req) => {
     const rawPassword = typeof body?.password === "string" && body.password.trim() ? body.password.trim() : null;
     if (rawPassword && rawPassword.length < 8)
       return json({ error: "Password must be at least 8 characters." }, 400);
-    const password = rawPassword ?? generatePassword();
+    const password = rawPassword ?? DEFAULT_MEMBER_PASSWORD;
 
     if (action === "create") {
       if (member.user_id) return json({ error: "This member already has a portal login." }, 409);
