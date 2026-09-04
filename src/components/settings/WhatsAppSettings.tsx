@@ -193,7 +193,7 @@ export function WhatsAppSettings() {
             </div>
           </div>
 
-          <Button onClick={() => save.mutate(form)} disabled={save.isPending || isLoading}>
+          <Button onClick={handleSave} disabled={save.isPending || isLoading}>
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save settings
           </Button>
