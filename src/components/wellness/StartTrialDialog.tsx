@@ -46,14 +46,12 @@ export function StartTrialDialog({ member, open, onOpenChange }: Props) {
   const submit = async () => {
     if (!user) return;
     const duration = Math.max(1, Number(days) || 1);
-    const end = new Date(`${startDate}T00:00:00`);
-    end.setDate(end.getDate() + duration);
     await startTrial.mutateAsync({
       member_id: member.id,
       plan_id: planId === NO_PLAN ? null : planId,
       start_date: startDate,
       duration_days: duration,
-      end_date: end.toLocaleDateString("en-CA"),
+
       weight_at_start: weight ? Number(weight) : null,
       status: "active",
       created_by: user.id,
