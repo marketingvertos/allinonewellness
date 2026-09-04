@@ -32,6 +32,8 @@ export interface WellnessMember {
   email: string | null;
   gender: string | null;
   date_of_birth: string | null;
+  marital_status?: string | null;
+  anniversary_date?: string | null;
   joining_date: string;
   status: WellnessStatus;
   goal: string | null;
@@ -872,7 +874,110 @@ export function useAddBodyMeasurement() {
   });
 }
 
-/* ------------------------------ Birthdays ------------------------------ */
+/** Recomputes a member's current weight from the latest remaining reading. */
+async function syncCurrentWeight(memberId: string) {
+  const { data } = await supabase
+    .from("weight_tracking")
+    .select("weight")
+    .eq("member_id", memberId)
+    .order("recorded_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const latest = (data as { weight: number }[] | null)?.[0]?.weight ?? null;
+  if (latest != null) {
+    await supabase.from("wellness_members").update({ current_weight: latest } as never).eq("id", memberId);
+    return;
+  }
+  const { data: member } = await supabase
+    .from("wellness_members")
+    .select("initial_weight")
+    .eq("id", memberId)
+    .maybeSingle();
+  await supabase
+    .from("wellness_members")
+    .update({ current_weight: (member as { initial_weight: number | null } | null)?.initial_weight ?? null } as never)
+    .eq("id", memberId);
+}
+
+function useProgressInvalidation() {
+  const qc = useQueryClient();
+  return () => {
+    qc.invalidateQueries({ queryKey: ["weight-tracking"] });
+    qc.invalidateQueries({ queryKey: ["body-measurements"] });
+    qc.invalidateQueries({ queryKey: ["wellness-members"] });
+    qc.invalidateQueries({ queryKey: ["wellness-member"] });
+    qc.invalidateQueries({ queryKey: ["member-achievements"] });
+  };
+}
+
+export function useUpdateWeightEntry() {
+  const t = useToastedMutation();
+  const invalidate = useProgressInvalidation();
+  return useMutation({
+    mutationFn: async (entry: { id: string; member_id: string; weight: number; recorded_date: string; notes?: string | null }) => {
+      const { id, member_id, ...updates } = entry;
+      const { error } = await supabase.from("weight_tracking").update(updates as never).eq("id", id);
+      if (error) throw error;
+      await syncCurrentWeight(member_id);
+    },
+    onSuccess: () => {
+      invalidate();
+      t.success("Reading updated");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useDeleteWeightEntry() {
+  const t = useToastedMutation();
+  const invalidate = useProgressInvalidation();
+  return useMutation({
+    mutationFn: async ({ id, member_id }: { id: string; member_id: string }) => {
+      const { error } = await supabase.from("weight_tracking").delete().eq("id", id);
+      if (error) throw error;
+      await syncCurrentWeight(member_id);
+    },
+    onSuccess: () => {
+      invalidate();
+      t.success("Reading deleted");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useUpdateBodyMeasurement() {
+  const t = useToastedMutation();
+  const invalidate = useProgressInvalidation();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Record<string, unknown>) => {
+      const { error } = await supabase.from("body_measurements").update(updates as never).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidate();
+      t.success("Measurements updated");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useDeleteBodyMeasurement() {
+  const t = useToastedMutation();
+  const invalidate = useProgressInvalidation();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("body_measurements").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidate();
+      t.success("Measurements deleted");
+    },
+    onError: t.onError,
+  });
+}
+
+/* ------------------------------ Celebrations ------------------------------ */
 
 export interface BirthdayEntry {
   id: string;
