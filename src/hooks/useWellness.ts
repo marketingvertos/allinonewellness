@@ -1659,8 +1659,7 @@ export function useStartGuestTrial() {
       duration_days?: number;
     }) => {
       const duration = args.duration_days ?? 3;
-      const end = new Date(`${args.start_date}T00:00:00`);
-      end.setDate(end.getDate() + duration);
+
 
       const code = `GT-${Math.floor(100000 + Math.random() * 900000)}`;
       const { data: member, error } = await supabase
