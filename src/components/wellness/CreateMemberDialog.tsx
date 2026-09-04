@@ -68,6 +68,8 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       email: "",
       gender: "",
       date_of_birth: "",
+      marital_status: "",
+      anniversary_date: "",
       goal: "",
       initial_weight: "",
       target_weight: "",
