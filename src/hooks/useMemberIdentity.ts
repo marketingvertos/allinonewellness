@@ -14,19 +14,24 @@ export function useMemberIdentity() {
   return useQuery({
     queryKey: ["member-identity", user?.id],
     enabled: !!user,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
+    retry: 2,
     queryFn: async (): Promise<MemberIdentity> => {
-      const [{ data: roles }, { data: member }] = await Promise.all([
+      const [rolesRes, memberRes] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", user!.id),
         supabase.from("wellness_members").select("id, full_name").eq("user_id", user!.id).maybeSingle(),
       ]);
+      // A failed lookup must not be mistaken for "this account has no access".
+      if (rolesRes.error) throw rolesRes.error;
+      if (memberRes.error) throw memberRes.error;
       return {
-        isStaff: (roles?.length ?? 0) > 0,
-        memberId: member?.id ?? null,
-        memberName: member?.full_name ?? null,
+        isStaff: (rolesRes.data?.length ?? 0) > 0,
+        memberId: memberRes.data?.id ?? null,
+        memberName: memberRes.data?.full_name ?? null,
       };
     },
   });
+
 }
 
 /** 10-digit Indian mobile number -> deterministic credential address. */

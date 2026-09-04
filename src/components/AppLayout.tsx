@@ -6,11 +6,13 @@ import { AppSidebar } from "./AppSidebar";
 import { GlobalSearch } from "./GlobalSearch";
 import { ThemeToggle } from "./ThemeToggle";
 import { NotificationCenter } from "./NotificationCenter";
+import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+
 
 export function AppLayout() {
   const { session, loading } = useAuth();
-  const { data: identity, isLoading: identityLoading } = useMemberIdentity();
+  const { data: identity, isLoading: identityLoading, isError: identityError, refetch } = useMemberIdentity();
 
   if (loading || (session && identityLoading)) {
     return (
@@ -22,8 +24,25 @@ export function AppLayout() {
 
   if (!session) return <Navigate to="/auth" replace />;
 
+  if (identityError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="w-full max-w-sm space-y-4 text-center">
+          <h1 className="font-display text-2xl font-semibold">Couldn't check your access</h1>
+          <p className="text-sm text-muted-foreground">
+            We could not reach the centre to confirm your access. Please check your connection and try again.
+          </p>
+          <Button className="w-full" onClick={() => refetch()}>
+            Try again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Wellness members without a staff role belong in the member portal.
   if (identity && !identity.isStaff && identity.memberId) return <Navigate to="/portal" replace />;
+
 
   return (
     <SidebarProvider>

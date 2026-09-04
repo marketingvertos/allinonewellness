@@ -26,7 +26,8 @@ const signupSchema = loginSchema.extend({
 
 export default function Auth() {
   const { session, loading, signOut } = useAuth();
-  const { data: identity, isLoading: identityLoading } = useMemberIdentity();
+  const { data: identity, isLoading: identityLoading, isError: identityError, refetch: refetchIdentity } = useMemberIdentity();
+
   const [params, setParams] = useSearchParams();
   const { toast } = useToast();
 
@@ -54,6 +55,28 @@ export default function Auth() {
       </div>
     );
   }
+
+  if (session && identityError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="w-full max-w-sm space-y-4 text-center">
+          <BrandLogo className="mx-auto h-14 w-14" />
+          <h1 className="font-display text-2xl font-semibold">Couldn't check your access</h1>
+          <p className="text-sm text-muted-foreground">
+            We signed you in but could not reach the centre to confirm your access. Please check your connection and try
+            again.
+          </p>
+          <Button className="w-full" onClick={() => refetchIdentity()}>
+            Try again
+          </Button>
+          <Button variant="outline" className="w-full" onClick={signOut}>
+            Sign out
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
 
   if (session && identity) {
     if (identity.isStaff) return <Navigate to={next && next.startsWith("/") ? next : "/dashboard"} replace />;
