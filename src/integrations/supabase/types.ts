@@ -335,6 +335,30 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_credentials: {
+        Row: {
+          created_at: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: string | null
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
+        }
+        Relationships: []
+      }
       member_achievements: {
         Row: {
           achievement_id: string
@@ -1199,37 +1223,46 @@ export type Database = {
       }
       wellness_notification_log: {
         Row: {
+          attempts: number
           channel: string
           created_at: string
           error_message: string | null
           id: string
+          last_attempt_at: string | null
           member_id: string
           message: string | null
           sent_at: string | null
           status: string
           trigger_key: string
+          whatsapp_message_id: string | null
         }
         Insert: {
+          attempts?: number
           channel?: string
           created_at?: string
           error_message?: string | null
           id?: string
+          last_attempt_at?: string | null
           member_id: string
           message?: string | null
           sent_at?: string | null
           status?: string
           trigger_key: string
+          whatsapp_message_id?: string | null
         }
         Update: {
+          attempts?: number
           channel?: string
           created_at?: string
           error_message?: string | null
           id?: string
+          last_attempt_at?: string | null
           member_id?: string
           message?: string | null
           sent_at?: string | null
           status?: string
           trigger_key?: string
+          whatsapp_message_id?: string | null
         }
         Relationships: [
           {
@@ -1249,8 +1282,11 @@ export type Database = {
           created_by: string
           id: string
           message_template: string
+          template_language: string | null
+          template_name: string | null
           trigger_key: string
           updated_at: string
+          variables: Json
         }
         Insert: {
           active?: boolean
@@ -1259,8 +1295,11 @@ export type Database = {
           created_by: string
           id?: string
           message_template: string
+          template_language?: string | null
+          template_name?: string | null
           trigger_key: string
           updated_at?: string
+          variables?: Json
         }
         Update: {
           active?: boolean
@@ -1269,8 +1308,11 @@ export type Database = {
           created_by?: string
           id?: string
           message_template?: string
+          template_language?: string | null
+          template_name?: string | null
           trigger_key?: string
           updated_at?: string
+          variables?: Json
         }
         Relationships: []
       }
@@ -1375,6 +1417,218 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_api_logs: {
+        Row: {
+          action: string
+          created_at: string
+          error: string | null
+          function_name: string | null
+          http_status: number | null
+          id: string
+          message_id: string | null
+          ok: boolean
+          phone: string | null
+          provider_code: string | null
+          provider_message_id: string | null
+          request_summary: Json
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          error?: string | null
+          function_name?: string | null
+          http_status?: number | null
+          id?: string
+          message_id?: string | null
+          ok?: boolean
+          phone?: string | null
+          provider_code?: string | null
+          provider_message_id?: string | null
+          request_summary?: Json
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          error?: string | null
+          function_name?: string | null
+          http_status?: number | null
+          id?: string
+          message_id?: string | null
+          ok?: boolean
+          phone?: string | null
+          provider_code?: string | null
+          provider_message_id?: string | null
+          request_summary?: Json
+        }
+        Relationships: []
+      }
+      whatsapp_conversations: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          last_direction: string | null
+          last_message_at: string | null
+          last_message_preview: string | null
+          member_id: string | null
+          phone: string
+          status: string
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          last_direction?: string | null
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          member_id?: string | null
+          phone: string
+          status?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          last_direction?: string | null
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          member_id?: string | null
+          phone?: string
+          status?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversations_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_messages: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          delivered_at: string | null
+          direction: string
+          error_message: string | null
+          id: string
+          is_bot: boolean
+          member_id: string | null
+          message_content: string | null
+          message_type: string
+          phone: string | null
+          provider_message_id: string | null
+          read_at: string | null
+          retry_of_message_id: string | null
+          sent_by: string | null
+          source_module: string
+          status: string
+          template_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          direction: string
+          error_message?: string | null
+          id?: string
+          is_bot?: boolean
+          member_id?: string | null
+          message_content?: string | null
+          message_type?: string
+          phone?: string | null
+          provider_message_id?: string | null
+          read_at?: string | null
+          retry_of_message_id?: string | null
+          sent_by?: string | null
+          source_module?: string
+          status?: string
+          template_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          direction?: string
+          error_message?: string | null
+          id?: string
+          is_bot?: boolean
+          member_id?: string | null
+          message_content?: string | null
+          message_type?: string
+          phone?: string | null
+          provider_message_id?: string | null
+          read_at?: string | null
+          retry_of_message_id?: string | null
+          sent_by?: string | null
+          source_module?: string
+          status?: string
+          template_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_webhook_logs: {
+        Row: {
+          created_at: string
+          error: string | null
+          event_type: string
+          id: string
+          payload: Json | null
+          phone: string | null
+          processed_at: string | null
+          processing_status: string
+          provider_message_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          event_type: string
+          id?: string
+          payload?: Json | null
+          phone?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          provider_message_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          phone?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          provider_message_id?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

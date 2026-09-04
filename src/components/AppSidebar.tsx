@@ -12,6 +12,7 @@ import {
   Layers,
   Sparkles,
   Bell,
+  MessageSquare,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -36,6 +37,7 @@ const mainNav = [
   { title: "Trials", icon: Sparkles, to: "/trials", end: false },
   { title: "Batches", icon: Layers, to: "/batches", end: false },
   { title: "Notifications", icon: Bell, to: "/notifications", end: false },
+  { title: "WhatsApp", icon: MessageSquare, to: "/whatsapp", end: true },
   { title: "Achievements", icon: Trophy, to: "/achievements", end: false },
 ];
 

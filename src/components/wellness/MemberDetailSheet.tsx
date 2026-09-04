@@ -33,6 +33,7 @@ import { StartTrialDialog } from "./StartTrialDialog";
 import { RenewPlanDialog } from "./RenewPlanDialog";
 import { SwitchPlanDialog } from "./SwitchPlanDialog";
 import { MemberLoginCard } from "./MemberLoginCard";
+import { SendWhatsAppDialog } from "@/components/wellness/SendWhatsAppDialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -99,6 +100,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [confirmDelete, setConfirmDelete] = useState<{ kind: "weight" | "measurement"; id: string } | null>(null);
   const [referrerDraft, setReferrerDraft] = useState<string | null | undefined>(undefined);
   const [trialOpen, setTrialOpen] = useState(false);
+  const [whatsAppOpen, setWhatsAppOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
 
@@ -151,7 +153,18 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               Start trial
             </Button>
           )}
+          <Button variant="outline" onClick={() => setWhatsAppOpen(true)}>
+            Send WhatsApp
+          </Button>
         </div>
+
+        <SendWhatsAppDialog
+          memberId={member.id}
+          memberName={member.full_name}
+          mobileNumber={member.mobile_number}
+          open={whatsAppOpen}
+          onOpenChange={setWhatsAppOpen}
+        />
 
         <Tabs defaultValue="overview" className="mt-6">
           <TabsList className="flex w-full justify-start gap-1 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
