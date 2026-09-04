@@ -45,7 +45,6 @@ export default function Auth() {
   // Member state
   const [mobile, setMobile] = useState("");
   const [memberPassword, setMemberPassword] = useState("");
-  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
 
   if (loading || (session && identityLoading)) {
@@ -162,57 +161,9 @@ export default function Auth() {
     if (error) {
       toast({
         title: "Sign in failed",
-        description: "Check your mobile number and password, or activate your account first.",
+        description: "Check your mobile number and password, or contact the centre front desk.",
         variant: "destructive",
       });
-    }
-  };
-
-  const memberActivate = async () => {
-    setBusy(true);
-    try {
-      const digits = normalizeMobile(mobile);
-      const memberEmail = mobileToEmail(mobile);
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: memberEmail,
-        password: memberPassword,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: { account_type: "wellness_member", mobile_number: digits },
-        },
-      });
-
-      if (signUpError) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email: memberEmail, password: memberPassword });
-        if (signInError) throw signUpError;
-      }
-
-      const { data, error } = await supabase.rpc("claim_member_account", {
-        p_mobile: digits,
-        p_code: code.trim(),
-      } as never);
-      if (error) throw error;
-
-      const result = data as unknown as { status: string; message?: string };
-      if (result?.status !== "ok") {
-        await supabase.auth.signOut();
-        toast({
-          title: "Could not activate",
-          description: result?.message ?? "Please check the details with the front desk.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({ title: "Account activated", description: "You are signed in." });
-    } catch (error) {
-      toast({
-        title: "Activation failed",
-        description: sanitizeErrorMessage((error as { message?: string })?.message ?? ""),
-        variant: "destructive",
-      });
-    } finally {
-      setBusy(false);
     }
   };
 
