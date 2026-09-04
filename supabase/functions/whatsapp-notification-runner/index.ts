@@ -168,15 +168,28 @@ Deno.serve(async (req) => {
 
       const tpl = pickTemplate(templates, item.trigger_key);
       const membership = memberships.get(item.member_id);
+      const latestWeight = latestWeights.get(item.member_id) ??
+        (member.current_weight !== null && member.current_weight !== undefined
+          ? Number(member.current_weight)
+          : null);
+      const startWeight = member.initial_weight !== null &&
+          member.initial_weight !== undefined
+        ? Number(member.initial_weight)
+        : null;
       const vars: Record<string, string> = {
         name: (member.full_name || "").split(" ")[0] || member.full_name || "",
         full_name: member.full_name || "",
         code: membership?.membership_code || "",
-        end_date: membership?.end_date || "",
+        end_date: fmtDate(membership?.end_date),
         remaining: String(membership?.remaining_servings ?? ""),
         servings: String(membership?.remaining_servings ?? ""),
-        date: new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }),
+        used_today: "1",
+        weight: fmtWeight(latestWeight),
+        start_weight: fmtWeight(startWeight),
+        weight_change: fmtChange(latestWeight, startWeight),
+        date: fmtDate(new Date().toISOString()),
       };
+
 
       const text = item.message?.trim() ||
         (tpl ? render(tpl.message_template, vars) : null);
