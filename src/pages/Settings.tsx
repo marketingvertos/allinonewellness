@@ -6,7 +6,19 @@ import { NotificationSettings } from "@/components/settings/NotificationSettings
 import { ConnectorSettings } from "@/components/settings/ConnectorSettings";
 import { WhatsAppSettings } from "@/components/settings/WhatsAppSettings";
 
+const TABS = ["profile", "team", "notifications", "whatsapp", "connectors"] as const;
+
 export default function Settings() {
+  const [params, setParams] = useSearchParams();
+  const raw = params.get("tab") ?? "profile";
+  const tab = (TABS as readonly string[]).includes(raw) ? raw : "profile";
+
+  const setTab = (value: string) => {
+    const next = new URLSearchParams(params);
+    next.set("tab", value);
+    setParams(next, { replace: true });
+  };
+
   return (
     <div className="space-y-6">
       <div>
