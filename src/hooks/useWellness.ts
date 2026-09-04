@@ -1062,6 +1062,12 @@ export function useUpcomingBirthdays(windowDays = 30) {
 
 /* --------------------- Check-in with optional weight --------------------- */
 
+/** Nudge the WhatsApp queue so the confirmation goes out immediately (cron is the fallback). */
+function runNotificationsNow() {
+  void supabase.functions.invoke("whatsapp-notification-runner", { body: { source: "checkin" } }).catch(() => {});
+}
+
+
 export function useCheckInWithWeight() {
   const qc = useQueryClient();
   const { toast } = useToast();
