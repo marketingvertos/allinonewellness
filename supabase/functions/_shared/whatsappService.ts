@@ -97,6 +97,14 @@ export async function resolveConversation(
 }
 
 /** Records one provider API interaction. Never stores credentials. */
+/** Strips access tokens / secrets that providers echo back in URLs. */
+export function redactSecrets(text: string | null | undefined): string | null {
+  if (!text) return text ?? null;
+  return String(text)
+    .replace(/([?&](?:token|access_token|api_key|apikey)=)[^&\s)"']+/gi, "$1***")
+    .replace(/(Bearer\s+)[A-Za-z0-9._-]+/gi, "$1***");
+}
+
 export async function logApiCall(
   supabase: SupabaseClient,
   entry: {
@@ -124,7 +132,7 @@ export async function logApiCall(
         ? String(entry.providerCode)
         : null,
       provider_message_id: entry.providerMessageId ?? null,
-      error: entry.error ?? null,
+      error: redactSecrets(entry.error ?? null),
       request_summary: entry.summary ?? {},
     });
   } catch (e) {
@@ -220,7 +228,7 @@ export async function sendWhatsApp(
     outcome = {
       ok: false,
       providerMessageId: null,
-      error: e instanceof Error ? e.message : "Network error",
+      error: redactSecrets(e instanceof Error ? e.message : "Network error"),
       errorCode: null,
       errorDetails: null,
     };
@@ -240,7 +248,7 @@ export async function sendWhatsApp(
   let messageId: string | null = null;
   if (!meta.skipMessageRow) {
     const errorDetail = [
-      outcome.error,
+      redactSecrets(outcome.error),
       outcome.errorCode ? `code ${outcome.errorCode}` : null,
       outcome.errorDetails,
     ].filter(Boolean).join(" · ") || null;
@@ -257,7 +265,7 @@ export async function sendWhatsApp(
         source_module: meta.sourceModule,
         message_content: content,
         status: outcome.ok ? "sent" : "failed",
-        error_message: outcome.ok ? null : errorDetail,
+        error_message: outcome.ok ? null : redactSecrets(errorDetail),
         provider_message_id: outcome.providerMessageId,
         sent_by: meta.sentBy ?? null,
         is_bot: meta.isBot ?? false,

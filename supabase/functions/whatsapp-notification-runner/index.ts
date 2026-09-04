@@ -3,7 +3,7 @@
 
 import {
   corsHeaders,
-  isWachat,
+  validateConfig,
   json,
   loadWhatsAppConfig,
   serviceClient,
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
   try {
     const cfg = await loadWhatsAppConfig(supabase);
-    if (!cfg.apiKey || (isWachat(cfg) ? !cfg.vendorUid : !cfg.phoneNumberId)) {
+    if (!validateConfig(cfg).ok) {
       return json({ skipped: "not_configured", sent: 0, failed: 0 });
     }
     if (!cfg.automationEnabled) {

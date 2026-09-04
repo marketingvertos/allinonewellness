@@ -17,7 +17,11 @@ export function serviceClient(): SupabaseClient {
   );
 }
 
+export type WhatsAppProvider = "meta" | "wachat";
+
 export interface WhatsAppConfig {
+  /** Explicit provider choice made in Settings. */
+  provider: WhatsAppProvider;
   apiUrl: string;
   apiKey: string;
   phoneNumberId: string;
@@ -33,7 +37,8 @@ export interface WhatsAppConfig {
   automationEnabled: boolean;
 }
 
-const DEFAULT_API_URL = "https://graph.facebook.com/v21.0";
+export const META_DEFAULT_API_URL = "https://graph.facebook.com/v21.0";
+export const WACHAT_DEFAULT_API_URL = "https://panel.wachatsender.com/api/v1";
 
 export async function loadWhatsAppConfig(
   supabase: SupabaseClient,
@@ -51,15 +56,38 @@ export async function loadWhatsAppConfig(
   const pick = (dbKey: string, envKey: string) =>
     row[dbKey] || Deno.env.get(envKey) || "";
 
+  const apiUrlRaw = pick("whatsapp_api_url", "WHATSAPP_API_URL").replace(/\/+$/, "");
+  const vendorUid = pick("whatsapp_vendor_uid", "WACHATSENDER_VENDOR_UID");
+  const phoneNumberId = pick(
+    "whatsapp_phone_number_id",
+    "WHATSAPP_PHONE_NUMBER_ID",
+  );
+
+  // Explicit choice wins. Only fall back to inference for setups saved before
+  // the provider selector existed.
+  const stored = String(
+    pick("whatsapp_provider", "WHATSAPP_PROVIDER"),
+  ).toLowerCase();
+  let provider: WhatsAppProvider;
+  if (stored === "meta" || stored === "wachat") {
+    provider = stored;
+  } else if (/wachatsender/i.test(apiUrlRaw)) {
+    provider = "wachat";
+  } else if (/graph\.facebook\.com/i.test(apiUrlRaw) || phoneNumberId) {
+    provider = "meta";
+  } else {
+    provider = vendorUid ? "wachat" : "meta";
+  }
+
+  const apiUrl = apiUrlRaw ||
+    (provider === "wachat" ? WACHAT_DEFAULT_API_URL : META_DEFAULT_API_URL);
+
   return {
-    apiUrl:
-      (pick("whatsapp_api_url", "WHATSAPP_API_URL") || DEFAULT_API_URL).replace(
-        /\/+$/,
-        "",
-      ),
+    provider,
+    apiUrl,
     apiKey: pick("whatsapp_api_key", "WHATSAPP_API_KEY"),
-    phoneNumberId: pick("whatsapp_phone_number_id", "WHATSAPP_PHONE_NUMBER_ID"),
-    vendorUid: pick("whatsapp_vendor_uid", "WACHATSENDER_VENDOR_UID"),
+    phoneNumberId,
+    vendorUid,
     verifyToken: pick("whatsapp_verify_token", "WHATSAPP_VERIFY_TOKEN"),
     appSecret: pick("whatsapp_app_secret", "WHATSAPP_APP_SECRET"),
     defaultLanguage: row["whatsapp_default_language"] || "en",
@@ -67,6 +95,32 @@ export async function loadWhatsAppConfig(
       String(row["whatsapp_automation_enabled"] || "").toLowerCase() === "true",
   };
 }
+
+/** Checks the saved credentials make sense for the chosen provider. */
+export function validateConfig(
+  cfg: WhatsAppConfig,
+): { ok: boolean; problems: string[] } {
+  const problems: string[] = [];
+  if (!cfg.apiKey) problems.push("Access token is missing");
+
+  if (cfg.provider === "wachat") {
+    if (!cfg.vendorUid) problems.push("Vendor UID is missing");
+    if (/graph\.facebook\.com/i.test(cfg.apiUrl)) {
+      problems.push(
+        "The API base URL points at Meta (graph.facebook.com) but the provider is set to WachatSender",
+      );
+    }
+  } else {
+    if (!cfg.phoneNumberId) problems.push("Phone number ID is missing");
+    if (/wachatsender/i.test(cfg.apiUrl)) {
+      problems.push(
+        "The API base URL points at WachatSender but the provider is set to Meta Cloud API",
+      );
+    }
+  }
+  return { ok: problems.length === 0, problems };
+}
+
 
 /** Last 10 digits of a phone number — used to match numbers across formats. */
 export function last10(phone: string | null | undefined): string {
@@ -121,8 +175,9 @@ export interface SendInput {
 }
 
 export function isWachat(cfg: WhatsAppConfig): boolean {
-  return Boolean(cfg.vendorUid) || /wachatsender/i.test(cfg.apiUrl);
+  return cfg.provider === "wachat";
 }
+
 
 /** Builds the provider URL + JSON body for a send. */
 export function buildSendRequest(

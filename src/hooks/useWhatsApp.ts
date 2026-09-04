@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export interface WhatsAppSettingsValues {
+  whatsapp_provider: string;
   whatsapp_api_url: string;
   whatsapp_api_key: string;
   whatsapp_vendor_uid: string;
@@ -14,6 +15,7 @@ export interface WhatsAppSettingsValues {
 }
 
 export const WHATSAPP_KEYS: (keyof WhatsAppSettingsValues)[] = [
+  "whatsapp_provider",
   "whatsapp_api_url",
   "whatsapp_api_key",
   "whatsapp_vendor_uid",
@@ -111,21 +113,53 @@ export interface TestConnectionInput {
   template_variables?: string[];
 }
 
+export interface TestConnectionResult {
+  success: boolean;
+  not_configured?: boolean;
+  provider?: string;
+  api_url?: string;
+  http_status?: number | null;
+  message_id?: string | null;
+  provider_message_id?: string | null;
+  latency_ms?: number;
+  error?: string | null;
+  details?: string | null;
+}
+
+/** Edge functions may answer with a non-2xx status; still read the JSON body. */
+async function readFunctionError(error: unknown): Promise<TestConnectionResult | null> {
+  const ctx = (error as { context?: unknown })?.context;
+  if (ctx && typeof (ctx as Response).json === "function") {
+    try {
+      const body = await (ctx as Response).clone().json();
+      if (body && typeof body === "object") {
+        return { success: false, ...(body as Record<string, unknown>) } as TestConnectionResult;
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  return null;
+}
+
 export function useTestWhatsAppConnection() {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: TestConnectionInput) => {
+    mutationFn: async (input: TestConnectionInput): Promise<TestConnectionResult> => {
       const { data, error } = await supabase.functions.invoke("whatsapp-test-connection", {
         body: input,
       });
-      if (error) throw error;
-      return data as {
-        success: boolean;
-        error?: string | null;
-        details?: string | null;
-        raw?: string;
-        provider?: string;
-        http_status?: number;
-      };
+      if (error) {
+        const parsed = await readFunctionError(error);
+        if (parsed) return parsed;
+        return { success: false, error: errText(error) };
+      }
+      return data as TestConnectionResult;
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["whatsapp-messages"] });
+      qc.invalidateQueries({ queryKey: ["whatsapp-api-logs"] });
+      qc.invalidateQueries({ queryKey: ["whatsapp-conversations"] });
     },
     onSuccess: (data) => {
       if (data.success) toast.success("Test message sent successfully");
@@ -212,6 +246,35 @@ export function useSendWhatsApp() {
       qc.invalidateQueries({ queryKey: ["whatsapp-messages"] });
       toast.success("WhatsApp message sent");
     },
+    onError: (e) => toast.error(errText(e)),
+  });
+}
+
+export function useRetryWhatsAppMessage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (message: WhatsAppMessage) => {
+      const { data, error } = await supabase.functions.invoke("whatsapp-send", {
+        body: {
+          member_id: message.member_id,
+          phone: message.phone,
+          message_content: message.message_content,
+          template_name: message.template_name,
+          source_module: "manual",
+        },
+      });
+      if (error) throw error;
+      const result = data as { success: boolean; error?: string };
+      if (!result.success) throw new Error(result.error || "WhatsApp send failed");
+      return result;
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["whatsapp-messages"] });
+      qc.invalidateQueries({ queryKey: ["whatsapp-conversations"] });
+      qc.invalidateQueries({ queryKey: ["whatsapp-thread"] });
+      qc.invalidateQueries({ queryKey: ["whatsapp-api-logs"] });
+    },
+    onSuccess: () => toast.success("Message resent"),
     onError: (e) => toast.error(errText(e)),
   });
 }

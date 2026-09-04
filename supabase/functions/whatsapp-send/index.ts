@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   corsHeaders,
-  isWachat,
+  validateConfig,
   json,
   loadWhatsAppConfig,
   serviceClient,
@@ -81,9 +81,10 @@ Deno.serve(async (req) => {
     if (!to) return json({ error: "Invalid mobile number" }, 400);
 
     const cfg = await loadWhatsAppConfig(supabase);
-    if (!cfg.apiKey || (isWachat(cfg) ? !cfg.vendorUid : !cfg.phoneNumberId)) {
+    const check = validateConfig(cfg);
+    if (!check.ok) {
       return json({
-        error: "WhatsApp is not configured yet. Add the credentials in Settings → WhatsApp.",
+        error: `WhatsApp is not configured correctly: ${check.problems.join(". ")}. Fix it in Settings → WhatsApp.`,
         not_configured: true,
       }, 400);
     }
