@@ -1122,6 +1122,7 @@ export function useCheckInWithWeight() {
         return;
       }
       if (result.status === "ok") {
+        runNotificationsNow();
         toast({
           title: "Checked in",
           description:
