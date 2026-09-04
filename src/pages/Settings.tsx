@@ -26,7 +26,7 @@ export default function Settings() {
         <p className="text-muted-foreground mt-1">Manage your account, team and wellness centre preferences.</p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
+      <Tabs value={tab} onValueChange={setTab} className="space-y-6">
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
