@@ -33,7 +33,7 @@ function fmtDate(value: string | null | undefined): string {
   if (!value) return "";
   const d = new Date(value.length <= 10 ? `${value}T00:00:00+05:30` : value);
   if (isNaN(d.getTime())) return String(value);
-  return new Intl.DateTimeFormat("en-IN", {
+  return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
