@@ -10,6 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ReferrerPicker } from "./ReferrerPicker";
 import { BatchPicker } from "./BatchPicker";
 import { MemberLoginCard } from "./MemberLoginCard";
+import { useManageMemberLogin } from "@/hooks/useMemberAccess";
+import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
+import { useToast } from "@/hooks/use-toast";
+import { Copy, Loader2 } from "lucide-react";
 
 const GOALS = [
   { value: "weight_loss", label: "Weight loss" },
@@ -29,6 +33,10 @@ interface Props {
 export function CreateMemberDialog({ open, onOpenChange }: Props) {
   const { user } = useAuth();
   const createMember = useCreateWellnessMember();
+  const manageLogin = useManageMemberLogin();
+  const { toast } = useToast();
+  const [creatingLogin, setCreatingLogin] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [referrerId, setReferrerId] = useState<string | null>(null);
   const [batchId, setBatchId] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: string; mobile: string } | null>(null);
@@ -50,6 +58,8 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
     setReferrerId(null);
     setBatchId(null);
     setCreated(null);
+    setLoginError(null);
+    setCreatingLogin(false);
     setForm({
       full_name: "",
       mobile_number: "",
@@ -86,7 +96,26 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       status: "lead",
       created_by: user.id,
     });
-    setCreated({ id: (member as { id: string }).id, mobile: form.mobile_number.trim() });
+    const memberId = (member as { id: string }).id;
+    const mobile = form.mobile_number.trim();
+    setCreated({ id: memberId, mobile });
+    setCreatingLogin(true);
+    setLoginError(null);
+    try {
+      await manageLogin.mutateAsync({ memberId, action: "create", password: DEFAULT_MEMBER_PASSWORD });
+    } catch (error) {
+      setLoginError((error as Error).message || "Could not create the portal login.");
+    } finally {
+      setCreatingLogin(false);
+    }
+  };
+
+  const copyCredentials = () => {
+    if (!created) return;
+    navigator.clipboard.writeText(
+      `Login ID: ${created.mobile}\nPassword: ${DEFAULT_MEMBER_PASSWORD}\nPortal: ${window.location.origin}/auth`,
+    );
+    toast({ title: "Credentials copied" });
   };
 
   const valid = form.full_name.trim().length > 1 && /^[0-9+\s-]{10,15}$/.test(form.mobile_number.trim());
@@ -97,15 +126,41 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
         open={open}
         onOpenChange={close}
         title="Step 2 — portal login"
-        description="Create the member's login now, or skip and do it later from their profile."
+        description={
+          loginError
+            ? "The login could not be created automatically. You can create it manually below."
+            : "The member's portal login has been created. Share these details with them."
+        }
         footer={<Button onClick={() => close(false)}>Done</Button>}
       >
         <div className="rounded-lg border p-4">
-          <MemberLoginCard memberId={created.id} mobileNumber={created.mobile} />
+          {creatingLogin ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Creating portal login…
+            </div>
+          ) : loginError ? (
+            <div className="space-y-3">
+              <p className="text-sm text-destructive">{loginError}</p>
+              <MemberLoginCard memberId={created.id} mobileNumber={created.mobile} />
+            </div>
+          ) : (
+            <div className="space-y-3 text-sm">
+              <p className="font-medium">Portal login created</p>
+              <p className="text-xs text-muted-foreground">
+                The member is asked to set their own password the first time they sign in.
+              </p>
+              <p className="font-mono">Login ID / Mobile: {created.mobile}</p>
+              <p className="font-mono">Password: {DEFAULT_MEMBER_PASSWORD}</p>
+              <Button size="sm" variant="outline" onClick={copyCredentials}>
+                <Copy className="mr-2 h-4 w-4" /> Copy credentials
+              </Button>
+            </div>
+          )}
         </div>
       </ResponsiveDialog>
     );
   }
+
 
   return (
     <ResponsiveDialog

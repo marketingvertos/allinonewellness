@@ -6,7 +6,7 @@ import { useMemberIdentity, mobileToEmail, normalizeMobile } from "@/hooks/useMe
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowRight } from "lucide-react";
 import { z } from "zod";
@@ -45,7 +45,6 @@ export default function Auth() {
   // Member state
   const [mobile, setMobile] = useState("");
   const [memberPassword, setMemberPassword] = useState("");
-  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
 
   if (loading || (session && identityLoading)) {
@@ -162,57 +161,9 @@ export default function Auth() {
     if (error) {
       toast({
         title: "Sign in failed",
-        description: "Check your mobile number and password, or activate your account first.",
+        description: "Check your mobile number and password, or contact the centre front desk.",
         variant: "destructive",
       });
-    }
-  };
-
-  const memberActivate = async () => {
-    setBusy(true);
-    try {
-      const digits = normalizeMobile(mobile);
-      const memberEmail = mobileToEmail(mobile);
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: memberEmail,
-        password: memberPassword,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: { account_type: "wellness_member", mobile_number: digits },
-        },
-      });
-
-      if (signUpError) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email: memberEmail, password: memberPassword });
-        if (signInError) throw signUpError;
-      }
-
-      const { data, error } = await supabase.rpc("claim_member_account", {
-        p_mobile: digits,
-        p_code: code.trim(),
-      } as never);
-      if (error) throw error;
-
-      const result = data as unknown as { status: string; message?: string };
-      if (result?.status !== "ok") {
-        await supabase.auth.signOut();
-        toast({
-          title: "Could not activate",
-          description: result?.message ?? "Please check the details with the front desk.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({ title: "Account activated", description: "You are signed in." });
-    } catch (error) {
-      toast({
-        title: "Activation failed",
-        description: sanitizeErrorMessage((error as { message?: string })?.message ?? ""),
-        variant: "destructive",
-      });
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -296,36 +247,16 @@ export default function Auth() {
                 Check in with the centre QR and follow your plan.
               </p>
 
-              <Tabs defaultValue="signin">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="signin">Sign in</TabsTrigger>
-                  <TabsTrigger value="activate">Activate account</TabsTrigger>
-                </TabsList>
-                <TabsContent value="signin" className="space-y-4 pt-4">
-                  {memberFields("in")}
-                  <Button className="w-full" disabled={!memberValid || busy} onClick={memberSignIn}>
-                    {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Sign in
-                  </Button>
-                </TabsContent>
-                <TabsContent value="activate" className="space-y-4 pt-4">
-                  {memberFields("up")}
-                  <div className="space-y-2">
-                    <Label htmlFor="up-code">Activation code</Label>
-                    <Input
-                      id="up-code"
-                      placeholder="6-character code from the front desk"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Use the mobile number you gave at the centre along with the activation code the front desk shares with you.
-                  </p>
-                  <Button className="w-full" disabled={!memberValid || code.trim().length < 4 || busy} onClick={memberActivate}>
-                    {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Activate
-                  </Button>
-                </TabsContent>
-              </Tabs>
+              <div className="space-y-4">
+                {memberFields("in")}
+                <Button className="w-full" disabled={!memberValid || busy} onClick={memberSignIn}>
+                  {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Sign in
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Your login is created by the centre front desk. Ask them for your password if you do not have it yet.
+                </p>
+              </div>
+
             </>
           ) : (
             <>
