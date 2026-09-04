@@ -25,7 +25,14 @@ import PortalCheckIn from "./pages/portal/PortalCheckIn";
 import PortalHistory from "./pages/portal/PortalHistory";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Returning to a browser tab must never overwrite what someone is typing.
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 /** Legacy member login path — the unified /auth page handles both roles now. */
 function LegacyPortalAuthRedirect() {
