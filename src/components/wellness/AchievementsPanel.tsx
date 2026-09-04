@@ -69,6 +69,63 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
 
   return (
     <div className={compact ? "space-y-3" : "space-y-4"}>
+      {showHealth && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Trophy className="h-4 w-4" />
+              {healthCategory === "weight_gain" ? "My weight gain journey" : "My weight loss journey"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <Stat label="Starting" value={start != null ? `${start} kg` : "—"} />
+              <Stat label="Current" value={current != null ? `${current} kg` : "—"} />
+              <Stat
+                label={healthCategory === "weight_gain" ? "Gained" : "Lost"}
+                value={`${Math.max(0, delta)} kg`}
+                highlight
+              />
+            </div>
+
+            {health.next ? (
+              <div className="space-y-1">
+                <Progress value={health.pct} />
+                <p className="text-sm text-muted-foreground">
+                  {healthCategory === "weight_gain" ? "Gain" : "Lose"} {health.remaining} more kg to unlock{" "}
+                  <span className="font-medium text-foreground">{health.next.name}</span>
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">All milestones unlocked. Outstanding work!</p>
+            )}
+
+            <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5">
+              {health.visible.map((m, i) => (
+                <MilestoneBadge
+                  key={m.def.id}
+                  icon={m.def.icon}
+                  name={m.def.name}
+                  unlocked={m.unlocked}
+                  tier={tierForIndex(i, health.visible.length)}
+                  inProgress={health.next?.id === m.def.id}
+                  progressPct={health.pct}
+                  caption={
+                    unlockedAt.get(m.def.id) ? formatDate(unlockedAt.get(m.def.id)!.slice(0, 10)) : undefined
+                  }
+                />
+              ))}
+            </div>
+
+            {health.hiddenCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {health.hiddenCount} further milestone{health.hiddenCount === 1 ? "" : "s"} unlock automatically if the
+                goal is extended.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -131,63 +188,6 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
         </CardContent>
       </Card>
 
-      {showHealth && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Trophy className="h-4 w-4" />
-              {healthCategory === "weight_gain" ? "My weight gain journey" : "My weight loss journey"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <Stat label="Starting" value={start != null ? `${start} kg` : "—"} />
-              <Stat label="Current" value={current != null ? `${current} kg` : "—"} />
-              <Stat
-                label={healthCategory === "weight_gain" ? "Gained" : "Lost"}
-                value={`${Math.max(0, delta)} kg`}
-                highlight
-              />
-            </div>
-
-            {health.next ? (
-              <div className="space-y-1">
-                <Progress value={health.pct} />
-                <p className="text-sm text-muted-foreground">
-                  {healthCategory === "weight_gain" ? "Gain" : "Lose"} {health.remaining} more kg to unlock{" "}
-                  <span className="font-medium text-foreground">{health.next.name}</span>
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">All milestones unlocked. Outstanding work!</p>
-            )}
-
-            <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5">
-              {health.visible.map((m, i) => (
-                <MilestoneBadge
-                  key={m.def.id}
-                  icon={m.def.icon}
-                  name={m.def.name}
-                  unlocked={m.unlocked}
-                  tier={tierForIndex(i, health.visible.length)}
-                  inProgress={health.next?.id === m.def.id}
-                  progressPct={health.pct}
-                  caption={
-                    unlockedAt.get(m.def.id) ? formatDate(unlockedAt.get(m.def.id)!.slice(0, 10)) : undefined
-                  }
-                />
-              ))}
-            </div>
-
-            {health.hiddenCount > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {health.hiddenCount} further milestone{health.hiddenCount === 1 ? "" : "s"} unlock automatically if the
-                goal is extended.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
