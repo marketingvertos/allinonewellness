@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
     const memberIds = [...new Set(queue.map((q) => q.member_id))];
     const { data: memberRows } = await supabase
       .from("wellness_members")
-      .select("id, full_name, mobile_number")
+      .select("id, full_name, mobile_number, initial_weight, current_weight")
       .in("id", memberIds);
     const members = new Map(
       (memberRows || []).map((m) => [m.id, m]),
@@ -119,6 +119,23 @@ Deno.serve(async (req) => {
     for (const m of membershipRows || []) {
       if (!memberships.has(m.member_id)) memberships.set(m.member_id, m);
     }
+
+    // latest approved check-in weight per member (falls back to profile weight)
+    const { data: checkinRows } = await supabase
+      .from("wellness_checkin_requests")
+      .select("member_id, requested_weight, decided_at")
+      .in("member_id", memberIds)
+      .eq("status", "approved")
+      .not("requested_weight", "is", null)
+      .order("decided_at", { ascending: false })
+      .limit(200);
+    const latestWeights = new Map<string, number>();
+    for (const c of checkinRows || []) {
+      if (!latestWeights.has(c.member_id) && c.requested_weight !== null) {
+        latestWeights.set(c.member_id, Number(c.requested_weight));
+      }
+    }
+
 
     let sent = 0;
     let failed = 0;
