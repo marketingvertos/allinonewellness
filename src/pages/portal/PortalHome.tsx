@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
-import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory } from "@/hooks/useWellness";
+import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements } from "@/hooks/useWellness";
+import { bmiCategory } from "@/components/wellness/bodyEvalConstants";
 import { AchievementsPanel } from "@/components/wellness/AchievementsPanel";
 import { PinkCardPanel } from "@/components/wellness/PinkCardPanel";
 import { PortalPasswordPrompt } from "@/components/wellness/PortalPasswordPrompt";
@@ -18,6 +19,8 @@ export default function PortalHome() {
   const { data: memberships } = useMemberships(identity?.memberId ?? undefined);
   const { data: attendance } = useMemberAttendance(identity?.memberId ?? undefined);
   const { data: weights } = useWeightHistory(identity?.memberId ?? undefined);
+  const { data: evaluations } = useBodyMeasurements(identity?.memberId ?? undefined);
+  const latestEvaluation = evaluations?.length ? evaluations[evaluations.length - 1] : null;
 
   const active = (memberships ?? []).find((m) => m.status === "active" || m.status === "expiring_soon");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -91,6 +94,61 @@ export default function PortalHome() {
               <p className="text-muted-foreground">Target</p>
               <p className="font-semibold">{profile.target_weight ?? "—"} kg</p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {latestEvaluation && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Body evaluation</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Last recorded: {formatDate(latestEvaluation.recorded_date)}
+            </p>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {latestEvaluation.bmi != null && (
+                <div>
+                  <p className="text-muted-foreground">BMI</p>
+                  <p className="font-semibold">{latestEvaluation.bmi}</p>
+                  <p className="text-xs text-muted-foreground">{bmiCategory(Number(latestEvaluation.bmi))}</p>
+                </div>
+              )}
+              {latestEvaluation.body_fat_percentage != null && (
+                <div>
+                  <p className="text-muted-foreground">Body fat</p>
+                  <p className="font-semibold">{latestEvaluation.body_fat_percentage}%</p>
+                </div>
+              )}
+              {latestEvaluation.muscle_mass != null && (
+                <div>
+                  <p className="text-muted-foreground">Muscle mass</p>
+                  <p className="font-semibold">{latestEvaluation.muscle_mass} kg</p>
+                </div>
+              )}
+              {latestEvaluation.visceral_fat != null && (
+                <div>
+                  <p className="text-muted-foreground">Visceral fat</p>
+                  <p className="font-semibold">{latestEvaluation.visceral_fat}</p>
+                </div>
+              )}
+              {latestEvaluation.bmr != null && (
+                <div>
+                  <p className="text-muted-foreground">BMR</p>
+                  <p className="font-semibold">{latestEvaluation.bmr} kcal/day</p>
+                </div>
+              )}
+              {latestEvaluation.body_age != null && (
+                <div>
+                  <p className="text-muted-foreground">Body age</p>
+                  <p className="font-semibold">{latestEvaluation.body_age} yrs</p>
+                </div>
+              )}
+            </div>
+            {latestEvaluation.remark && (
+              <p className="text-xs italic text-muted-foreground">{latestEvaluation.remark}</p>
+            )}
           </CardContent>
         </Card>
       )}
