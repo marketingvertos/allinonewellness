@@ -2,7 +2,10 @@ import { useMemo } from "react";
 import {
   AchievementCategory,
   buildLadder,
+  isActiveMemberStatus,
+  istMonthKey,
   useAchievementDefinitions,
+  useCoachMonthlyActivity,
   useMemberReferrals,
   useUnlockedAchievements,
 } from "@/hooks/useAchievements";
@@ -11,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { formatDate } from "@/lib/formatters";
-import { Trophy, Users } from "lucide-react";
+import { AlertTriangle, CalendarCheck, Check, Trophy, Users, X } from "lucide-react";
 
 interface MemberLike {
   id: string;
@@ -19,7 +22,13 @@ interface MemberLike {
   initial_weight: number | null;
   current_weight: number | null;
   target_weight?: number | null;
+  status?: string | null;
 }
+
+const MONTH_LABEL = (month: string) => {
+  const [y, m] = month.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, 1).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+};
 
 interface Props {
   member: MemberLike;
