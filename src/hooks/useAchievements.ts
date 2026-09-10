@@ -124,6 +124,117 @@ export function useMemberReferrals(memberId: string | undefined) {
   });
 }
 
+/** Statuses that count as an "active" member for coach titles. */
+export const ACTIVE_MEMBER_STATUSES = ["active_member", "renewal_due"];
+
+export function isActiveMemberStatus(status: string | null | undefined) {
+  return !!status && ACTIVE_MEMBER_STATUSES.includes(status);
+}
+
+export function istMonthKey(date = new Date()) {
+  const ist = new Date(date.getTime() + (330 + date.getTimezoneOffset()) * 60000);
+  return `${ist.getFullYear()}-${String(ist.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export interface CoachActivity {
+  month: string;
+  new_memberships: number;
+  required_memberships: number;
+  met_requirement: boolean;
+}
+
+export function useCoachMonthlyActivity(memberId: string | undefined) {
+  return useQuery({
+    queryKey: ["coach-monthly-activity", memberId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coach_monthly_activity")
+        .select("month, new_memberships, required_memberships, met_requirement")
+        .eq("coach_id", memberId!)
+        .order("month", { ascending: false })
+        .limit(12);
+      if (error) throw error;
+      return data as unknown as CoachActivity[];
+    },
+    enabled: !!memberId,
+  });
+}
+
+export interface CoachAtRisk {
+  id: string;
+  full_name: string;
+  title: string;
+  icon: string;
+  done: number;
+  required: number;
+}
+
+/** Title holders who have not yet met this month's new-membership quota. */
+export function useCoachesAtRisk() {
+  const month = istMonthKey();
+  return useQuery({
+    queryKey: ["coaches-at-risk", month],
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("member_achievements")
+        .select("member_id, achievement_definitions!inner(name, icon, sort_order, category)")
+        .eq("achievement_definitions.category", "referral");
+      if (error) throw error;
+
+      const best = new Map<string, { name: string; icon: string; sort: number }>();
+      for (const r of (rows ?? []) as unknown as {
+        member_id: string;
+        achievement_definitions: { name: string; icon: string; sort_order: number };
+      }[]) {
+        const d = r.achievement_definitions;
+        const prev = best.get(r.member_id);
+        if (!prev || d.sort_order > prev.sort) {
+          best.set(r.member_id, { name: d.name, icon: d.icon, sort: d.sort_order });
+        }
+      }
+      const ids = [...best.keys()];
+      if (!ids.length) return [] as CoachAtRisk[];
+
+      const [{ data: activity }, { data: members }] = await Promise.all([
+        supabase
+          .from("coach_monthly_activity")
+          .select("coach_id, new_memberships, required_memberships, met_requirement")
+          .eq("month", month)
+          .in("coach_id", ids),
+        supabase.from("wellness_members").select("id, full_name").in("id", ids),
+      ]);
+
+      const byCoach = new Map(
+        ((activity ?? []) as unknown as {
+          coach_id: string;
+          new_memberships: number;
+          required_memberships: number;
+          met_requirement: boolean;
+        }[]).map((a) => [a.coach_id, a]),
+      );
+      const names = new Map(((members ?? []) as { id: string; full_name: string }[]).map((m) => [m.id, m.full_name]));
+
+      return ids
+        .map((id) => {
+          const t = best.get(id)!;
+          const a = byCoach.get(id);
+          const required = a?.required_memberships ?? (t.sort > 4 ? 2 : 1);
+          return {
+            id,
+            full_name: names.get(id) ?? "—",
+            title: t.name,
+            icon: t.icon,
+            done: a?.new_memberships ?? 0,
+            required,
+            met: a?.met_requirement ?? false,
+          };
+        })
+        .filter((c) => !c.met)
+        .sort((a, b) => a.full_name.localeCompare(b.full_name)) as CoachAtRisk[];
+    },
+  });
+}
+
 export function useUnlockedAchievements(memberId: string | undefined) {
   return useQuery({
     queryKey: ["member-achievements", memberId],
