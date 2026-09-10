@@ -23,6 +23,7 @@ import { PortalLayout } from "./pages/portal/PortalLayout";
 import PortalHome from "./pages/portal/PortalHome";
 import PortalCheckIn from "./pages/portal/PortalCheckIn";
 import PortalHistory from "./pages/portal/PortalHistory";
+import PortalNetwork from "./pages/portal/PortalNetwork";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -81,6 +82,7 @@ const App = () => (
                 <Route path="/portal" element={<PortalHome />} />
                 <Route path="/portal/checkin" element={<PortalCheckIn />} />
                 <Route path="/portal/history" element={<PortalHistory />} />
+                <Route path="/portal/network" element={<PortalNetwork />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
