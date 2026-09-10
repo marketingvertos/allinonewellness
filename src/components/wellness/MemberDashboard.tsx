@@ -146,7 +146,11 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
       sub: change != null && start ? `${((change / start) * 100).toFixed(1)}%` : "",
       trend: change,
     },
-    { label: "BMI", value: bmi != null ? `${bmi}` : "—", sub: bmi != null ? bmiCategory(bmi) : "Add height" },
+    {
+      label: "BMI",
+      value: effectiveBmi != null ? `${effectiveBmi}` : "—",
+      sub: effectiveBmi != null ? bmiCategory(effectiveBmi) : "Add height",
+    },
     {
       label: "Servings left",
       value: membership ? `${membership.remaining_servings}` : "—",
