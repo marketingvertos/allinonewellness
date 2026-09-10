@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
 import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory } from "@/hooks/useWellness";
 import { AchievementsPanel } from "@/components/wellness/AchievementsPanel";
+import { PinkCardPanel } from "@/components/wellness/PinkCardPanel";
 import { PortalPasswordPrompt } from "@/components/wellness/PortalPasswordPrompt";
 import { InstallAppPrompt } from "@/components/InstallAppPrompt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,6 +93,10 @@ export default function PortalHome() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {profile && (
+        <PinkCardPanel memberId={profile.id} balance={profile.pink_card_balance} readOnly />
       )}
 
       {profile && <AchievementsPanel member={profile} weights={weights ?? []} compact />}

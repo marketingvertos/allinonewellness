@@ -6,6 +6,8 @@ import {
   useActiveTrials,
   useSalesAnalytics,
   useTopReferrers,
+  usePinkCardBalances,
+  PINK_CARD_SERVING_VALUE,
   useWellnessStats,
 } from "@/hooks/useWellness";
 import { PageBanner } from "@/components/PageBanner";
@@ -55,6 +57,7 @@ export default function WellnessDashboard() {
   const { data: trials } = useActiveTrials(mode);
   const { data: memberships } = useActiveMemberships(mode);
   const { data: topReferrers } = useTopReferrers(5, mode);
+  const { data: pinkBalances } = usePinkCardBalances((topReferrers ?? []).map((r) => r.id));
 
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const trialsEndingToday = (trials ?? []).filter((t) => t.end_date <= today).length;
@@ -223,7 +226,14 @@ export default function WellnessDashboard() {
                   <span className="font-medium">
                     {i + 1}. {r.full_name}
                   </span>
-                  <Badge variant="outline">{r.count} helped</Badge>
+                  <span className="flex items-center gap-2">
+                    <Badge variant="outline">{r.count} helped</Badge>
+                    {(pinkBalances?.[r.id] ?? 0) > 0 && (
+                      <Badge className="border-transparent bg-[hsl(330_70%_55%)] text-white hover:bg-[hsl(330_70%_50%)]">
+                        {formatCurrency((pinkBalances?.[r.id] ?? 0) * PINK_CARD_SERVING_VALUE)} credit
+                      </Badge>
+                    )}
+                  </span>
                 </div>
               ))
             ) : (
