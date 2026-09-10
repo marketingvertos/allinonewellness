@@ -210,6 +210,8 @@ export function useCreateWellnessMember() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wellness-members"] });
+      qc.invalidateQueries({ queryKey: ["referral-network"] });
+      qc.invalidateQueries({ queryKey: ["network-summary"] });
       t.success("Member added");
     },
     onError: t.onError,
@@ -232,6 +234,8 @@ export function useUpdateWellnessMember() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wellness-members"] });
+      qc.invalidateQueries({ queryKey: ["referral-network"] });
+      qc.invalidateQueries({ queryKey: ["network-summary"] });
       qc.invalidateQueries({ queryKey: ["wellness-member"] });
       t.success("Member updated");
     },
