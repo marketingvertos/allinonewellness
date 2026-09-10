@@ -209,17 +209,63 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
             ))}
           </div>
 
+          <div className="space-y-2 rounded-md border p-3">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <CalendarCheck className="h-4 w-4" /> Monthly activity
+            </p>
+            <div className="flex items-center justify-between text-sm">
+              <span>{MONTH_LABEL(thisMonth)}</span>
+              <span
+                className={`flex items-center gap-1 font-medium ${
+                  currentActivity?.met_requirement ? "text-emerald-600" : "text-amber-600"
+                }`}
+              >
+                {currentActivity?.new_memberships ?? 0} of{" "}
+                {currentActivity?.required_memberships ?? (community.current && community.current.sort_order > 4 ? 2 : 1)}{" "}
+                new memberships
+                {currentActivity?.met_requirement ? <Check className="h-4 w-4" /> : null}
+              </span>
+            </div>
+            {recentActivity.map((a) => (
+              <div key={a.month} className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>{MONTH_LABEL(a.month)}</span>
+                <span className="flex items-center gap-1">
+                  {a.new_memberships} of {a.required_memberships}
+                  {a.met_requirement ? (
+                    <Check className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <X className="h-4 w-4 text-destructive" />
+                  )}
+                </span>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground">
+              Add {community.current && community.current.sort_order > 4 ? "2 new memberships" : "1 new membership"} to
+              your frontline each month to keep this title. Titles also need your own membership active and enough
+              active frontline members.
+            </p>
+          </div>
+
           {referrals && referrals.length > 0 && (
             <div className="space-y-1">
               <p className="text-sm font-medium">People helped</p>
-              {referrals.map((r) => (
-                <div key={r.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                  <span>{r.full_name}</span>
-                  <span className="text-muted-foreground">
-                    {formatDate(r.joining_date)} · {r.status.replace(/_/g, " ")}
-                  </span>
-                </div>
-              ))}
+              {referrals.map((r) => {
+                const active = isActiveMemberStatus(r.status);
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
+                  >
+                    <span className={active ? "" : "text-muted-foreground"}>{r.full_name}</span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={active ? "default" : "outline"} className="text-xs">
+                        {r.status.replace(/_/g, " ")}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{formatDate(r.joining_date)}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
