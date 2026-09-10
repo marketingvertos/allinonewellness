@@ -51,7 +51,14 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
     [unlocked],
   );
 
-  const referralCount = (referrals ?? []).filter((r) => r.status !== "inactive").length;
+  const activeReferralCount = (referrals ?? []).filter((r) => isActiveMemberStatus(r.status)).length;
+  const totalReferralCount = (referrals ?? []).filter((r) => r.status !== "inactive").length;
+  const referralCount = activeReferralCount;
+  const ownMembershipActive = member.status == null || isActiveMemberStatus(member.status);
+
+  const thisMonth = istMonthKey();
+  const currentActivity = (activity ?? []).find((a) => a.month === thisMonth);
+  const recentActivity = (activity ?? []).filter((a) => a.month !== thisMonth).slice(0, 3);
 
   const start = member.initial_weight ?? weights[0]?.weight ?? null;
   const current = weights.length ? weights[weights.length - 1].weight : member.current_weight;
