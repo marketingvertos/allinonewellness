@@ -50,6 +50,10 @@ export interface WellnessMember {
   member_mode?: string | null;
   tags?: string[] | null;
   pink_card_balance?: number | null;
+  frontline_count?: number | null;
+  cluster_count?: number | null;
+  network_total?: number | null;
+  master_level?: number | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -1508,6 +1512,72 @@ export function useTopReferrers(limit = 10, memberMode?: MemberModeFilter) {
       const names = Object.fromEntries((data ?? []).map((m) => [m.id as string, m.full_name as string]));
       return entries.map(([id, count]) => ({ id, full_name: names[id] ?? "Member", count }));
     },
+  });
+}
+
+/* --------------------------- Master title network ------------------------- */
+
+export const MASTER_LEVELS = [100, 50, 40, 30, 20, 10] as const;
+
+export function getMasterTitle(totalNetwork: number): string | null {
+  for (const level of MASTER_LEVELS) {
+    if (totalNetwork >= level) return `Master ${level}`;
+  }
+  return null;
+}
+
+export function getNextMasterLevel(totalNetwork: number): { level: number; remaining: number } | null {
+  const levels = [...MASTER_LEVELS].reverse();
+  for (const level of levels) {
+    if (totalNetwork < level) return { level, remaining: level - totalNetwork };
+  }
+  return null;
+}
+
+export interface NetworkMember {
+  member_id: string;
+  full_name: string;
+  mobile_number: string;
+  status: string;
+  depth: number;
+  referred_by: string | null;
+}
+
+export function useReferralNetwork(memberId: string | undefined) {
+  return useQuery({
+    queryKey: ["referral-network", memberId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_referral_network", {
+        root_member_id: memberId!,
+      } as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as NetworkMember[];
+    },
+    enabled: !!memberId,
+  });
+}
+
+export interface NetworkSummary {
+  root_id: string;
+  frontline_count: number;
+  cluster_count: number;
+  total_count: number;
+  master_level: number;
+}
+
+export function useNetworkSummary(memberIds: string[]) {
+  const key = [...memberIds].sort().join(",");
+  return useQuery({
+    queryKey: ["network-summary", key],
+    queryFn: async () => {
+      if (!memberIds.length) return [] as NetworkSummary[];
+      const { data, error } = await supabase.rpc("get_network_summary", {
+        member_ids: memberIds,
+      } as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as NetworkSummary[];
+    },
+    enabled: memberIds.length > 0,
   });
 }
 
