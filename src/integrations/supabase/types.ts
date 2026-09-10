@@ -499,6 +499,60 @@ export type Database = {
         }
         Relationships: []
       }
+      pink_card_ledger: {
+        Row: {
+          balance_after: number
+          change: number
+          created_at: string
+          created_by: string | null
+          id: string
+          member_id: string
+          note: string | null
+          reason: string
+          reference_id: string | null
+          referred_member_id: string | null
+        }
+        Insert: {
+          balance_after: number
+          change: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          member_id: string
+          note?: string | null
+          reason: string
+          reference_id?: string | null
+          referred_member_id?: string | null
+        }
+        Update: {
+          balance_after?: number
+          change?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          member_id?: string
+          note?: string | null
+          reason?: string
+          reference_id?: string | null
+          referred_member_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pink_card_ledger_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pink_card_ledger_referred_member_id_fkey"
+            columns: ["referred_member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pipeline_stages: {
         Row: {
           color: string
@@ -1053,6 +1107,7 @@ export type Database = {
           marital_status: string | null
           member_mode: string
           mobile_number: string
+          pink_card_balance: number
           referred_by_member_id: string | null
           status: Database["public"]["Enums"]["wellness_status"]
           tags: string[]
@@ -1083,6 +1138,7 @@ export type Database = {
           marital_status?: string | null
           member_mode?: string
           mobile_number: string
+          pink_card_balance?: number
           referred_by_member_id?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
           tags?: string[]
@@ -1113,6 +1169,7 @@ export type Database = {
           marital_status?: string | null
           member_mode?: string
           mobile_number?: string
+          pink_card_balance?: number
           referred_by_member_id?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
           tags?: string[]
@@ -1645,6 +1702,10 @@ export type Database = {
         Args: { p_member_id: string }
         Returns: string
       }
+      adjust_pink_card: {
+        Args: { p_change: number; p_member_id: string; p_note?: string }
+        Returns: number
+      }
       adjust_servings: {
         Args: { p_change: number; p_membership_id: string; p_note?: string }
         Returns: number
@@ -1652,6 +1713,15 @@ export type Database = {
       approve_checkin_request: {
         Args: { p_request_id: string; p_weight?: number }
         Returns: Json
+      }
+      award_pink_card: {
+        Args: {
+          p_change: number
+          p_reason: string
+          p_reference_id: string
+          p_referred_member_id: string
+        }
+        Returns: undefined
       }
       checkin_member: {
         Args: {
@@ -1703,6 +1773,15 @@ export type Database = {
       recalc_member_achievements: {
         Args: { p_member_id: string }
         Returns: undefined
+      }
+      redeem_pink_card: {
+        Args: {
+          p_credits: number
+          p_member_id: string
+          p_membership_id?: string
+          p_note?: string
+        }
+        Returns: number
       }
       refresh_wellness_statuses: { Args: never; Returns: undefined }
       reject_checkin_request: {
