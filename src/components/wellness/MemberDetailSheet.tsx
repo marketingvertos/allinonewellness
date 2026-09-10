@@ -58,6 +58,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { statusLabel, statusVariant } from "./status";
 import { MEMBER_TAGS, ModeBadge, TagBadges } from "./memberMeta";
+import { MasterTitleBadge } from "@/components/wellness/MasterTitleBadge";
+import { NetworkPanel } from "@/components/wellness/NetworkPanel";
 import { cn } from "@/lib/utils";
 import { DobInput } from "@/components/ui/dob-input";
 import { ageFromDob } from "@/lib/formatters";
