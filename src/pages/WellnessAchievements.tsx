@@ -150,7 +150,13 @@ export default function WellnessAchievements() {
         open={!!editing}
         onOpenChange={(o) => !o && setEditing(null)}
         title={editing?.def ? "Edit milestone" : "Add milestone"}
-        description={<>Members unlock this milestone once they reach the threshold. Already unlocked badges are never removed.</>}
+        description={
+          <>
+            Coach titles need an active own membership, active frontline members above the threshold and a monthly
+            new-membership quota (1 per month up to Platinum, 2 above it) — they are reversible when requirements are
+            not met. Weight milestones are permanent once earned.
+          </>
+        }
         footer={
           <>
             <Button variant="outline" onClick={() => setEditing(null)}>
