@@ -47,6 +47,8 @@ export interface WellnessMember {
   referred_by_member_id?: string | null;
   contact_id: string | null;
   is_guest?: boolean;
+  member_mode?: string | null;
+  tags?: string[] | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -121,9 +123,35 @@ export function useIsWellnessManager() {
 
 /* ------------------------------- Members ------------------------------- */
 
-export function useWellnessMembers(search?: string, status?: WellnessStatus | "all", categoryId?: string | "all") {
+export type MemberModeFilter = "all" | "physical" | "virtual";
+
+/** Member ids for a mode filter, or null when no filtering is needed. */
+async function memberIdsForMode(mode: MemberModeFilter | undefined): Promise<string[] | null> {
+  if (!mode || mode === "all") return null;
+  const { data, error } = await supabase
+    .from("wellness_members")
+    .select("id")
+    .eq("member_mode", mode);
+  if (error) throw error;
+  return (data ?? []).map((m) => m.id as string);
+}
+
+export function useWellnessMembers(
+  search?: string,
+  status?: WellnessStatus | "all",
+  categoryId?: string | "all",
+  memberMode?: MemberModeFilter,
+  tag?: string | "all",
+) {
   return useQuery({
-    queryKey: ["wellness-members", search ?? "", status ?? "all", categoryId ?? "all"],
+    queryKey: [
+      "wellness-members",
+      search ?? "",
+      status ?? "all",
+      categoryId ?? "all",
+      memberMode ?? "all",
+      tag ?? "all",
+    ],
     queryFn: async () => {
       let q = supabase
         .from("wellness_members")
@@ -132,6 +160,8 @@ export function useWellnessMembers(search?: string, status?: WellnessStatus | "a
         .order("created_at", { ascending: false });
       if (status && status !== "all") q = q.eq("status", status);
       if (categoryId && categoryId !== "all") q = q.eq("category_id", categoryId);
+      if (memberMode && memberMode !== "all") q = q.eq("member_mode", memberMode);
+      if (tag && tag !== "all") q = q.contains("tags", [tag]);
       if (search)
         q = q.or(
           `full_name.ilike.%${search}%,mobile_number.ilike.%${search}%,activation_code.ilike.%${search}%,email.ilike.%${search}%`,
@@ -274,15 +304,18 @@ export function useMemberships(memberId: string | undefined) {
   });
 }
 
-export function useActiveMemberships() {
+export function useActiveMemberships(memberMode?: MemberModeFilter) {
   return useQuery({
-    queryKey: ["wellness-memberships-active"],
+    queryKey: ["wellness-memberships-active", memberMode ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const ids = await memberIdsForMode(memberMode);
+      let query = supabase
         .from("wellness_memberships")
         .select("*, wellness_plans(id, name), wellness_members(id, full_name, mobile_number)")
         .in("status", ["active", "expiring_soon"])
         .order("end_date");
+      if (ids) query = query.in("member_id", ids);
+      const { data, error } = await query;
       if (error) throw error;
       return data as unknown as (WellnessMembership & {
         wellness_members?: { id: string; full_name: string; mobile_number: string } | null;
@@ -385,16 +418,19 @@ export function useAdjustServings() {
 
 /* ------------------------------ Attendance ------------------------------ */
 
-export function useTodayAttendance() {
+export function useTodayAttendance(memberMode?: MemberModeFilter) {
   return useQuery({
-    queryKey: ["wellness-attendance-today"],
+    queryKey: ["wellness-attendance-today", memberMode ?? "all"],
     queryFn: async () => {
       const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
-      const { data, error } = await supabase
+      const ids = await memberIdsForMode(memberMode);
+      let q = supabase
         .from("wellness_attendance")
         .select("*, wellness_members(id, full_name, mobile_number)")
         .eq("visit_date", today)
         .order("visit_time", { ascending: false });
+      if (ids) q = q.in("member_id", ids);
+      const { data, error } = await q;
       if (error) throw error;
       return data as unknown as {
         id: string;
@@ -576,23 +612,40 @@ export function useAddMemberNote() {
 
 /* ------------------------------ Dashboard ------------------------------ */
 
-export function useWellnessStats() {
+export function useWellnessStats(memberMode?: MemberModeFilter) {
   return useQuery({
-    queryKey: ["wellness-stats"],
+    queryKey: ["wellness-stats", memberMode ?? "all"],
     queryFn: async () => {
       await supabase.rpc("refresh_wellness_statuses" as never);
       const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      const ids = await memberIdsForMode(memberMode);
+
+      let membersQ = supabase.from("wellness_members").select("status").eq("is_guest", false);
+      let checkinsQ = supabase
+        .from("wellness_attendance")
+        .select("id", { count: "exact", head: true })
+        .eq("visit_date", today);
+      let membershipsQ = supabase
+        .from("wellness_memberships")
+        .select("status, end_date, remaining_servings, price_paid, start_date");
+      let lowBalanceQ = supabase
+        .from("wellness_memberships")
+        .select("id, remaining_servings, member_id, end_date, wellness_members(full_name, mobile_number)")
+        .in("status", ["active", "expiring_soon"])
+        .lte("remaining_servings", 5)
+        .order("remaining_servings");
+      if (ids) {
+        membersQ = membersQ.in("id", ids);
+        checkinsQ = checkinsQ.in("member_id", ids);
+        membershipsQ = membershipsQ.in("member_id", ids);
+        lowBalanceQ = lowBalanceQ.in("member_id", ids);
+      }
 
       const [members, checkins, memberships, lowBalance] = await Promise.all([
-        supabase.from("wellness_members").select("status").eq("is_guest", false),
-        supabase.from("wellness_attendance").select("id", { count: "exact", head: true }).eq("visit_date", today),
-        supabase.from("wellness_memberships").select("status, end_date, remaining_servings, price_paid, start_date"),
-        supabase
-          .from("wellness_memberships")
-          .select("id, remaining_servings, member_id, end_date, wellness_members(full_name, mobile_number)")
-          .in("status", ["active", "expiring_soon"])
-          .lte("remaining_servings", 5)
-          .order("remaining_servings"),
+        membersQ,
+        checkinsQ,
+        membershipsQ,
+        lowBalanceQ,
       ]);
 
       if (members.error) throw members.error;
@@ -700,17 +753,20 @@ export interface CheckInRequest {
   } | null;
 }
 
-export function usePendingCheckIns() {
+export function usePendingCheckIns(memberMode?: MemberModeFilter) {
   return useQuery({
-    queryKey: ["wellness-checkin-requests", "pending"],
+    queryKey: ["wellness-checkin-requests", "pending", memberMode ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const ids = await memberIdsForMode(memberMode);
+      let q = supabase
         .from("wellness_checkin_requests")
         .select(
           "*, wellness_members(id, full_name, mobile_number, status, current_weight), wellness_memberships(id, remaining_servings, end_date)",
         )
         .eq("status", "pending")
         .order("requested_at", { ascending: true });
+      if (ids) q = q.in("member_id", ids);
+      const { data, error } = await q;
       if (error) throw error;
       return data as unknown as CheckInRequest[];
     },
@@ -1013,14 +1069,16 @@ export interface CelebrationEntry extends BirthdayEntry {
   years: number;
 }
 
-export function useUpcomingCelebrations(windowDays = 30) {
+export function useUpcomingCelebrations(windowDays = 30, memberMode?: MemberModeFilter) {
   return useQuery({
-    queryKey: ["wellness-celebrations", windowDays],
+    queryKey: ["wellness-celebrations", windowDays, memberMode ?? "all"],
     queryFn: async (): Promise<CelebrationEntry[]> => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("wellness_members")
         .select("id, full_name, mobile_number, date_of_birth, anniversary_date")
         .eq("is_guest", false);
+      if (memberMode && memberMode !== "all") q = q.eq("member_mode", memberMode);
+      const { data, error } = await q;
       if (error) throw error;
 
       const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -1056,8 +1114,8 @@ export function useUpcomingCelebrations(windowDays = 30) {
 }
 
 /** Kept for compatibility: birthdays only. */
-export function useUpcomingBirthdays(windowDays = 30) {
-  const q = useUpcomingCelebrations(windowDays);
+export function useUpcomingBirthdays(windowDays = 30, memberMode?: MemberModeFilter) {
+  const q = useUpcomingCelebrations(windowDays, memberMode);
   return { ...q, data: q.data?.filter((e) => e.kind === "birthday") };
 }
 
@@ -1339,17 +1397,20 @@ export function useMarkNotificationSent() {
 
 /* ------------------------------ Active trials ----------------------------- */
 
-export function useActiveTrials() {
+export function useActiveTrials(memberMode?: MemberModeFilter) {
   return useQuery({
-    queryKey: ["wellness-trials-active"],
+    queryKey: ["wellness-trials-active", memberMode ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const ids = await memberIdsForMode(memberMode);
+      let q = supabase
         .from("wellness_trials")
         .select(
           "*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight, is_guest)",
         )
         .eq("status", "active")
         .order("end_date");
+      if (ids) q = q.in("member_id", ids);
+      const { data, error } = await q;
       if (error) throw error;
       return data as unknown as (WellnessTrial & {
         plan_id?: string | null;
@@ -1363,17 +1424,20 @@ export function useActiveTrials() {
 
 /* --------------------------- Serving consumption -------------------------- */
 
-export function useServingTrend(days = 30) {
+export function useServingTrend(days = 30, memberMode?: MemberModeFilter) {
   return useQuery({
-    queryKey: ["wellness-serving-trend", days],
+    queryKey: ["wellness-serving-trend", days, memberMode ?? "all"],
     queryFn: async () => {
       const since = new Date();
       since.setDate(since.getDate() - days);
-      const { data, error } = await supabase
+      const ids = await memberIdsForMode(memberMode);
+      let q = supabase
         .from("wellness_attendance")
         .select("visit_date, serving_deducted")
         .gte("visit_date", since.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }))
         .order("visit_date");
+      if (ids) q = q.in("member_id", ids);
+      const { data, error } = await q;
       if (error) throw error;
 
       const buckets: Record<string, { visits: number; servings: number }> = {};
@@ -1395,14 +1459,16 @@ export function useServingTrend(days = 30) {
 
 /* ------------------------------- Referrals -------------------------------- */
 
-export function useReferralCounts() {
+export function useReferralCounts(memberMode?: MemberModeFilter) {
   return useQuery({
-    queryKey: ["wellness-referral-counts"],
+    queryKey: ["wellness-referral-counts", memberMode ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("wellness_members")
         .select("referred_by_member_id")
         .not("referred_by_member_id", "is", null);
+      if (memberMode && memberMode !== "all") q = q.eq("member_mode", memberMode);
+      const { data, error } = await q;
       if (error) throw error;
       const counts: Record<string, number> = {};
       for (const row of data ?? []) {
@@ -1414,10 +1480,10 @@ export function useReferralCounts() {
   });
 }
 
-export function useTopReferrers(limit = 10) {
-  const counts = useReferralCounts();
+export function useTopReferrers(limit = 10, memberMode?: MemberModeFilter) {
+  const counts = useReferralCounts(memberMode);
   return useQuery({
-    queryKey: ["wellness-top-referrers", limit, counts.data],
+    queryKey: ["wellness-top-referrers", limit, memberMode ?? "all", counts.data],
     enabled: !!counts.data,
     queryFn: async () => {
       const entries = Object.entries(counts.data ?? {})
