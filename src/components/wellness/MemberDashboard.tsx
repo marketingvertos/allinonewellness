@@ -17,7 +17,10 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatters";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowDownRight, ArrowUpRight, Cake, Heart, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Cake, Heart, Minus, Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BodyEvalPrintCard } from "./BodyEvalPrintCard";
+import { BodyEvalParam, bmiCategory, getRange } from "./bodyEvalConstants";
 
 interface Props {
   member: WellnessMember;
@@ -27,12 +30,7 @@ interface Props {
   measurements: BodyMeasurement[];
 }
 
-function bmiCategory(bmi: number) {
-  if (bmi < 18.5) return "Underweight";
-  if (bmi < 25) return "Healthy";
-  if (bmi < 30) return "Overweight";
-  return "Obese";
-}
+// Indian BMI categories live in bodyEvalConstants.
 
 function age(dob: string | null) {
   if (!dob) return null;

@@ -610,6 +610,9 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
 
         <RecordMeasurementDialog
         memberId={member.id}
+        memberHeight={member.height}
+        memberGender={member.gender}
+        memberDob={member.date_of_birth}
         entry={editMeasurement}
         open={measureOpen}
         onOpenChange={(o) => {
