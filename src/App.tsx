@@ -24,6 +24,8 @@ import PortalHome from "./pages/portal/PortalHome";
 import PortalCheckIn from "./pages/portal/PortalCheckIn";
 import PortalHistory from "./pages/portal/PortalHistory";
 import PortalNetwork from "./pages/portal/PortalNetwork";
+import DisplayWeightChanges from "./pages/display/DisplayWeightChanges";
+import DisplayMilestones from "./pages/display/DisplayMilestones";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
