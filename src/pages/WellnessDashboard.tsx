@@ -26,6 +26,7 @@ import { Users, CalendarCheck, BadgeCheck, AlertTriangle, IndianRupee, QrCode, S
 import { BirthdaysCard } from "@/components/wellness/BirthdaysCard";
 import { ServingTrendChart } from "@/components/wellness/ServingTrendChart";
 import { PendingCheckInsCard } from "@/components/wellness/PendingCheckInsCard";
+import { DisplayScreensCard } from "@/components/wellness/DisplayScreensCard";
 
 const PERIODS = [
   { key: "today", label: "Today" },
@@ -318,6 +319,8 @@ export default function WellnessDashboard() {
             )}
           </CardContent>
         </Card>
+
+        <DisplayScreensCard />
       </div>
     </div>
   );

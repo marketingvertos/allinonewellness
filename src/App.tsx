@@ -24,6 +24,8 @@ import PortalHome from "./pages/portal/PortalHome";
 import PortalCheckIn from "./pages/portal/PortalCheckIn";
 import PortalHistory from "./pages/portal/PortalHistory";
 import PortalNetwork from "./pages/portal/PortalNetwork";
+import DisplayWeightChanges from "./pages/display/DisplayWeightChanges";
+import DisplayMilestones from "./pages/display/DisplayMilestones";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -53,6 +55,9 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Navigate to="/auth" replace />} />
               <Route path="/auth" element={<Auth />} />
+              {/* Public display screens — no login required */}
+              <Route path="/display/weight-changes" element={<DisplayWeightChanges />} />
+              <Route path="/display/milestones" element={<DisplayMilestones />} />
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<WellnessDashboard />} />
                 <Route path="/members" element={<WellnessMembers />} />

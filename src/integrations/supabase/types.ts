@@ -1826,6 +1826,37 @@ export type Database = {
         Returns: string
       }
       delete_wellness_plan: { Args: { p_plan_id: string }; Returns: Json }
+      display_milestone_achievers: {
+        Args: { p_category?: string }
+        Returns: {
+          member_name: string
+          milestone_icon: string
+          milestone_name: string
+          milestone_threshold: number
+          total_change: number
+        }[]
+      }
+      display_milestone_definitions: {
+        Args: { p_category?: string }
+        Returns: {
+          icon: string
+          name: string
+          sort_order: number
+          threshold: number
+        }[]
+      }
+      display_weight_changes: {
+        Args: { p_period?: string }
+        Returns: {
+          change: number
+          current_weight: number
+          goal: string
+          initial_weight: number
+          member_name: string
+          previous_weight: number
+          total_change: number
+        }[]
+      }
       expire_stale_checkin_requests: { Args: never; Returns: undefined }
       get_network_summary: {
         Args: { member_ids: string[] }
