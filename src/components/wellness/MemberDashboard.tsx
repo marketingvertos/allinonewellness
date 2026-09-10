@@ -115,7 +115,7 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
     : [];
 
   const evalRows: { label: string; value: string; param?: BodyEvalParam; raw?: number | null }[] = latest
-    ? [
+    ? ([
         { label: "Weight", value: latest.weight != null ? `${latest.weight} kg` : "—" },
         { label: "BMI", value: latest.bmi != null ? `${latest.bmi}` : "—", param: "bmi", raw: latest.bmi },
         { label: "Trunk fat", value: latest.trunk_fat != null ? `${latest.trunk_fat}%` : "—", param: "trunk_fat", raw: latest.trunk_fat },
@@ -124,7 +124,7 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
         { label: "Visceral fat", value: latest.visceral_fat != null ? `${latest.visceral_fat}` : "—", param: "visceral_fat", raw: latest.visceral_fat },
         { label: "BMR", value: latest.bmr != null ? `${latest.bmr} kcal/day` : "—" },
         { label: "Body age", value: latest.body_age != null ? `${latest.body_age} yrs` : "—" },
-      ].filter((r) => r.value !== "—")
+      ] as { label: string; value: string; param?: BodyEvalParam; raw?: number | null }[]).filter((r) => r.value !== "—")
     : [];
 
   const evalOverUnder =
