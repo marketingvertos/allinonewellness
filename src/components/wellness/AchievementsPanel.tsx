@@ -2,7 +2,10 @@ import { useMemo } from "react";
 import {
   AchievementCategory,
   buildLadder,
+  isActiveMemberStatus,
+  istMonthKey,
   useAchievementDefinitions,
+  useCoachMonthlyActivity,
   useMemberReferrals,
   useUnlockedAchievements,
 } from "@/hooks/useAchievements";
@@ -11,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { formatDate } from "@/lib/formatters";
-import { Trophy, Users } from "lucide-react";
+import { AlertTriangle, CalendarCheck, Check, Trophy, Users, X } from "lucide-react";
 
 interface MemberLike {
   id: string;
@@ -19,7 +22,13 @@ interface MemberLike {
   initial_weight: number | null;
   current_weight: number | null;
   target_weight?: number | null;
+  status?: string | null;
 }
+
+const MONTH_LABEL = (month: string) => {
+  const [y, m] = month.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, 1).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+};
 
 interface Props {
   member: MemberLike;
@@ -31,6 +40,7 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
   const { data: defs } = useAchievementDefinitions(true);
   const { data: unlocked } = useUnlockedAchievements(member.id);
   const { data: referrals } = useMemberReferrals(member.id);
+  const { data: activity } = useCoachMonthlyActivity(member.id);
 
   const unlockedIds = useMemo(
     () => new Set((unlocked ?? []).map((u) => u.achievement_id)),
@@ -41,7 +51,14 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
     [unlocked],
   );
 
-  const referralCount = (referrals ?? []).filter((r) => r.status !== "inactive").length;
+  const activeReferralCount = (referrals ?? []).filter((r) => isActiveMemberStatus(r.status)).length;
+  const totalReferralCount = (referrals ?? []).filter((r) => r.status !== "inactive").length;
+  const referralCount = activeReferralCount;
+  const ownMembershipActive = member.status == null || isActiveMemberStatus(member.status);
+
+  const thisMonth = istMonthKey();
+  const currentActivity = (activity ?? []).find((a) => a.month === thisMonth);
+  const recentActivity = (activity ?? []).filter((a) => a.month !== thisMonth).slice(0, 3);
 
   const start = member.initial_weight ?? weights[0]?.weight ?? null;
   const current = weights.length ? weights[weights.length - 1].weight : member.current_weight;
@@ -133,15 +150,35 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="text-3xl font-bold">{referralCount}</p>
-              <p className="text-sm text-muted-foreground">People helped to join</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex gap-6">
+              <div>
+                <p className="text-3xl font-bold">{activeReferralCount}</p>
+                <p className="text-sm text-muted-foreground">Active frontline</p>
+              </div>
+              <div>
+                <p className="text-3xl font-semibold text-muted-foreground">{totalReferralCount}</p>
+                <p className="text-sm text-muted-foreground">Total referred</p>
+              </div>
             </div>
-            <Badge variant={community.current ? "default" : "secondary"} className="text-sm">
+            <Badge
+              variant={community.current ? "default" : "secondary"}
+              className={`text-sm ${
+                community.current && !currentActivity?.met_requirement
+                  ? "border-2 border-amber-500"
+                  : ""
+              }`}
+            >
               {community.current ? `${community.current.icon} ${community.current.name}` : "No title yet"}
             </Badge>
           </div>
+
+          {!ownMembershipActive && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <span>Your own membership must be active to hold a coach title.</span>
+            </div>
+          )}
 
           {community.next ? (
             <div className="space-y-1">
@@ -172,17 +209,63 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
             ))}
           </div>
 
+          <div className="space-y-2 rounded-md border p-3">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <CalendarCheck className="h-4 w-4" /> Monthly activity
+            </p>
+            <div className="flex items-center justify-between text-sm">
+              <span>{MONTH_LABEL(thisMonth)}</span>
+              <span
+                className={`flex items-center gap-1 font-medium ${
+                  currentActivity?.met_requirement ? "text-emerald-600" : "text-amber-600"
+                }`}
+              >
+                {currentActivity?.new_memberships ?? 0} of{" "}
+                {currentActivity?.required_memberships ?? (community.current && community.current.sort_order > 4 ? 2 : 1)}{" "}
+                new memberships
+                {currentActivity?.met_requirement ? <Check className="h-4 w-4" /> : null}
+              </span>
+            </div>
+            {recentActivity.map((a) => (
+              <div key={a.month} className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>{MONTH_LABEL(a.month)}</span>
+                <span className="flex items-center gap-1">
+                  {a.new_memberships} of {a.required_memberships}
+                  {a.met_requirement ? (
+                    <Check className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <X className="h-4 w-4 text-destructive" />
+                  )}
+                </span>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground">
+              Add {community.current && community.current.sort_order > 4 ? "2 new memberships" : "1 new membership"} to
+              your frontline each month to keep this title. Titles also need your own membership active and enough
+              active frontline members.
+            </p>
+          </div>
+
           {referrals && referrals.length > 0 && (
             <div className="space-y-1">
               <p className="text-sm font-medium">People helped</p>
-              {referrals.map((r) => (
-                <div key={r.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                  <span>{r.full_name}</span>
-                  <span className="text-muted-foreground">
-                    {formatDate(r.joining_date)} · {r.status.replace(/_/g, " ")}
-                  </span>
-                </div>
-              ))}
+              {referrals.map((r) => {
+                const active = isActiveMemberStatus(r.status);
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
+                  >
+                    <span className={active ? "" : "text-muted-foreground"}>{r.full_name}</span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={active ? "default" : "outline"} className="text-xs">
+                        {r.status.replace(/_/g, " ")}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{formatDate(r.joining_date)}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>

@@ -172,6 +172,47 @@ export type Database = {
           },
         ]
       }
+      coach_monthly_activity: {
+        Row: {
+          coach_id: string
+          created_at: string
+          id: string
+          met_requirement: boolean
+          month: string
+          new_memberships: number
+          required_memberships: number
+          updated_at: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          id?: string
+          met_requirement?: boolean
+          month: string
+          new_memberships?: number
+          required_memberships?: number
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          id?: string
+          met_requirement?: boolean
+          month?: string
+          new_memberships?: number
+          required_memberships?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_monthly_activity_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string
@@ -1133,6 +1174,7 @@ export type Database = {
           initial_weight: number | null
           is_guest: boolean
           joining_date: string
+          last_title_downgrade_month: string | null
           marital_status: string | null
           master_level: number
           member_mode: string
@@ -1168,6 +1210,7 @@ export type Database = {
           initial_weight?: number | null
           is_guest?: boolean
           joining_date?: string
+          last_title_downgrade_month?: string | null
           marital_status?: string | null
           master_level?: number
           member_mode?: string
@@ -1203,6 +1246,7 @@ export type Database = {
           initial_weight?: number | null
           is_guest?: boolean
           joining_date?: string
+          last_title_downgrade_month?: string | null
           marital_status?: string | null
           master_level?: number
           member_mode?: string
@@ -1825,6 +1869,7 @@ export type Database = {
         Args: { p_code: string; p_weight?: number }
         Returns: Json
       }
+      monthly_coach_title_check: { Args: never; Returns: undefined }
       owns_wellness_member: {
         Args: { _member_id: string; _user_id: string }
         Returns: boolean

@@ -14,6 +14,7 @@ import {
   PINK_CARD_SERVING_VALUE,
   useWellnessStats,
 } from "@/hooks/useWellness";
+import { useCoachesAtRisk } from "@/hooks/useAchievements";
 import { PageBanner } from "@/components/PageBanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,6 +62,13 @@ export default function WellnessDashboard() {
   const { data: trials } = useActiveTrials(mode);
   const { data: memberships } = useActiveMemberships(mode);
   const { data: topReferrers } = useTopReferrers(5, mode);
+  const { data: coachesAtRisk } = useCoachesAtRisk();
+  const daysLeftInMonth = useMemo(() => {
+    const now = new Date();
+    const ist = new Date(now.getTime() + (330 + now.getTimezoneOffset()) * 60000);
+    const end = new Date(ist.getFullYear(), ist.getMonth() + 1, 0).getDate();
+    return Math.max(0, end - ist.getDate());
+  }, []);
   const referrerIds = useMemo(() => (topReferrers ?? []).map((r) => r.id), [topReferrers]);
   const { data: networkSummary } = useNetworkSummary(referrerIds);
   const rankedReferrers = useMemo(() => {
@@ -280,6 +288,36 @@ export default function WellnessDashboard() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <BirthdaysCard memberMode={mode} />
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4 text-amber-600" /> Coaches at risk this month
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {coachesAtRisk?.length ? (
+              coachesAtRisk.map((c) => (
+                <div key={c.id} className="rounded-md border px-3 py-2 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-medium">{c.full_name}</span>
+                    <Badge variant="outline">
+                      {c.icon} {c.title}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {c.done} of {c.required} new memberships · {daysLeftInMonth} day
+                    {daysLeftInMonth === 1 ? "" : "s"} left
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Every coach has met this month's new-membership quota.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
