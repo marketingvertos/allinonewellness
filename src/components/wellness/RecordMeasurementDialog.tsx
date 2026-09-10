@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
-import { BodyEvalParam, ageFromDob, bmiCategory, getRange, idealWeightFor } from "./bodyEvalConstants";
+import { ageFromDob } from "@/lib/formatters";
+import { BodyEvalParam, bmiCategory, getRange, idealWeightFor } from "./bodyEvalConstants";
 
 interface Props {
   memberId: string;
