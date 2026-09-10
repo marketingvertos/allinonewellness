@@ -132,6 +132,9 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
       ? Number((latest.weight - latest.ideal_weight).toFixed(1))
       : null;
 
+  const effectiveBmi = latest?.bmi != null ? Number(latest.bmi) : bmi;
+
+
   const memberAge = age(member.date_of_birth);
   const anniversaryYears = age(member.anniversary_date ?? null);
 
