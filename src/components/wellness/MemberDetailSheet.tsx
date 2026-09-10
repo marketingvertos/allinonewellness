@@ -228,7 +228,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
 
               <div className="rounded-lg border p-4 text-sm">
                 <MemberLoginCard memberId={member.id} mobileNumber={member.mobile_number} />
-                {!(member as { user_id?: string | null }).user_id && (
+                {!member.user_id && (
                   <p className="mt-3 text-xs text-muted-foreground">
                     Or share this self-activation code:{" "}
                     <span className="font-mono font-semibold text-foreground">
