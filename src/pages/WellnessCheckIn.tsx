@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCheckInWithWeight, useMemberBalances, useTodayAttendance, useWellnessMembers } from "@/hooks/useWellness";
 import { TagBadges } from "@/components/wellness/memberMeta";
+import { PinkCardBadge } from "@/components/wellness/PinkCardPanel";
 import { PageBanner } from "@/components/PageBanner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -107,6 +108,7 @@ export default function WellnessCheckIn() {
                         badges={
                           <>
                             <TagBadges tags={m.tags} />
+                            <PinkCardBadge balance={m.pink_card_balance} />
                             {balances?.[m.id] === undefined ? null : balances[m.id] === 0 ? (
                               <Badge variant="destructive">No servings</Badge>
                             ) : balances[m.id] <= 5 ? (

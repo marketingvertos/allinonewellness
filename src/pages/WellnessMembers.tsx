@@ -6,6 +6,7 @@ import { CreateMemberDialog } from "@/components/wellness/CreateMemberDialog";
 import { MemberDetailSheet } from "@/components/wellness/MemberDetailSheet";
 import { statusLabel, statusVariant } from "@/components/wellness/status";
 import { MEMBER_TAGS, ModeBadge, TagBadges, modeLabel, tagLabel } from "@/components/wellness/memberMeta";
+import { PinkCardBadge } from "@/components/wellness/PinkCardPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -177,6 +178,7 @@ export default function WellnessMembers() {
                 <>
                   <ModeBadge mode={m.member_mode} />
                   <TagBadges tags={m.tags} />
+                  <PinkCardBadge balance={m.pink_card_balance} />
                   {m.wellness_batches?.name && <Badge variant="outline">{m.wellness_batches.name}</Badge>}
                   {!!referralCounts?.[m.id] && (
                     <Badge variant="outline" className="gap-1">

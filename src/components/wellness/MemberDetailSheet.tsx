@@ -36,6 +36,7 @@ import { MemberLoginCard } from "./MemberLoginCard";
 import { SendWhatsAppDialog } from "@/components/wellness/SendWhatsAppDialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PinkCardPanel } from "@/components/wellness/PinkCardPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -179,6 +180,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="servings">Servings</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="pinkcard">Pink Card</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
           </TabsList>
@@ -391,6 +393,10 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
             ) : (
               <p className="text-sm text-muted-foreground">No serving activity yet.</p>
             )}
+          </TabsContent>
+
+          <TabsContent value="pinkcard" className="space-y-4 pt-4">
+            <PinkCardPanel memberId={member.id} balance={member.pink_card_balance} />
           </TabsContent>
 
           <TabsContent value="progress" className="space-y-4 pt-4">
