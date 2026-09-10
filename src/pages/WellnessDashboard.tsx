@@ -318,6 +318,8 @@ export default function WellnessDashboard() {
             )}
           </CardContent>
         </Card>
+
+        <DisplayScreensCard />
       </div>
     </div>
   );
