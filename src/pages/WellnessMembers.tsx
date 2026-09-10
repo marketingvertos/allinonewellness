@@ -6,6 +6,7 @@ import { CreateMemberDialog } from "@/components/wellness/CreateMemberDialog";
 import { MemberDetailSheet } from "@/components/wellness/MemberDetailSheet";
 import { statusLabel, statusVariant } from "@/components/wellness/status";
 import { MEMBER_TAGS, ModeBadge, TagBadges, modeLabel, tagLabel } from "@/components/wellness/memberMeta";
+import { MasterTitleBadge } from "@/components/wellness/MasterTitleBadge";
 import { PinkCardBadge } from "@/components/wellness/PinkCardPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,7 +61,7 @@ export default function WellnessMembers() {
   const exportCsv = () => {
     const rows = members ?? [];
     const headers = [
-      "Name","Mobile","Email","Status","Mode","Tags","Goal","Batch","Joined","Initial weight (kg)","Current weight (kg)","Target weight (kg)","People helped",
+      "Name","Mobile","Email","Status","Mode","Tags","Goal","Batch","Joined","Initial weight (kg)","Current weight (kg)","Target weight (kg)","People helped","Frontline","Cluster","Network total","Master level",
     ];
     const csv = [
       headers.join(","),
@@ -79,6 +80,10 @@ export default function WellnessMembers() {
           m.current_weight ?? "",
           m.target_weight ?? "",
           referralCounts?.[m.id] ?? 0,
+          m.frontline_count ?? 0,
+          m.cluster_count ?? 0,
+          m.network_total ?? 0,
+          (m.master_level ?? 0) > 0 ? `Master ${m.master_level}` : "",
         ]
           .map((v) => `"${String(v).replace(/"/g, '""')}"`)
           .join(","),
@@ -179,6 +184,7 @@ export default function WellnessMembers() {
                   <ModeBadge mode={m.member_mode} />
                   <TagBadges tags={m.tags} />
                   <PinkCardBadge balance={m.pink_card_balance} />
+                  <MasterTitleBadge level={m.master_level} size="sm" />
                   {m.wellness_batches?.name && <Badge variant="outline">{m.wellness_batches.name}</Badge>}
                   {!!referralCounts?.[m.id] && (
                     <Badge variant="outline" className="gap-1">
