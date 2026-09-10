@@ -137,6 +137,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <SheetTitle className="flex flex-wrap items-center gap-2">
             {member.full_name}
             <Badge variant={statusVariant(member.status)}>{statusLabel(member.status)}</Badge>
+            <MasterTitleBadge level={member.master_level} />
             <ModeBadge mode={member.member_mode} />
             <TagBadges tags={member.tags} />
           </SheetTitle>
@@ -181,6 +182,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="servings">Servings</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="network">Network</TabsTrigger>
             <TabsTrigger value="pinkcard">Pink Card</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -581,6 +583,10 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
 
           <TabsContent value="achievements" className="pt-4">
             <AchievementsPanel member={member} weights={weights ?? []} />
+          </TabsContent>
+
+          <TabsContent value="network" className="space-y-4 pt-4">
+            <NetworkPanel memberId={member.id} />
           </TabsContent>
 
           <TabsContent value="notes" className="space-y-4 pt-4">
