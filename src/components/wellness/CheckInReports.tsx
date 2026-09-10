@@ -57,10 +57,19 @@ export function CheckInReports({ onSelectMember }: Props) {
     URL.revokeObjectURL(url);
   };
 
+  const days = Math.max(
+    1,
+    Math.round((new Date(`${to}T00:00:00`).getTime() - new Date(`${from}T00:00:00`).getTime()) / 86400000) + 1,
+  );
+  const avgDaily = Math.round(((data?.totals.checkins ?? 0) / days) * 10) / 10;
+
   const tiles = [
     { label: "Check-ins", value: data?.totals.checkins ?? 0 },
     { label: "Servings used", value: data?.totals.servings ?? 0 },
     { label: "Members", value: data?.totals.uniqueMembers ?? 0 },
+    { label: "Avg / day", value: avgDaily },
+    { label: "Memberships sold", value: sales?.memberships ?? 0 },
+    { label: "Revenue", value: formatCurrency(sales?.revenue ?? 0) },
     { label: "Approved", value: data?.totals.approved ?? 0 },
     { label: "Rejected", value: data?.totals.rejected ?? 0 },
     { label: "Pending", value: data?.totals.pending ?? 0 },
@@ -82,15 +91,14 @@ export function CheckInReports({ onSelectMember }: Props) {
             </Button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {(["daily", "weekly", "monthly", "custom"] as Range[]).map((r) => (
+            {RANGE_OPTIONS.map((r) => (
               <Button
-                key={r}
+                key={r.key}
                 size="sm"
-                variant={range === r ? "default" : "outline"}
-                className="capitalize"
-                onClick={() => setRange(r)}
+                variant={range === r.key ? "default" : "outline"}
+                onClick={() => setRange(r.key)}
               >
-                {r}
+                {r.label}
               </Button>
             ))}
           </div>
