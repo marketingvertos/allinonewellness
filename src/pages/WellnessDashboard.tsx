@@ -14,6 +14,7 @@ import {
   PINK_CARD_SERVING_VALUE,
   useWellnessStats,
 } from "@/hooks/useWellness";
+import { useCoachesAtRisk } from "@/hooks/useAchievements";
 import { PageBanner } from "@/components/PageBanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,6 +62,13 @@ export default function WellnessDashboard() {
   const { data: trials } = useActiveTrials(mode);
   const { data: memberships } = useActiveMemberships(mode);
   const { data: topReferrers } = useTopReferrers(5, mode);
+  const { data: coachesAtRisk } = useCoachesAtRisk();
+  const daysLeftInMonth = useMemo(() => {
+    const now = new Date();
+    const ist = new Date(now.getTime() + (330 + now.getTimezoneOffset()) * 60000);
+    const end = new Date(ist.getFullYear(), ist.getMonth() + 1, 0).getDate();
+    return Math.max(0, end - ist.getDate());
+  }, []);
   const referrerIds = useMemo(() => (topReferrers ?? []).map((r) => r.id), [topReferrers]);
   const { data: networkSummary } = useNetworkSummary(referrerIds);
   const rankedReferrers = useMemo(() => {
