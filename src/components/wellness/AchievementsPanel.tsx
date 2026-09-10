@@ -40,6 +40,7 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
   const { data: defs } = useAchievementDefinitions(true);
   const { data: unlocked } = useUnlockedAchievements(member.id);
   const { data: referrals } = useMemberReferrals(member.id);
+  const { data: activity } = useCoachMonthlyActivity(member.id);
 
   const unlockedIds = useMemo(
     () => new Set((unlocked ?? []).map((u) => u.achievement_id)),
