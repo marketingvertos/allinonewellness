@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { DobInput } from "@/components/ui/dob-input";
+import { TagPicker } from "./TagPicker";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ReferrerPicker } from "./ReferrerPicker";
 import { BatchPicker } from "./BatchPicker";
 import { MemberLoginCard } from "./MemberLoginCard";
@@ -39,8 +42,10 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [referrerId, setReferrerId] = useState<string | null>(null);
   const [batchId, setBatchId] = useState<string | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
   const [created, setCreated] = useState<{ id: string; mobile: string } | null>(null);
   const [form, setForm] = useState({
+    member_mode: "physical",
     full_name: "",
     mobile_number: "",
     email: "",
@@ -62,7 +67,9 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
     setCreated(null);
     setLoginError(null);
     setCreatingLogin(false);
+    setTags([]);
     setForm({
+      member_mode: "physical",
       full_name: "",
       mobile_number: "",
       email: "",
@@ -85,6 +92,8 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
   const submit = async () => {
     if (!user) return;
     const member = await createMember.mutateAsync({
+      member_mode: form.member_mode,
+      tags,
       full_name: form.full_name.trim(),
       mobile_number: form.mobile_number.trim(),
       email: form.email.trim() || null,
@@ -184,6 +193,18 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
         <div className="grid gap-4 sm:grid-cols-2">
 
           <div className="sm:col-span-2 space-y-2">
+            <Label>Member type</Label>
+            <ToggleGroup
+              type="single"
+              value={form.member_mode}
+              onValueChange={(v) => v && set("member_mode")(v)}
+              className="justify-start gap-2"
+            >
+              <ToggleGroupItem value="physical" className="flex-1 sm:flex-none">Physical</ToggleGroupItem>
+              <ToggleGroupItem value="virtual" className="flex-1 sm:flex-none">Virtual</ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+          <div className="sm:col-span-2 space-y-2">
             <Label htmlFor="wm-name">Full name</Label>
             <Input id="wm-name" value={form.full_name} onChange={(e) => set("full_name")(e.target.value)} placeholder="Priya Sharma" />
           </div>
@@ -208,7 +229,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="wm-dob">Date of birth</Label>
-            <Input id="wm-dob" type="date" value={form.date_of_birth} onChange={(e) => set("date_of_birth")(e.target.value)} />
+            <DobInput id="wm-dob" value={form.date_of_birth} onChange={set("date_of_birth")} />
           </div>
           <div className="space-y-2">
             <Label>Relationship status</Label>
@@ -249,6 +270,10 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
           <div className="space-y-2">
             <Label htmlFor="wm-height">Height (cm)</Label>
             <Input id="wm-height" inputMode="decimal" value={form.height} onChange={(e) => set("height")(e.target.value)} />
+          </div>
+          <div className="sm:col-span-2 space-y-2">
+            <Label>Tags (optional)</Label>
+            <TagPicker value={tags} onChange={setTags} idPrefix="wm-tag" />
           </div>
           <div className="sm:col-span-2 space-y-2">
             <Label>Batch (optional)</Label>

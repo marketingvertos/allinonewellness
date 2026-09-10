@@ -1,15 +1,24 @@
 import { useMemo, useState } from "react";
-import { useCheckInReport } from "@/hooks/useWellness";
+import { useCheckInReport, useSalesAnalytics } from "@/hooks/useWellness";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDate } from "@/lib/formatters";
+import { formatCurrency, formatDate } from "@/lib/formatters";
 import { ArrowDownRight, ArrowUpRight, Download, Minus, Trophy } from "lucide-react";
 
-type Range = "daily" | "weekly" | "monthly" | "custom";
+type Range = "daily" | "weekly" | "monthly" | "last_month" | "last30" | "custom";
+
+const RANGE_OPTIONS: { key: Range; label: string }[] = [
+  { key: "daily", label: "Today" },
+  { key: "weekly", label: "This week" },
+  { key: "monthly", label: "This month" },
+  { key: "last_month", label: "Last month" },
+  { key: "last30", label: "Last 30 days" },
+  { key: "custom", label: "Custom" },
+];
 
 function istToday() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -33,11 +42,22 @@ export function CheckInReports({ onSelectMember }: Props) {
   const { from, to } = useMemo(() => {
     if (range === "daily") return { from: istToday(), to: istToday() };
     if (range === "weekly") return { from: shift(6), to: istToday() };
-    if (range === "monthly") return { from: shift(29), to: istToday() };
+    if (range === "monthly") {
+      const [y, m] = istToday().split("-");
+      return { from: `${y}-${m}-01`, to: istToday() };
+    }
+    if (range === "last_month") {
+      const [y, m] = istToday().split("-").map(Number);
+      const first = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10);
+      const last = new Date(Date.UTC(y, m - 1, 0)).toISOString().slice(0, 10);
+      return { from: first, to: last };
+    }
+    if (range === "last30") return { from: shift(29), to: istToday() };
     return { from: customFrom, to: customTo };
   }, [range, customFrom, customTo]);
 
   const { data, isLoading } = useCheckInReport(from, to);
+  const { data: sales } = useSalesAnalytics({ from, to });
 
   const exportCsv = () => {
     const rows = data?.members ?? [];
@@ -57,10 +77,19 @@ export function CheckInReports({ onSelectMember }: Props) {
     URL.revokeObjectURL(url);
   };
 
+  const days = Math.max(
+    1,
+    Math.round((new Date(`${to}T00:00:00`).getTime() - new Date(`${from}T00:00:00`).getTime()) / 86400000) + 1,
+  );
+  const avgDaily = Math.round(((data?.totals.checkins ?? 0) / days) * 10) / 10;
+
   const tiles = [
     { label: "Check-ins", value: data?.totals.checkins ?? 0 },
     { label: "Servings used", value: data?.totals.servings ?? 0 },
     { label: "Members", value: data?.totals.uniqueMembers ?? 0 },
+    { label: "Avg / day", value: avgDaily },
+    { label: "Memberships sold", value: sales?.memberships ?? 0 },
+    { label: "Revenue", value: formatCurrency(sales?.revenue ?? 0) },
     { label: "Approved", value: data?.totals.approved ?? 0 },
     { label: "Rejected", value: data?.totals.rejected ?? 0 },
     { label: "Pending", value: data?.totals.pending ?? 0 },
@@ -82,15 +111,14 @@ export function CheckInReports({ onSelectMember }: Props) {
             </Button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {(["daily", "weekly", "monthly", "custom"] as Range[]).map((r) => (
+            {RANGE_OPTIONS.map((r) => (
               <Button
-                key={r}
+                key={r.key}
                 size="sm"
-                variant={range === r ? "default" : "outline"}
-                className="capitalize"
-                onClick={() => setRange(r)}
+                variant={range === r.key ? "default" : "outline"}
+                onClick={() => setRange(r.key)}
               >
-                {r}
+                {r.label}
               </Button>
             ))}
           </div>
@@ -111,7 +139,7 @@ export function CheckInReports({ onSelectMember }: Props) {
           {isLoading ? (
             <Skeleton className="h-24 w-full" />
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5">
               {tiles.map((t) => (
                 <div key={t.label} className="rounded-lg border p-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">{t.label}</p>

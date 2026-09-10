@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useReferralCounts, useWellnessMembers, WellnessMember, WellnessStatus } from "@/hooks/useWellness";
+import { MemberModeFilter, useReferralCounts, useWellnessMembers, WellnessMember, WellnessStatus } from "@/hooks/useWellness";
 import { PageBanner } from "@/components/PageBanner";
 import { CreateMemberDialog } from "@/components/wellness/CreateMemberDialog";
 import { MemberDetailSheet } from "@/components/wellness/MemberDetailSheet";
 import { statusLabel, statusVariant } from "@/components/wellness/status";
+import { MEMBER_TAGS, ModeBadge, TagBadges, modeLabel, tagLabel } from "@/components/wellness/memberMeta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,19 +26,40 @@ const STATUSES: (WellnessStatus | "all")[] = [
 ];
 
 export default function WellnessMembers() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
-  const [status, setStatus] = useState<WellnessStatus | "all">("all");
+  const [status, setStatus] = useState<WellnessStatus | "all">(
+    (searchParams.get("status") as WellnessStatus | "all") ?? "all",
+  );
+  const [mode, setMode] = useState<MemberModeFilter>((searchParams.get("mode") as MemberModeFilter) ?? "all");
+  const [tag, setTag] = useState<string>(searchParams.get("tag") ?? "all");
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<WellnessMember | null>(null);
 
-  const { data: members, isLoading } = useWellnessMembers(search, status);
+  // follow deep links from the dashboard
+  useEffect(() => {
+    const s = searchParams.get("status");
+    if (s) setStatus(s as WellnessStatus | "all");
+    const m = searchParams.get("mode");
+    if (m) setMode(m as MemberModeFilter);
+    const t = searchParams.get("tag");
+    if (t) setTag(t);
+  }, [searchParams]);
+
+  const syncParam = (key: string, value: string) => {
+    const p = new URLSearchParams(searchParams);
+    if (!value || value === "all") p.delete(key);
+    else p.set(key, value);
+    setSearchParams(p, { replace: true });
+  };
+
+  const { data: members, isLoading } = useWellnessMembers(search, status, "all", mode, tag);
   const { data: referralCounts } = useReferralCounts();
 
   const exportCsv = () => {
     const rows = members ?? [];
     const headers = [
-      "Name","Mobile","Email","Status","Goal","Batch","Joined","Initial weight (kg)","Current weight (kg)","Target weight (kg)","People helped",
+      "Name","Mobile","Email","Status","Mode","Tags","Goal","Batch","Joined","Initial weight (kg)","Current weight (kg)","Target weight (kg)","People helped",
     ];
     const csv = [
       headers.join(","),
@@ -47,6 +69,8 @@ export default function WellnessMembers() {
           m.mobile_number,
           m.email ?? "",
           statusLabel(m.status),
+          modeLabel(m.member_mode),
+          (m.tags ?? []).map(tagLabel).join(" | "),
           m.goal ?? "",
           m.wellness_batches?.name ?? "",
           m.joining_date,
@@ -80,8 +104,8 @@ export default function WellnessMembers() {
         </div>
       </PageBanner>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <div className="relative flex-1 sm:min-w-[16rem]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-9"
@@ -90,13 +114,48 @@ export default function WellnessMembers() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Select value={status} onValueChange={(v) => setStatus(v as WellnessStatus | "all")}>
+        <Select
+          value={status}
+          onValueChange={(v) => {
+            setStatus(v as WellnessStatus | "all");
+            syncParam("status", v);
+          }}
+        >
           <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
             {STATUSES.map((s) => (
               <SelectItem key={s} value={s}>
                 {s === "all" ? "All statuses" : statusLabel(s as WellnessStatus)}
               </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={mode}
+          onValueChange={(v) => {
+            setMode(v as MemberModeFilter);
+            syncParam("mode", v);
+          }}
+        >
+          <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All modes</SelectItem>
+            <SelectItem value="physical">Physical</SelectItem>
+            <SelectItem value="virtual">Virtual</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={tag}
+          onValueChange={(v) => {
+            setTag(v);
+            syncParam("tag", v);
+          }}
+        >
+          <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All tags</SelectItem>
+            {MEMBER_TAGS.map((t) => (
+              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -116,6 +175,8 @@ export default function WellnessMembers() {
               meta={`${m.mobile_number} · Joined ${formatDate(m.joining_date)}`}
               badges={
                 <>
+                  <ModeBadge mode={m.member_mode} />
+                  <TagBadges tags={m.tags} />
                   {m.wellness_batches?.name && <Badge variant="outline">{m.wellness_batches.name}</Badge>}
                   {!!referralCounts?.[m.id] && (
                     <Badge variant="outline" className="gap-1">

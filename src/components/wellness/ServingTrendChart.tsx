@@ -1,10 +1,10 @@
-import { useServingTrend } from "@/hooks/useWellness";
+import { MemberModeFilter, useServingTrend } from "@/hooks/useWellness";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-export function ServingTrendChart({ days = 30 }: { days?: number }) {
-  const { data, isLoading } = useServingTrend(days);
+export function ServingTrendChart({ days = 30, memberMode }: { days?: number; memberMode?: MemberModeFilter }) {
+  const { data, isLoading } = useServingTrend(days, memberMode);
 
   const rows = (data ?? []).map((d) => ({
     ...d,

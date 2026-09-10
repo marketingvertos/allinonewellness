@@ -1,12 +1,12 @@
-import { useUpcomingCelebrations } from "@/hooks/useWellness";
+import { MemberModeFilter, useUpcomingCelebrations } from "@/hooks/useWellness";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/formatters";
 import { Cake, Heart, MessageCircle } from "lucide-react";
 
-export function BirthdaysCard() {
-  const { data: celebrations } = useUpcomingCelebrations(30);
+export function BirthdaysCard({ memberMode }: { memberMode?: MemberModeFilter }) {
+  const { data: celebrations } = useUpcomingCelebrations(30, memberMode);
 
   return (
     <Card>

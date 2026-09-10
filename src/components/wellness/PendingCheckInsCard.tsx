@@ -6,10 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatDateTime } from "@/lib/formatters";
 import { BellRing, Check, X } from "lucide-react";
-import { usePendingCheckIns, useApproveCheckIn, useRejectCheckIn } from "@/hooks/useWellness";
+import { MemberModeFilter, usePendingCheckIns, useApproveCheckIn, useRejectCheckIn } from "@/hooks/useWellness";
 
-export function PendingCheckInsCard() {
-  const { data: requests, isLoading } = usePendingCheckIns();
+export function PendingCheckInsCard({ memberMode }: { memberMode?: MemberModeFilter }) {
+  const { data: requests, isLoading } = usePendingCheckIns(memberMode);
   const approve = useApproveCheckIn();
   const reject = useRejectCheckIn();
   const [rejecting, setRejecting] = useState<string | null>(null);

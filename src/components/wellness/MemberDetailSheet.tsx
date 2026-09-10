@@ -56,6 +56,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { statusLabel, statusVariant } from "./status";
+import { ModeBadge, TagBadges } from "./memberMeta";
+import { DobInput } from "@/components/ui/dob-input";
+import { ageFromDob } from "@/lib/formatters";
 
 interface Props {
   member: WellnessMember | null;
@@ -132,6 +135,8 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <SheetTitle className="flex flex-wrap items-center gap-2">
             {member.full_name}
             <Badge variant={statusVariant(member.status)}>{statusLabel(member.status)}</Badge>
+            <ModeBadge mode={member.member_mode} />
+            <TagBadges tags={member.tags} />
           </SheetTitle>
           <SheetDescription>
             {member.mobile_number} · Joined {formatDate(member.joining_date)}
@@ -192,11 +197,13 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                 <p className="font-medium">Date of birth</p>
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
 
-                  <Input
-                    type="date"
-                    value={dob ?? member.date_of_birth ?? ""}
-                    onChange={(e) => setDob(e.target.value)}
-                  />
+                  <div className="flex-1">
+                    <DobInput
+                      value={dob ?? member.date_of_birth ?? ""}
+                      onChange={(v) => setDob(v)}
+                      showAge={false}
+                    />
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
@@ -206,6 +213,9 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                     Save
                   </Button>
                 </div>
+                {ageFromDob(dob ?? member.date_of_birth) !== null && (
+                  <p className="mt-2 text-sm font-medium">Age: {ageFromDob(dob ?? member.date_of_birth)} years</p>
+                )}
                 <p className="mt-2 text-xs text-muted-foreground">Used for birthday reminders on the overview page.</p>
               </div>
 
