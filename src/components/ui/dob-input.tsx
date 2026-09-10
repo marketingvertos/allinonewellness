@@ -44,17 +44,24 @@ export function DobInput({ value, onChange, id, showAge = true, className, disab
   const yearRef = React.useRef<HTMLInputElement>(null);
   const dayRef = React.useRef<HTMLInputElement>(null);
 
+  const partsRef = React.useRef({ d: "", m: "", y: "" });
+
+  const setParts = (d: string, m: string, y: string) => {
+    partsRef.current = { d, m, y };
+    setDay(d);
+    setMonth(m);
+    setYear(y);
+  };
+
   // sync down from the outside value
   React.useEffect(() => {
     if (value && /^\d{4}-\d{2}-\d{2}$/.test(value.slice(0, 10))) {
       const [y, m, d] = value.slice(0, 10).split("-");
-      setDay(d);
-      setMonth(m);
-      setYear(y);
-    } else if (!value) {
-      setDay("");
-      setMonth("");
-      setYear("");
+      if (partsRef.current.d !== d || partsRef.current.m !== m || partsRef.current.y !== y) {
+        setParts(d, m, y);
+      }
+    } else if (!value && (partsRef.current.y.length === 4)) {
+      setParts("", "", "");
     }
   }, [value]);
 
@@ -67,20 +74,23 @@ export function DobInput({ value, onChange, id, showAge = true, className, disab
 
   const onDay = (raw: string) => {
     const v = digitsOnly(raw, 2);
-    setDay(v);
-    emit(v, month, year);
+    const { m, y } = partsRef.current;
+    setParts(v, m, y);
+    emit(v, m, y);
     if (v.length === 2 || (v.length === 1 && Number(v) > 3)) monthRef.current?.focus();
   };
   const onMonth = (raw: string) => {
     const v = digitsOnly(raw, 2);
-    setMonth(v);
-    emit(day, v, year);
+    const { d, y } = partsRef.current;
+    setParts(d, v, y);
+    emit(d, v, y);
     if (v.length === 2 || (v.length === 1 && Number(v) > 1)) yearRef.current?.focus();
   };
   const onYear = (raw: string) => {
     const v = digitsOnly(raw, 4);
-    setYear(v);
-    emit(day, month, v);
+    const { d, m } = partsRef.current;
+    setParts(d, m, v);
+    emit(d, m, v);
   };
 
   const back = (current: string, prev: React.RefObject<HTMLInputElement>) =>
@@ -109,7 +119,7 @@ export function DobInput({ value, onChange, id, showAge = true, className, disab
           value={day}
           disabled={disabled}
           onChange={(e) => onDay(e.target.value)}
-          onBlur={() => day.length === 1 && setDay(pad(day, 2))}
+          onBlur={() => { const { d, m, y } = partsRef.current; if (d.length === 1) { setParts(pad(d, 2), m, y); emit(pad(d, 2), m, y); } }}
         />
         <span className="text-muted-foreground">/</span>
         <input
@@ -122,7 +132,7 @@ export function DobInput({ value, onChange, id, showAge = true, className, disab
           disabled={disabled}
           onChange={(e) => onMonth(e.target.value)}
           onKeyDown={back(month, dayRef)}
-          onBlur={() => month.length === 1 && setMonth(pad(month, 2))}
+          onBlur={() => { const { d, m, y } = partsRef.current; if (m.length === 1) { setParts(d, pad(m, 2), y); emit(d, pad(m, 2), y); } }}
         />
         <span className="text-muted-foreground">/</span>
         <input
@@ -153,8 +163,11 @@ export function DobInput({ value, onChange, id, showAge = true, className, disab
               toYear={new Date().getFullYear()}
               onSelect={(d) => {
                 if (!d) return;
-                const iso = `${d.getFullYear()}-${pad(String(d.getMonth() + 1), 2)}-${pad(String(d.getDate()), 2)}`;
-                onChange(iso);
+                const yy = String(d.getFullYear());
+                const mm = pad(String(d.getMonth() + 1), 2);
+                const dd = pad(String(d.getDate()), 2);
+                setParts(dd, mm, yy);
+                onChange(`${yy}-${mm}-${dd}`);
               }}
               initialFocus
               className={cn("p-3 pointer-events-auto")}
