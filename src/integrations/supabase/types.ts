@@ -1051,9 +1051,11 @@ export type Database = {
           is_guest: boolean
           joining_date: string
           marital_status: string | null
+          member_mode: string
           mobile_number: string
           referred_by_member_id: string | null
           status: Database["public"]["Enums"]["wellness_status"]
+          tags: string[]
           target_weight: number | null
           updated_at: string
           user_id: string | null
@@ -1079,9 +1081,11 @@ export type Database = {
           is_guest?: boolean
           joining_date?: string
           marital_status?: string | null
+          member_mode?: string
           mobile_number: string
           referred_by_member_id?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
+          tags?: string[]
           target_weight?: number | null
           updated_at?: string
           user_id?: string | null
@@ -1107,9 +1111,11 @@ export type Database = {
           is_guest?: boolean
           joining_date?: string
           marital_status?: string | null
+          member_mode?: string
           mobile_number?: string
           referred_by_member_id?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
+          tags?: string[]
           target_weight?: number | null
           updated_at?: string
           user_id?: string | null
