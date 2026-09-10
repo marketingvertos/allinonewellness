@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMemberSearch } from "@/hooks/useAchievements";
+import { useReferralNetwork } from "@/hooks/useWellness";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -23,8 +24,12 @@ export function ReferrerPicker({ value, onChange, excludeId, placeholder = "Sear
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
   const { data: results, isLoading } = useMemberSearch(term, excludeId);
+  // A member cannot be referred by someone inside their own downstream network.
+  const { data: ownNetwork } = useReferralNetwork(excludeId);
+  const blocked = new Set((ownNetwork ?? []).map((n) => n.member_id));
+  const options = (results ?? []).filter((r) => !blocked.has(r.id));
 
-  const selected = (results ?? []).find((r) => r.id === value);
+  const selected = options.find((r) => r.id === value);
 
   return (
     <div className="flex items-center gap-2">
@@ -43,7 +48,7 @@ export function ReferrerPicker({ value, onChange, excludeId, placeholder = "Sear
             <CommandList>
               {isLoading ? null : <CommandEmpty>No matching member.</CommandEmpty>}
               <CommandGroup>
-                {(results ?? []).map((r) => (
+                {options.map((r) => (
                   <CommandItem
                     key={r.id}
                     value={r.id}

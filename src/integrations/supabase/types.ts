@@ -1117,12 +1117,14 @@ export type Database = {
           anniversary_date: string | null
           batch_id: string | null
           category_id: string | null
+          cluster_count: number
           contact_id: string | null
           created_at: string
           created_by: string
           current_weight: number | null
           date_of_birth: string | null
           email: string | null
+          frontline_count: number
           full_name: string
           gender: string | null
           goal: Database["public"]["Enums"]["wellness_goal"] | null
@@ -1132,8 +1134,10 @@ export type Database = {
           is_guest: boolean
           joining_date: string
           marital_status: string | null
+          master_level: number
           member_mode: string
           mobile_number: string
+          network_total: number
           pink_card_balance: number
           referred_by_member_id: string | null
           status: Database["public"]["Enums"]["wellness_status"]
@@ -1148,12 +1152,14 @@ export type Database = {
           anniversary_date?: string | null
           batch_id?: string | null
           category_id?: string | null
+          cluster_count?: number
           contact_id?: string | null
           created_at?: string
           created_by: string
           current_weight?: number | null
           date_of_birth?: string | null
           email?: string | null
+          frontline_count?: number
           full_name: string
           gender?: string | null
           goal?: Database["public"]["Enums"]["wellness_goal"] | null
@@ -1163,8 +1169,10 @@ export type Database = {
           is_guest?: boolean
           joining_date?: string
           marital_status?: string | null
+          master_level?: number
           member_mode?: string
           mobile_number: string
+          network_total?: number
           pink_card_balance?: number
           referred_by_member_id?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
@@ -1179,12 +1187,14 @@ export type Database = {
           anniversary_date?: string | null
           batch_id?: string | null
           category_id?: string | null
+          cluster_count?: number
           contact_id?: string | null
           created_at?: string
           created_by?: string
           current_weight?: number | null
           date_of_birth?: string | null
           email?: string | null
+          frontline_count?: number
           full_name?: string
           gender?: string | null
           goal?: Database["public"]["Enums"]["wellness_goal"] | null
@@ -1194,8 +1204,10 @@ export type Database = {
           is_guest?: boolean
           joining_date?: string
           marital_status?: string | null
+          master_level?: number
           member_mode?: string
           mobile_number?: string
+          network_total?: number
           pink_card_balance?: number
           referred_by_member_id?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
@@ -1771,6 +1783,27 @@ export type Database = {
       }
       delete_wellness_plan: { Args: { p_plan_id: string }; Returns: Json }
       expire_stale_checkin_requests: { Args: never; Returns: undefined }
+      get_network_summary: {
+        Args: { member_ids: string[] }
+        Returns: {
+          cluster_count: number
+          frontline_count: number
+          master_level: number
+          root_id: string
+          total_count: number
+        }[]
+      }
+      get_referral_network: {
+        Args: { root_member_id: string }
+        Returns: {
+          depth: number
+          full_name: string
+          member_id: string
+          mobile_number: string
+          referred_by: string
+          status: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1798,6 +1831,10 @@ export type Database = {
       }
       recalc_all_member_achievements: { Args: never; Returns: undefined }
       recalc_member_achievements: {
+        Args: { p_member_id: string }
+        Returns: undefined
+      }
+      recalc_network_counts: {
         Args: { p_member_id: string }
         Returns: undefined
       }

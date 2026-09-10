@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { formatDate } from "@/lib/formatters";
-import { QrCode } from "lucide-react";
+import { ChevronRight, QrCode } from "lucide-react";
+import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
 
 export default function PortalHome() {
   const { data: identity } = useMemberIdentity();
@@ -94,6 +95,38 @@ export default function PortalHome() {
               <p className="text-muted-foreground">Target</p>
               <p className="font-semibold">{profile.target_weight ?? "—"} kg</p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {profile && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">My network</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {(profile.network_total ?? 0) > 0 ? (
+              <MasterTitleCard
+                frontline={profile.frontline_count ?? 0}
+                cluster={profile.cluster_count ?? 0}
+                total={profile.network_total ?? 0}
+                compact
+              />
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Start building your community by referring friends and family to the centre. Reach 10
+                  members to earn the Master 10 title!
+                </p>
+                <p className="text-xs text-muted-foreground">0 of 10 for Master 10</p>
+                <Progress value={0} className="h-2 [&>div]:bg-amber-500 dark:[&>div]:bg-amber-400" />
+              </div>
+            )}
+            <Button variant="outline" size="sm" asChild className="w-full">
+              <Link to="/portal/network">
+                View my network <ChevronRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       )}
