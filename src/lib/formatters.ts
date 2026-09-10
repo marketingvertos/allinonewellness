@@ -23,6 +23,19 @@ export function formatCompactCurrency(value: number): string {
   return formatCurrency(v);
 }
 
+/** Whole years between a YYYY-MM-DD date of birth and today in IST. */
+export function ageFromDob(dob: string | null | undefined): number | null {
+  if (!dob) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob.slice(0, 10));
+  if (!m) return null;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: APP_TIME_ZONE });
+  const [ty, tm, td] = todayStr.split("-").map(Number);
+  let age = ty - y;
+  if (tm < mo || (tm === mo && td < d)) age -= 1;
+  return age >= 0 && age < 130 ? age : null;
+}
+
 export function formatRelativeDate(date: string | Date): string {
   return formatDistanceToNow(new Date(date), { addSuffix: true });
 }
