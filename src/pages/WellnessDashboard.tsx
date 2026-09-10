@@ -6,6 +6,8 @@ import {
   useActiveTrials,
   useSalesAnalytics,
   useTopReferrers,
+  useNetworkSummary,
+  getNextMasterLevel,
   usePinkCardBalances,
   PINK_CARD_SERVING_VALUE,
   useWellnessStats,
@@ -57,6 +59,24 @@ export default function WellnessDashboard() {
   const { data: trials } = useActiveTrials(mode);
   const { data: memberships } = useActiveMemberships(mode);
   const { data: topReferrers } = useTopReferrers(5, mode);
+  const referrerIds = useMemo(() => (topReferrers ?? []).map((r) => r.id), [topReferrers]);
+  const { data: networkSummary } = useNetworkSummary(referrerIds);
+  const rankedReferrers = useMemo(() => {
+    const byId = Object.fromEntries((networkSummary ?? []).map((n) => [n.root_id, n]));
+    return (topReferrers ?? [])
+      .map((r) => {
+        const n = byId[r.id];
+        return {
+          id: r.id,
+          full_name: r.full_name,
+          frontline: n?.frontline_count ?? r.count,
+          cluster: n?.cluster_count ?? 0,
+          total: n?.total_count ?? r.count,
+          master_level: n?.master_level ?? 0,
+        };
+      })
+      .sort((a, b) => b.total - a.total);
+  }, [topReferrers, networkSummary]);
   const { data: pinkBalances } = usePinkCardBalances((topReferrers ?? []).map((r) => r.id));
 
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -217,25 +237,38 @@ export default function WellnessDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Top referrers</CardTitle>
+            <CardTitle className="text-base">Top referrers &amp; Master titles</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {topReferrers?.length ? (
-              topReferrers.map((r, i) => (
-                <div key={r.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
-                  <span className="font-medium">
-                    {i + 1}. {r.full_name}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Badge variant="outline">{r.count} helped</Badge>
-                    {(pinkBalances?.[r.id] ?? 0) > 0 && (
-                      <Badge className="border-transparent bg-[hsl(330_70%_55%)] text-white hover:bg-[hsl(330_70%_50%)]">
-                        {formatCurrency((pinkBalances?.[r.id] ?? 0) * PINK_CARD_SERVING_VALUE)} credit
-                      </Badge>
+            {rankedReferrers.length ? (
+              rankedReferrers.map((r, i) => {
+                const next = getNextMasterLevel(r.total);
+                return (
+                  <div key={r.id} className="space-y-1 rounded-md border px-3 py-2 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-medium">
+                        {i + 1}. {r.full_name}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <MasterTitleBadge level={r.master_level} size="sm" />
+                        {(pinkBalances?.[r.id] ?? 0) > 0 && (
+                          <Badge className="border-transparent bg-[hsl(330_70%_55%)] text-white hover:bg-[hsl(330_70%_50%)]">
+                            {formatCurrency((pinkBalances?.[r.id] ?? 0) * PINK_CARD_SERVING_VALUE)} credit
+                          </Badge>
+                        )}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Frontline: {r.frontline} · Cluster: {r.cluster} · Total: {r.total}
+                    </p>
+                    {r.master_level === 0 && next && (
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        {next.remaining} more for Master {next.level}
+                      </p>
                     )}
-                  </span>
-                </div>
-              ))
+                  </div>
+                );
+              })
             ) : (
               <p className="text-sm text-muted-foreground">No referrals recorded yet.</p>
             )}
