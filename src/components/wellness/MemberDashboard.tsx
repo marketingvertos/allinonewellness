@@ -94,15 +94,43 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
 
   const first = measurements[0];
   const latest = measurements[measurements.length - 1];
+  const compositionFields = [
+    { key: "trunk_fat", label: "Trunk fat %" },
+    { key: "muscle_mass", label: "Muscle mass" },
+    { key: "body_fat_percentage", label: "Body fat %" },
+    { key: "visceral_fat", label: "Visceral fat" },
+    { key: "bmi", label: "BMI" },
+    { key: "waist", label: "Waist" },
+    { key: "hip", label: "Hip" },
+    { key: "chest", label: "Chest" },
+  ] as const;
   const compositionData = latest
-    ? (["waist", "hip", "chest", "body_fat_percentage"] as const)
-        .filter((k) => latest[k] != null)
-        .map((k) => ({
-          metric: k === "body_fat_percentage" ? "Body fat %" : k[0].toUpperCase() + k.slice(1),
-          first: Number(first?.[k] ?? latest[k]),
-          latest: Number(latest[k]),
+    ? compositionFields
+        .filter((f) => latest[f.key] != null)
+        .map((f) => ({
+          metric: f.label,
+          first: Number(first?.[f.key] ?? latest[f.key]),
+          latest: Number(latest[f.key]),
         }))
     : [];
+
+  const evalRows: { label: string; value: string; param?: BodyEvalParam; raw?: number | null }[] = latest
+    ? [
+        { label: "Weight", value: latest.weight != null ? `${latest.weight} kg` : "—" },
+        { label: "BMI", value: latest.bmi != null ? `${latest.bmi}` : "—", param: "bmi", raw: latest.bmi },
+        { label: "Trunk fat", value: latest.trunk_fat != null ? `${latest.trunk_fat}%` : "—", param: "trunk_fat", raw: latest.trunk_fat },
+        { label: "Muscle mass", value: latest.muscle_mass != null ? `${latest.muscle_mass} kg` : "—", param: "muscle_mass", raw: latest.muscle_mass },
+        { label: "Body fat", value: latest.body_fat_percentage != null ? `${latest.body_fat_percentage}%` : "—", param: "body_fat_percentage", raw: latest.body_fat_percentage },
+        { label: "Visceral fat", value: latest.visceral_fat != null ? `${latest.visceral_fat}` : "—", param: "visceral_fat", raw: latest.visceral_fat },
+        { label: "BMR", value: latest.bmr != null ? `${latest.bmr} kcal/day` : "—" },
+        { label: "Body age", value: latest.body_age != null ? `${latest.body_age} yrs` : "—" },
+      ].filter((r) => r.value !== "—")
+    : [];
+
+  const evalOverUnder =
+    latest?.weight != null && latest?.ideal_weight != null
+      ? Number((latest.weight - latest.ideal_weight).toFixed(1))
+      : null;
 
   const memberAge = age(member.date_of_birth);
   const anniversaryYears = age(member.anniversary_date ?? null);
