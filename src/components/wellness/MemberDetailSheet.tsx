@@ -466,7 +466,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
 
             <div className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-medium">Body measurements</p>
+                <p className="text-sm font-medium">Body Evaluation</p>
                 <p className="text-xs text-muted-foreground">
                   {measurements?.length ? `${measurements.length} recorded` : "None recorded yet"}
                 </p>
@@ -479,46 +479,58 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   setMeasureOpen(true);
                 }}
               >
-                Record measurements
+                New Evaluation
               </Button>
             </div>
 
             {measurements?.length ? (
               <div className="space-y-2">
                 {[...measurements].reverse().map((m) => (
-                  <div key={m.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
-                    <span>{formatDate(m.recorded_date)}</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-right text-xs text-muted-foreground sm:text-sm">
-                        {[m.waist && `W ${m.waist}`, m.hip && `H ${m.hip}`, m.chest && `C ${m.chest}`,
-                          m.body_fat_percentage && `Fat ${m.body_fat_percentage}%`].filter(Boolean).join(" · ")}
-                      </span>
-                      {isManager && (
-                        <>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            aria-label="Edit measurements"
-                            onClick={() => {
-                              setEditMeasurement(m);
-                              setMeasureOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-destructive"
-                            aria-label="Delete measurements"
-                            onClick={() => setConfirmDelete({ kind: "measurement", id: m.id })}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      )}
+                  <div key={m.id} className="space-y-1 rounded-md border px-3 py-2.5 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium">{formatDate(m.recorded_date)}</span>
+                      <div className="flex items-center gap-1">
+                        {isManager && (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              aria-label="Edit evaluation"
+                              onClick={() => {
+                                setEditMeasurement(m);
+                                setMeasureOpen(true);
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-destructive"
+                              aria-label="Delete evaluation"
+                              onClick={() => setConfirmDelete({ kind: "measurement", id: m.id })}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                      {m.weight != null && <span>Wt {m.weight} kg</span>}
+                      {m.bmi != null && <span>BMI {m.bmi}</span>}
+                      {m.trunk_fat != null && <span>TSF {m.trunk_fat}%</span>}
+                      {m.muscle_mass != null && <span>MM {m.muscle_mass} kg</span>}
+                      {m.body_fat_percentage != null && <span>Fat {m.body_fat_percentage}%</span>}
+                      {m.visceral_fat != null && <span>VF {m.visceral_fat}</span>}
+                      {m.bmr != null && <span>BMR {m.bmr}</span>}
+                      {m.body_age != null && <span>B-Age {m.body_age}</span>}
+                      {m.waist != null && <span>W {m.waist}</span>}
+                      {m.hip != null && <span>H {m.hip}</span>}
+                      {m.chest != null && <span>C {m.chest}</span>}
+                    </div>
+                    {m.remark && <p className="text-xs italic text-muted-foreground">{m.remark}</p>}
                   </div>
                 ))}
               </div>
@@ -598,6 +610,9 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
 
         <RecordMeasurementDialog
         memberId={member.id}
+        memberHeight={member.height}
+        memberGender={member.gender}
+        memberDob={member.date_of_birth}
         entry={editMeasurement}
         open={measureOpen}
         onOpenChange={(o) => {

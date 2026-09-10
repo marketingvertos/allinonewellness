@@ -17,7 +17,10 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatters";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowDownRight, ArrowUpRight, Cake, Heart, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Cake, Heart, Minus, Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BodyEvalPrintCard } from "./BodyEvalPrintCard";
+import { BodyEvalParam, bmiCategory, getRange } from "./bodyEvalConstants";
 
 interface Props {
   member: WellnessMember;
@@ -27,12 +30,7 @@ interface Props {
   measurements: BodyMeasurement[];
 }
 
-function bmiCategory(bmi: number) {
-  if (bmi < 18.5) return "Underweight";
-  if (bmi < 25) return "Healthy";
-  if (bmi < 30) return "Overweight";
-  return "Obese";
-}
+// Indian BMI categories live in bodyEvalConstants.
 
 function age(dob: string | null) {
   if (!dob) return null;
@@ -96,15 +94,46 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
 
   const first = measurements[0];
   const latest = measurements[measurements.length - 1];
+  const compositionFields = [
+    { key: "trunk_fat", label: "Trunk fat %" },
+    { key: "muscle_mass", label: "Muscle mass" },
+    { key: "body_fat_percentage", label: "Body fat %" },
+    { key: "visceral_fat", label: "Visceral fat" },
+    { key: "bmi", label: "BMI" },
+    { key: "waist", label: "Waist" },
+    { key: "hip", label: "Hip" },
+    { key: "chest", label: "Chest" },
+  ] as const;
   const compositionData = latest
-    ? (["waist", "hip", "chest", "body_fat_percentage"] as const)
-        .filter((k) => latest[k] != null)
-        .map((k) => ({
-          metric: k === "body_fat_percentage" ? "Body fat %" : k[0].toUpperCase() + k.slice(1),
-          first: Number(first?.[k] ?? latest[k]),
-          latest: Number(latest[k]),
+    ? compositionFields
+        .filter((f) => latest[f.key] != null)
+        .map((f) => ({
+          metric: f.label,
+          first: Number(first?.[f.key] ?? latest[f.key]),
+          latest: Number(latest[f.key]),
         }))
     : [];
+
+  const evalRows: { label: string; value: string; param?: BodyEvalParam; raw?: number | null }[] = latest
+    ? ([
+        { label: "Weight", value: latest.weight != null ? `${latest.weight} kg` : "—" },
+        { label: "BMI", value: latest.bmi != null ? `${latest.bmi}` : "—", param: "bmi", raw: latest.bmi },
+        { label: "Trunk fat", value: latest.trunk_fat != null ? `${latest.trunk_fat}%` : "—", param: "trunk_fat", raw: latest.trunk_fat },
+        { label: "Muscle mass", value: latest.muscle_mass != null ? `${latest.muscle_mass} kg` : "—", param: "muscle_mass", raw: latest.muscle_mass },
+        { label: "Body fat", value: latest.body_fat_percentage != null ? `${latest.body_fat_percentage}%` : "—", param: "body_fat_percentage", raw: latest.body_fat_percentage },
+        { label: "Visceral fat", value: latest.visceral_fat != null ? `${latest.visceral_fat}` : "—", param: "visceral_fat", raw: latest.visceral_fat },
+        { label: "BMR", value: latest.bmr != null ? `${latest.bmr} kcal/day` : "—" },
+        { label: "Body age", value: latest.body_age != null ? `${latest.body_age} yrs` : "—" },
+      ] as { label: string; value: string; param?: BodyEvalParam; raw?: number | null }[]).filter((r) => r.value !== "—")
+    : [];
+
+  const evalOverUnder =
+    latest?.weight != null && latest?.ideal_weight != null
+      ? Number((latest.weight - latest.ideal_weight).toFixed(1))
+      : null;
+
+  const effectiveBmi = latest?.bmi != null ? Number(latest.bmi) : bmi;
+
 
   const memberAge = age(member.date_of_birth);
   const anniversaryYears = age(member.anniversary_date ?? null);
@@ -117,7 +146,11 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
       sub: change != null && start ? `${((change / start) * 100).toFixed(1)}%` : "",
       trend: change,
     },
-    { label: "BMI", value: bmi != null ? `${bmi}` : "—", sub: bmi != null ? bmiCategory(bmi) : "Add height" },
+    {
+      label: "BMI",
+      value: effectiveBmi != null ? `${effectiveBmi}` : "—",
+      sub: effectiveBmi != null ? bmiCategory(effectiveBmi) : "Add height",
+    },
     {
       label: "Servings left",
       value: membership ? `${membership.remaining_servings}` : "—",
@@ -299,6 +332,55 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
           </CardContent>
         </Card>
       </div>
+
+      {latest && evalRows.length > 0 && (
+        <Card>
+          <CardHeader className="flex-row items-start justify-between gap-2 pb-2">
+            <div>
+              <CardTitle className="text-sm">Latest body evaluation</CardTitle>
+              <p className="text-xs text-muted-foreground">Recorded {formatDate(latest.recorded_date)}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="mr-2 h-3.5 w-3.5" /> Print report
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {evalRows.map((r) => {
+                const range = r.param && r.raw != null ? getRange(r.param, Number(r.raw), member.gender) : null;
+                return (
+                  <div key={r.label} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+                    <span className="text-muted-foreground">{r.label}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-medium">{r.value}</span>
+                      {range && (
+                        <Badge variant="outline" className={range.className}>{range.label}</Badge>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            {latest.ideal_weight != null && (
+              <p className="text-xs text-muted-foreground">
+                Ideal weight: {latest.ideal_weight} kg
+                {evalOverUnder != null && evalOverUnder !== 0
+                  ? ` · ${Math.abs(evalOverUnder)} kg ${evalOverUnder > 0 ? "over" : "under"}`
+                  : ""}
+              </p>
+            )}
+            {latest.body_age != null && memberAge != null && latest.body_age !== memberAge && (
+              <p className={`text-xs ${latest.body_age < memberAge ? "text-primary" : "text-destructive"}`}>
+                Body age is {Math.abs(latest.body_age - memberAge)} yrs{" "}
+                {latest.body_age < memberAge ? "younger" : "older"} than actual age.
+              </p>
+            )}
+            {latest.remark && <p className="text-xs italic text-muted-foreground">{latest.remark}</p>}
+          </CardContent>
+        </Card>
+      )}
+
+      {latest && <BodyEvalPrintCard member={member} evaluation={latest} />}
     </div>
   );
 }

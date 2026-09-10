@@ -103,37 +103,64 @@ export type Database = {
       }
       body_measurements: {
         Row: {
+          bmi: number | null
+          bmr: number | null
+          body_age: number | null
           body_fat_percentage: number | null
           chest: number | null
           created_at: string
           hip: number | null
           id: string
+          ideal_weight: number | null
           member_id: string
+          muscle_mass: number | null
           recorded_by: string
           recorded_date: string
+          remark: string | null
+          trunk_fat: number | null
+          visceral_fat: number | null
           waist: number | null
+          weight: number | null
         }
         Insert: {
+          bmi?: number | null
+          bmr?: number | null
+          body_age?: number | null
           body_fat_percentage?: number | null
           chest?: number | null
           created_at?: string
           hip?: number | null
           id?: string
+          ideal_weight?: number | null
           member_id: string
+          muscle_mass?: number | null
           recorded_by: string
           recorded_date?: string
+          remark?: string | null
+          trunk_fat?: number | null
+          visceral_fat?: number | null
           waist?: number | null
+          weight?: number | null
         }
         Update: {
+          bmi?: number | null
+          bmr?: number | null
+          body_age?: number | null
           body_fat_percentage?: number | null
           chest?: number | null
           created_at?: string
           hip?: number | null
           id?: string
+          ideal_weight?: number | null
           member_id?: string
+          muscle_mass?: number | null
           recorded_by?: string
           recorded_date?: string
+          remark?: string | null
+          trunk_fat?: number | null
+          visceral_fat?: number | null
           waist?: number | null
+          weight?: number | null
         }
         Relationships: [
           {

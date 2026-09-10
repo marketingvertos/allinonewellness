@@ -916,6 +916,15 @@ export interface BodyMeasurement {
   hip: number | null;
   chest: number | null;
   body_fat_percentage: number | null;
+  weight: number | null;
+  trunk_fat: number | null;
+  muscle_mass: number | null;
+  visceral_fat: number | null;
+  bmr: number | null;
+  bmi: number | null;
+  body_age: number | null;
+  ideal_weight: number | null;
+  remark: string | null;
 }
 
 export function useBodyMeasurements(memberId: string | undefined) {
@@ -924,7 +933,7 @@ export function useBodyMeasurements(memberId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("body_measurements")
-        .select("id, recorded_date, waist, hip, chest, body_fat_percentage")
+        .select("*")
         .eq("member_id", memberId!)
         .order("recorded_date");
       if (error) throw error;
