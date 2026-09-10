@@ -1911,3 +1911,100 @@ export function useStartGuestTrial() {
     onError: t.onError,
   });
 }
+
+/* --------------------------- Sales & servings analytics -------------------------- */
+
+export interface PeriodRange {
+  from: string;
+  to: string;
+}
+
+function istDateStr(d: Date) {
+  return d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+}
+
+/** Named periods resolved to IST date ranges. */
+export function periodRange(period: "today" | "week" | "month" | "last_month" | "last30"): PeriodRange {
+  const today = istDateStr(new Date());
+  const [y, m, d] = today.split("-").map(Number);
+  if (period === "today") return { from: today, to: today };
+  if (period === "week") {
+    const dow = (new Date(`${today}T00:00:00`).getDay() + 6) % 7; // Monday = 0
+    const start = new Date(`${today}T00:00:00`);
+    start.setDate(start.getDate() - dow);
+    return { from: istDateStr(start), to: today };
+  }
+  if (period === "month") {
+    return { from: `${y}-${String(m).padStart(2, "0")}-01`, to: today };
+  }
+  if (period === "last_month") {
+    const first = new Date(Date.UTC(y, m - 2, 1));
+    const last = new Date(Date.UTC(y, m - 1, 0));
+    return { from: first.toISOString().slice(0, 10), to: last.toISOString().slice(0, 10) };
+  }
+  const start = new Date(`${today}T00:00:00`);
+  start.setDate(start.getDate() - 29);
+  return { from: istDateStr(start), to: today };
+}
+
+export interface SalesSummary {
+  memberships: number;
+  revenue: number;
+  servings: number;
+}
+
+/** Memberships sold, revenue and servings used inside a date range. */
+export function useSalesAnalytics(range: PeriodRange, memberMode?: MemberModeFilter) {
+  return useQuery({
+    queryKey: ["wellness-sales-analytics", range.from, range.to, memberMode ?? "all"],
+    queryFn: async (): Promise<SalesSummary> => {
+      const ids = await memberIdsForMode(memberMode);
+      let salesQ = supabase
+        .from("wellness_memberships")
+        .select("price_paid, created_at, member_id")
+        .gte("created_at", `${range.from}T00:00:00+05:30`)
+        .lte("created_at", `${range.to}T23:59:59+05:30`);
+      let servingsQ = supabase
+        .from("wellness_attendance")
+        .select("id, member_id, serving_deducted, visit_date")
+        .gte("visit_date", range.from)
+        .lte("visit_date", range.to);
+      if (ids) {
+        salesQ = salesQ.in("member_id", ids);
+        servingsQ = servingsQ.in("member_id", ids);
+      }
+      const [sales, servings] = await Promise.all([salesQ, servingsQ]);
+      if (sales.error) throw sales.error;
+      if (servings.error) throw servings.error;
+      return {
+        memberships: sales.data?.length ?? 0,
+        revenue: (sales.data ?? []).reduce((sum, r) => sum + Number((r as { price_paid: number }).price_paid ?? 0), 0),
+        servings: (servings.data ?? []).filter((r) => (r as { serving_deducted: boolean }).serving_deducted).length,
+      };
+    },
+  });
+}
+
+/** Remaining servings of the active membership, keyed by member id. */
+export function useMemberBalances(memberIds: string[]) {
+  const key = [...memberIds].sort().join(",");
+  return useQuery({
+    queryKey: ["wellness-member-balances", key],
+    enabled: memberIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_memberships")
+        .select("member_id, remaining_servings, status, end_date")
+        .in("member_id", memberIds)
+        .in("status", ["active", "expiring_soon"])
+        .order("end_date", { ascending: false });
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      for (const row of data ?? []) {
+        const r = row as { member_id: string; remaining_servings: number };
+        map[r.member_id] = (map[r.member_id] ?? 0) + Number(r.remaining_servings ?? 0);
+      }
+      return map;
+    },
+  });
+}
