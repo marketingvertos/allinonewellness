@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BatchPicker } from "./BatchPicker";
+import { TagPicker } from "./TagPicker";
+import { DobInput } from "@/components/ui/dob-input";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CategoryPicker } from "./CategoryPicker";
 import { statusLabel } from "./status";
 
@@ -20,6 +23,7 @@ interface Props {
 export function EditMemberDialog({ member, open, onOpenChange }: Props) {
   const update = useUpdateWellnessMember();
   const [form, setForm] = useState({
+    member_mode: member.member_mode ?? "physical",
     full_name: member.full_name,
     mobile_number: member.mobile_number,
     email: member.email ?? "",
@@ -35,10 +39,13 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
   });
   const [batchId, setBatchId] = useState<string | null>(member.batch_id);
   const [categoryId, setCategoryId] = useState<string | null>(member.category_id ?? null);
+  const [tags, setTags] = useState<string[]>(member.tags ?? []);
 
   useEffect(() => {
     if (!open) return;
+    setTags(member.tags ?? []);
     setForm({
+      member_mode: member.member_mode ?? "physical",
       full_name: member.full_name,
       mobile_number: member.mobile_number,
       email: member.email ?? "",
@@ -63,6 +70,8 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
   const submit = async () => {
     await update.mutateAsync({
       id: member.id,
+      member_mode: form.member_mode,
+      tags,
       full_name: form.full_name.trim(),
       mobile_number: form.mobile_number.trim(),
       email: form.email.trim() || null,
@@ -96,6 +105,18 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2 space-y-2">
+          <Label>Member type</Label>
+          <ToggleGroup
+            type="single"
+            value={form.member_mode}
+            onValueChange={(v) => v && set("member_mode")(v)}
+            className="justify-start gap-2"
+          >
+            <ToggleGroupItem value="physical" className="flex-1 sm:flex-none">Physical</ToggleGroupItem>
+            <ToggleGroupItem value="virtual" className="flex-1 sm:flex-none">Virtual</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <div className="sm:col-span-2 space-y-2">
           <Label htmlFor="em-name">Full name</Label>
           <Input id="em-name" value={form.full_name} onChange={(e) => set("full_name")(e.target.value)} />
         </div>
@@ -120,7 +141,7 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="em-dob">Date of birth</Label>
-          <Input id="em-dob" type="date" value={form.date_of_birth} onChange={(e) => set("date_of_birth")(e.target.value)} />
+          <DobInput id="em-dob" value={form.date_of_birth} onChange={set("date_of_birth")} />
         </div>
         <div className="space-y-2">
           <Label>Relationship status</Label>
@@ -170,6 +191,10 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
         <div className="space-y-2">
           <Label>Category</Label>
           <CategoryPicker value={categoryId} onChange={setCategoryId} />
+        </div>
+        <div className="sm:col-span-2 space-y-2">
+          <Label>Tags</Label>
+          <TagPicker value={tags} onChange={setTags} idPrefix="em-tag" />
         </div>
         <div className="space-y-2">
           <Label>Batch</Label>
