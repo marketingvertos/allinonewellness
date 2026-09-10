@@ -150,15 +150,35 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="text-3xl font-bold">{referralCount}</p>
-              <p className="text-sm text-muted-foreground">People helped to join</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex gap-6">
+              <div>
+                <p className="text-3xl font-bold">{activeReferralCount}</p>
+                <p className="text-sm text-muted-foreground">Active frontline</p>
+              </div>
+              <div>
+                <p className="text-3xl font-semibold text-muted-foreground">{totalReferralCount}</p>
+                <p className="text-sm text-muted-foreground">Total referred</p>
+              </div>
             </div>
-            <Badge variant={community.current ? "default" : "secondary"} className="text-sm">
+            <Badge
+              variant={community.current ? "default" : "secondary"}
+              className={`text-sm ${
+                community.current && !currentActivity?.met_requirement
+                  ? "border-2 border-amber-500"
+                  : ""
+              }`}
+            >
               {community.current ? `${community.current.icon} ${community.current.name}` : "No title yet"}
             </Badge>
           </div>
+
+          {!ownMembershipActive && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <span>Your own membership must be active to hold a coach title.</span>
+            </div>
+          )}
 
           {community.next ? (
             <div className="space-y-1">
