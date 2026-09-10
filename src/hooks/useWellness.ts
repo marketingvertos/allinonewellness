@@ -49,6 +49,7 @@ export interface WellnessMember {
   is_guest?: boolean;
   member_mode?: string | null;
   tags?: string[] | null;
+  pink_card_balance?: number | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -2006,5 +2007,100 @@ export function useMemberBalances(memberIds: string[]) {
       }
       return map;
     },
+  });
+}
+
+/* ------------------------------- Pink Card ------------------------------- */
+
+/** One Pink Card serving is worth this much rupee discount at renewal. */
+export const PINK_CARD_SERVING_VALUE = 250;
+
+export interface PinkCardEntry {
+  id: string;
+  member_id: string;
+  change: number;
+  balance_after: number;
+  reason: string;
+  reference_id: string | null;
+  referred_member_id: string | null;
+  note: string | null;
+  created_at: string;
+  referred?: { id: string; full_name: string } | null;
+}
+
+export function usePinkCardLedger(memberId: string | undefined) {
+  return useQuery({
+    queryKey: ["pink-card-ledger", memberId],
+    enabled: !!memberId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pink_card_ledger")
+        .select("*, referred:referred_member_id(id, full_name)")
+        .eq("member_id", memberId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as PinkCardEntry[];
+    },
+  });
+}
+
+/** Pink Card balances keyed by member id, for list/search badges. */
+export function usePinkCardBalances(memberIds: string[]) {
+  const key = [...memberIds].sort().join(",");
+  return useQuery({
+    queryKey: ["pink-card-balances", key],
+    enabled: memberIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_members")
+        .select("id, pink_card_balance")
+        .in("id", memberIds);
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      for (const row of (data ?? []) as { id: string; pink_card_balance: number | null }[]) {
+        map[row.id] = row.pink_card_balance ?? 0;
+      }
+      return map;
+    },
+  });
+}
+
+/** Manual add/remove of Pink Card credit (admin & manager only). */
+export function useAdjustPinkCard() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: { memberId: string; change: number; note?: string | null }) => {
+      const { error } = await supabase.rpc("adjust_pink_card", {
+        p_member_id: args.memberId,
+        p_change: args.change,
+        p_note: args.note ?? null,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
+      t.success("Pink Card updated");
+    },
+    onError: t.onError,
+  });
+}
+
+/** Redeem Pink Card credit as a renewal discount. */
+export function useRedeemPinkCard() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: { memberId: string; credits: number; membershipId?: string | null; note?: string | null }) => {
+      const { error } = await supabase.rpc("redeem_pink_card", {
+        p_member_id: args.memberId,
+        p_credits: args.credits,
+        p_membership_id: args.membershipId ?? null,
+        p_note: args.note ?? null,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries(),
+    onError: t.onError,
   });
 }
