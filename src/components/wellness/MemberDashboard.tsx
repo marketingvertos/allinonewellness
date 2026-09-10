@@ -332,6 +332,55 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
           </CardContent>
         </Card>
       </div>
+
+      {latest && evalRows.length > 0 && (
+        <Card>
+          <CardHeader className="flex-row items-start justify-between gap-2 pb-2">
+            <div>
+              <CardTitle className="text-sm">Latest body evaluation</CardTitle>
+              <p className="text-xs text-muted-foreground">Recorded {formatDate(latest.recorded_date)}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="mr-2 h-3.5 w-3.5" /> Print report
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {evalRows.map((r) => {
+                const range = r.param && r.raw != null ? getRange(r.param, Number(r.raw), member.gender) : null;
+                return (
+                  <div key={r.label} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+                    <span className="text-muted-foreground">{r.label}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-medium">{r.value}</span>
+                      {range && (
+                        <Badge variant="outline" className={range.className}>{range.label}</Badge>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            {latest.ideal_weight != null && (
+              <p className="text-xs text-muted-foreground">
+                Ideal weight: {latest.ideal_weight} kg
+                {evalOverUnder != null && evalOverUnder !== 0
+                  ? ` · ${Math.abs(evalOverUnder)} kg ${evalOverUnder > 0 ? "over" : "under"}`
+                  : ""}
+              </p>
+            )}
+            {latest.body_age != null && memberAge != null && latest.body_age !== memberAge && (
+              <p className={`text-xs ${latest.body_age < memberAge ? "text-primary" : "text-destructive"}`}>
+                Body age is {Math.abs(latest.body_age - memberAge)} yrs{" "}
+                {latest.body_age < memberAge ? "younger" : "older"} than actual age.
+              </p>
+            )}
+            {latest.remark && <p className="text-xs italic text-muted-foreground">{latest.remark}</p>}
+          </CardContent>
+        </Card>
+      )}
+
+      {latest && <BodyEvalPrintCard member={member} evaluation={latest} />}
     </div>
   );
 }
