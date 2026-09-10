@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCheckInWithWeight, useTodayAttendance, useWellnessMembers } from "@/hooks/useWellness";
+import { useCheckInWithWeight, useMemberBalances, useTodayAttendance, useWellnessMembers } from "@/hooks/useWellness";
+import { TagBadges } from "@/components/wellness/memberMeta";
 import { PageBanner } from "@/components/PageBanner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export default function WellnessCheckIn() {
 
   const checkedInIds = useMemo(() => new Set((today ?? []).map((a) => a.member_id)), [today]);
   const results = (members ?? []).slice(0, 8);
+  const { data: balances } = useMemberBalances(results.map((m) => m.id));
 
   const submit = async (memberId: string, skipCheckIn: boolean) => {
     const raw = weights[memberId];
@@ -102,7 +104,19 @@ export default function WellnessCheckIn() {
                         key={m.id}
                         title={m.full_name}
                         meta={`${m.mobile_number}${m.current_weight ? ` · last ${m.current_weight} kg` : ""}`}
-                        badges={done ? <Badge variant="secondary">Checked in</Badge> : undefined}
+                        badges={
+                          <>
+                            <TagBadges tags={m.tags} />
+                            {balances?.[m.id] === undefined ? null : balances[m.id] === 0 ? (
+                              <Badge variant="destructive">No servings</Badge>
+                            ) : balances[m.id] <= 5 ? (
+                              <Badge variant="destructive">Low servings · {balances[m.id]} left</Badge>
+                            ) : (
+                              <Badge variant="outline">{balances[m.id]} servings left</Badge>
+                            )}
+                            {done && <Badge variant="secondary">Checked in</Badge>}
+                          </>
+                        }
                         actions={
                           <div className="flex w-full items-center gap-2 sm:w-auto">
                             <Input
