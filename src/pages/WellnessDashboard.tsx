@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { MasterTitleBadge } from "@/components/wellness/MasterTitleBadge";
 import {
   MemberModeFilter,
   periodRange,
