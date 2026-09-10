@@ -57,7 +57,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { statusLabel, statusVariant } from "./status";
-import { ModeBadge, TagBadges } from "./memberMeta";
+import { MEMBER_TAGS, ModeBadge, TagBadges } from "./memberMeta";
+import { cn } from "@/lib/utils";
 import { DobInput } from "@/components/ui/dob-input";
 import { ageFromDob } from "@/lib/formatters";
 
