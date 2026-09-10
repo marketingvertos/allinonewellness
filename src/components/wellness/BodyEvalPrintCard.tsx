@@ -1,6 +1,6 @@
 import { BodyMeasurement, WellnessMember } from "@/hooks/useWellness";
-import { formatDate } from "@/lib/formatters";
-import { ageFromDob, bmiCategory, getRange } from "./bodyEvalConstants";
+import { ageFromDob, formatDate } from "@/lib/formatters";
+import { bmiCategory, getRange } from "./bodyEvalConstants";
 
 interface Props {
   member: WellnessMember;
