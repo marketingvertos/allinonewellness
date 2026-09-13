@@ -39,6 +39,7 @@ const mainNav = [
   { title: "Notifications", icon: Bell, to: "/notifications", end: false },
   { title: "WhatsApp", icon: MessageSquare, to: "/whatsapp", end: true },
   { title: "Achievements", icon: Trophy, to: "/achievements", end: false },
+  { title: "Reports", icon: BarChart3, to: "/reports", end: false },
 ];
 
 export function AppSidebar() {
