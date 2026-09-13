@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
-import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements } from "@/hooks/useWellness";
+import { useAuth } from "@/contexts/AuthContext";
+import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements, useAddWeight } from "@/hooks/useWellness";
+import { useUpcomingEvent, useMyMonthlyAttendance, currentMonthIst, monthLabel } from "@/hooks/useEvents";
 import { bmiCategory } from "@/components/wellness/bodyEvalConstants";
 import { AchievementsPanel } from "@/components/wellness/AchievementsPanel";
 import { PinkCardPanel } from "@/components/wellness/PinkCardPanel";
@@ -9,23 +12,64 @@ import { InstallAppPrompt } from "@/components/InstallAppPrompt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { formatDate } from "@/lib/formatters";
-import { ChevronRight, QrCode } from "lucide-react";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { formatDate, todayIst } from "@/lib/formatters";
+import { ChevronRight, QrCode, Scale } from "lucide-react";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
 
 export default function PortalHome() {
   const { data: identity } = useMemberIdentity();
+  const { user } = useAuth();
   const { data: profile } = useMyMemberProfile();
   const { data: memberships } = useMemberships(identity?.memberId ?? undefined);
   const { data: attendance } = useMemberAttendance(identity?.memberId ?? undefined);
   const { data: weights } = useWeightHistory(identity?.memberId ?? undefined);
   const { data: evaluations } = useBodyMeasurements(identity?.memberId ?? undefined);
   const latestEvaluation = evaluations?.length ? evaluations[evaluations.length - 1] : null;
+  const addWeight = useAddWeight();
+
+  const month = currentMonthIst();
+  const { data: familyDay } = useUpcomingEvent("family_day");
+  const { data: monthDays } = useMyMonthlyAttendance(identity?.memberId ?? undefined, month);
 
   const active = (memberships ?? []).find((m) => m.status === "active" || m.status === "expiring_soon");
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const today = todayIst();
   const checkedInToday = (attendance ?? []).some((a) => a.visit_date === today);
+
+  const history = weights ?? [];
+  const recordedToday = history.some((w) => w.recorded_date === today);
+  const gaining = profile?.goal === "weight_gain";
+  const [weighOpen, setWeighOpen] = useState(false);
+  const [newWeight, setNewWeight] = useState("");
+
+  const startWeight = profile?.initial_weight ?? (history[0]?.weight ?? null);
+  const latest = history.length ? history[history.length - 1].weight : profile?.current_weight ?? null;
+  const previous = history.length > 1 ? history[history.length - 2].weight : startWeight;
+  const latestChange = latest != null && previous != null ? Number(latest) - Number(previous) : null;
+  const totalChange = latest != null && startWeight != null ? Number(latest) - Number(startWeight) : null;
+  const isGood = (delta: number) => (gaining ? delta > 0 : delta < 0);
+  const changeText = (delta: number) =>
+    `${delta > 0 ? "+" : ""}${delta.toFixed(1)} kg`;
+
+  const maxW = history.length ? Math.max(...history.map((w) => Number(w.weight))) : 0;
+  const minW = history.length ? Math.min(...history.map((w) => Number(w.weight))) : 0;
+  const span = Math.max(maxW - minW, 1);
+
+  const saveWeight = async () => {
+    const value = Number(newWeight);
+    if (!identity?.memberId || !user || !value) return;
+    await addWeight.mutateAsync({
+      member_id: identity.memberId,
+      weight: value,
+      recorded_date: today,
+      recorded_by: user.id,
+    });
+    setNewWeight("");
+    setWeighOpen(false);
+  };
 
   return (
     <div className="space-y-4">
