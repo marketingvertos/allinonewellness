@@ -280,6 +280,21 @@ export default function PortalHome() {
                 {26 - (monthDays ?? 0)} more days to earn the consistency reward.
               </p>
             )}
+            {topMilestone && (
+              <p className="text-muted-foreground">
+                Milestone achieved: <span className="font-semibold text-foreground">{topMilestone.icon} {topMilestone.name}</span>
+              </p>
+            )}
+            {isCoach && (
+              <p className="text-muted-foreground">
+                WLP sessions attended this month:{" "}
+                <span className="font-semibold text-foreground">{wlpSessions}</span>
+                {wlpSessions >= 4 ? " — King/Queen eligible" : ` (${4 - wlpSessions} more for King/Queen)`}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Awards are handed out at the Family Day ceremony.
+            </p>
           </CardContent>
         </Card>
       )}
