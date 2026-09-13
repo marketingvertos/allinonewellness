@@ -359,22 +359,41 @@ export function useCreateMembership() {
   const qc = useQueryClient();
   const t = useToastedMutation();
   return useMutation({
-    mutationFn: async (args: { memberId: string; planId: string; price?: number; trialId?: string }) => {
+    mutationFn: async (args: {
+      memberId: string;
+      planId: string;
+      price?: number;
+      trialId?: string;
+      paymentMode?: string;
+      paymentDate?: string;
+    }) => {
+      let membershipId: string | null = null;
       if (args.trialId) {
         await supabase.from("wellness_members").update({ is_guest: false } as never).eq("id", args.memberId);
-        const { error } = await supabase.rpc("convert_trial_to_membership", {
+        const { data, error } = await supabase.rpc("convert_trial_to_membership", {
           p_trial_id: args.trialId,
           p_plan_id: args.planId,
           p_price: args.price ?? null,
         } as never);
         if (error) throw error;
+        membershipId = (data as unknown as string) ?? null;
       } else {
-        const { error } = await supabase.rpc("create_membership", {
+        const { data, error } = await supabase.rpc("create_membership", {
           p_member_id: args.memberId,
           p_plan_id: args.planId,
           p_price: args.price ?? null,
         } as never);
         if (error) throw error;
+        membershipId = (data as unknown as string) ?? null;
+      }
+      if (membershipId && (args.paymentMode || args.paymentDate)) {
+        await supabase
+          .from("wellness_memberships")
+          .update({
+            payment_mode: args.paymentMode ?? "cash",
+            payment_date: args.paymentDate ?? null,
+          } as never)
+          .eq("id", membershipId);
       }
     },
     onSuccess: () => {
