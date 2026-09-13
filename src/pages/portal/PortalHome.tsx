@@ -126,22 +126,152 @@ export default function PortalHome() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Progress</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-2 text-center text-sm">
-            <div>
-              <p className="text-muted-foreground">Start</p>
-              <p className="font-semibold">{profile.initial_weight ?? "—"} kg</p>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
+              <div>
+                <p className="text-muted-foreground">Start</p>
+                <p className="font-semibold">{profile.initial_weight ?? "—"} kg</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Now</p>
+                <p className="font-semibold">{profile.current_weight} kg</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Target</p>
+                <p className="font-semibold">{profile.target_weight ?? "—"} kg</p>
+              </div>
             </div>
-            <div>
-              <p className="text-muted-foreground">Now</p>
-              <p className="font-semibold">{profile.current_weight} kg</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Target</p>
-              <p className="font-semibold">{profile.target_weight ?? "—"} kg</p>
-            </div>
+
+            {history.length > 1 && (
+              <div>
+                <div className="flex h-28 items-end gap-1 rounded-md border bg-muted/30 p-2">
+                  {history.slice(-14).map((w, i, arr) => {
+                    const prev = i > 0 ? Number(arr[i - 1].weight) : Number(w.weight);
+                    const delta = Number(w.weight) - prev;
+                    const good = delta === 0 ? null : isGood(delta);
+                    const height = 8 + ((Number(w.weight) - minW) / span) * 80;
+                    return (
+                      <div key={w.id} className="flex flex-1 flex-col items-center justify-end gap-1">
+                        <span
+                          className={`h-2.5 w-2.5 rounded-full ${
+                            good === null
+                              ? "bg-muted-foreground"
+                              : good
+                                ? "bg-emerald-500"
+                                : "bg-destructive"
+                          }`}
+                          style={{ marginBottom: `${height}px` }}
+                          title={`${formatDate(w.recorded_date)} — ${w.weight} kg`}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 flex justify-between text-xs">
+                  <span className="text-muted-foreground">
+                    Latest change:{" "}
+                    {latestChange == null ? (
+                      "—"
+                    ) : (
+                      <span
+                        className={
+                          latestChange === 0
+                            ? ""
+                            : isGood(latestChange)
+                              ? "font-semibold text-emerald-600 dark:text-emerald-400"
+                              : "font-semibold text-destructive"
+                        }
+                      >
+                        {changeText(latestChange)}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-muted-foreground">
+                    Total change:{" "}
+                    {totalChange == null ? (
+                      "—"
+                    ) : (
+                      <span
+                        className={
+                          totalChange === 0
+                            ? ""
+                            : isGood(totalChange)
+                              ? "font-semibold text-emerald-600 dark:text-emerald-400"
+                              : "font-semibold text-destructive"
+                        }
+                      >
+                        {changeText(totalChange)}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setWeighOpen(true)}
+              disabled={recordedToday}
+            >
+              <Scale className="mr-2 h-4 w-4" />
+              {recordedToday ? "Today's weight is recorded" : "Record today's weight"}
+            </Button>
           </CardContent>
         </Card>
       )}
+
+      <ResponsiveDialog
+        open={weighOpen}
+        onOpenChange={setWeighOpen}
+        title="Record today's weight"
+        description={`Saved against ${formatDate(today)}.`}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setWeighOpen(false)}>Cancel</Button>
+            <Button onClick={saveWeight} disabled={!newWeight || addWeight.isPending}>Save</Button>
+          </>
+        }
+      >
+        <div className="space-y-2">
+          <Label htmlFor="pw-weight">Weight (kg)</Label>
+          <Input
+            id="pw-weight"
+            inputMode="decimal"
+            value={newWeight}
+            onChange={(e) => setNewWeight(e.target.value)}
+            placeholder="e.g. 74.5"
+          />
+        </div>
+      </ResponsiveDialog>
+
+      {familyDay && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Family Day — {monthLabel(month)}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <p className="font-medium">{formatDate(familyDay.event_date)}</p>
+            {familyDay.description && (
+              <p className="text-muted-foreground">{familyDay.description}</p>
+            )}
+            <p className="text-muted-foreground">
+              You have attended <span className="font-semibold text-foreground">{monthDays ?? 0}</span> days
+              this month.
+            </p>
+            {(monthDays ?? 0) >= 26 ? (
+              <Badge className="bg-emerald-600 hover:bg-emerald-600">
+                You qualify for the consistency reward
+              </Badge>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {26 - (monthDays ?? 0)} more days to earn the consistency reward.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
 
       {profile && (
         <Card>
