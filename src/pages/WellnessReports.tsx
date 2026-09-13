@@ -269,8 +269,14 @@ function MiwTab({ month }: { month: string }) {
             </div>
 
             <div className="space-y-2">
-              {(participants ?? []).map((p) => (
-                <div key={p.id} className="flex flex-wrap items-center gap-3 rounded-md border p-3 text-sm">
+              {ranked.map(({ p, change }, i) => (
+                <div
+                  key={p.id}
+                  className={`flex flex-wrap items-center gap-3 rounded-md border p-3 text-sm ${
+                    i === 0 && change != null ? "border-emerald-500 bg-emerald-500/5" : ""
+                  }`}
+                >
+                  <Badge variant={i === 0 && change != null ? "default" : "outline"}>#{i + 1}</Badge>
                   <span className="flex-1 font-medium">{p.wellness_members?.full_name}</span>
                   <span className="text-muted-foreground">Start {p.start_weight ?? "—"} kg</span>
                   <Input
@@ -288,6 +294,9 @@ function MiwTab({ month }: { month: string }) {
                       })
                     }
                   />
+                  <span className={change != null && change < 0 ? "font-semibold text-emerald-600" : "text-muted-foreground"}>
+                    {change != null ? `${change > 0 ? "+" : ""}${change.toFixed(1)} kg` : "—"}
+                  </span>
                   <Button size="icon" variant="ghost" onClick={() => removeParticipant.mutate(p.id)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
