@@ -96,6 +96,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const isManager = useIsWellnessManager();
   const addNote = useAddMemberNote();
 
+  const [joinDate, setJoinDate] = useState("");
   const [planId, setPlanId] = useState("");
   const [weight, setWeight] = useState("");
   const [note, setNote] = useState("");
