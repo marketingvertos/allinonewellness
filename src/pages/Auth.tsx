@@ -389,6 +389,9 @@ export default function Auth() {
               </div>
             </>
           )}
+          <div className="mt-6">
+            <InstallAppPrompt />
+          </div>
         </div>
       </div>
     </div>
