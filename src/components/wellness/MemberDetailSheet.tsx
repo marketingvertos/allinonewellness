@@ -99,6 +99,10 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
 
   const [joinDate, setJoinDate] = useState("");
   const [planId, setPlanId] = useState("");
+  const [payMode, setPayMode] = useState("cash");
+  const [payDate, setPayDate] = useState(todayIst());
+  const [payPrice, setPayPrice] = useState("");
+  const selectedNewPlan = plans?.find((p) => p.id === planId);
   const [weight, setWeight] = useState("");
   const [note, setNote] = useState("");
   const [dob, setDob] = useState<string | null>(null);
