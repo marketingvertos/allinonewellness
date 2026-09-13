@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { InstallAppPrompt } from "@/components/InstallAppPrompt";
 import { Loader2, ArrowRight } from "lucide-react";
 import { z } from "zod";
 import { sanitizeErrorMessage } from "@/lib/sanitize";
