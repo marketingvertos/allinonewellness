@@ -1,6 +1,55 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface MilestoneHolder {
+  milestone: string;
+  icon: string;
+  threshold: number;
+  sortOrder: number;
+  members: { id: string; name: string }[];
+}
+
+/** Members currently holding each weight milestone, grouped by milestone. */
+export function useMilestoneHolders() {
+  return useQuery({
+    queryKey: ["milestone-holders"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("member_achievements")
+        .select(
+          "member_id, achievement_definitions(name, icon, threshold, sort_order, category), wellness_members(full_name)",
+        );
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as {
+        member_id: string;
+        achievement_definitions: {
+          name: string;
+          icon: string;
+          threshold: number;
+          sort_order: number;
+          category: string;
+        } | null;
+        wellness_members: { full_name: string } | null;
+      }[];
+      const groups = new Map<string, MilestoneHolder>();
+      for (const r of rows) {
+        const d = r.achievement_definitions;
+        if (!d || d.category === "referral") continue;
+        const g = groups.get(d.name) ?? {
+          milestone: d.name,
+          icon: d.icon,
+          threshold: Number(d.threshold),
+          sortOrder: d.sort_order,
+          members: [],
+        };
+        g.members.push({ id: r.member_id, name: r.wellness_members?.full_name ?? "Member" });
+        groups.set(d.name, g);
+      }
+      return [...groups.values()].sort((a, b) => a.sortOrder - b.sortOrder);
+    },
+  });
+}
+
 export const PAYMENT_MODES = [
   { value: "cash", label: "Cash" },
   { value: "upi", label: "UPI" },
