@@ -17,6 +17,7 @@ import WellnessAchievements from "./pages/WellnessAchievements";
 import WellnessBatches from "./pages/WellnessBatches";
 import WellnessTrials from "./pages/WellnessTrials";
 import WellnessNotifications from "./pages/WellnessNotifications";
+import WellnessReports from "./pages/WellnessReports";
 import WhatsAppInbox from "./pages/WhatsAppInbox";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
 import { PortalLayout } from "./pages/portal/PortalLayout";
@@ -68,6 +69,7 @@ const App = () => (
                 <Route path="/batches" element={<WellnessBatches />} />
                 <Route path="/trials" element={<WellnessTrials />} />
                 <Route path="/notifications" element={<WellnessNotifications />} />
+                <Route path="/reports" element={<WellnessReports />} />
                 <Route path="/whatsapp" element={<WhatsAppInbox />} />
                 <Route path="/whatsapp/logs" element={<WhatsAppLogs />} />
                 <Route path="/settings" element={<Settings />} />
