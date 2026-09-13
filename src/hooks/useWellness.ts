@@ -1681,6 +1681,8 @@ export function useRenewPlan() {
       price?: number | null;
       mode: RenewMode;
       note?: string | null;
+      paymentMode?: string;
+      paymentDate?: string | null;
     }) => {
       const { error } = await supabase.rpc("renew_membership_v2", {
         p_membership_id: args.membershipId,
@@ -1689,6 +1691,8 @@ export function useRenewPlan() {
         p_price: args.price ?? null,
         p_mode: args.mode,
         p_note: args.note ?? null,
+        p_payment_mode: args.paymentMode ?? "cash",
+        p_payment_date: args.paymentDate ?? null,
       } as never);
       if (error) throw error;
     },
