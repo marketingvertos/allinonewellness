@@ -56,6 +56,8 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
     setNote("");
     setUsePink(false);
     setPinkCredits(0);
+    setPaymentMode("cash");
+    setPaymentDate(todayIst());
   }, [open, membership]);
 
   useEffect(() => {
@@ -85,6 +87,8 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
       price: price === "" ? null : Number(price),
       mode,
       note: note.trim() || null,
+      paymentMode,
+      paymentDate: paymentDate || null,
     });
     if (usePink && pinkCredits > 0) {
       await redeemPink.mutateAsync({
