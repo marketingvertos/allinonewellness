@@ -35,6 +35,17 @@ export default function PortalHome() {
   const month = currentMonthIst();
   const { data: familyDay } = useUpcomingEvent("family_day");
   const { data: monthDays } = useMyMonthlyAttendance(identity?.memberId ?? undefined, month);
+  const { data: unlocked } = useUnlockedAchievements(identity?.memberId ?? undefined);
+  const { data: definitions } = useAchievementDefinitions();
+  const { data: wlpRows } = useWlpAttendance(month);
+  const isCoach = (profile?.tags ?? []).includes("coach");
+  const wlpSessions = (wlpRows ?? []).filter((r) => r.member_id === identity?.memberId).length;
+  const myMilestones = (unlocked ?? [])
+    .map((u) => (definitions ?? []).find((d) => d.id === u.achievement_id))
+    .filter((d): d is NonNullable<typeof d> => !!d && d.category !== "referral")
+    .sort((a, b) => b.sort_order - a.sort_order);
+  const topMilestone = myMilestones[0] ?? null;
+
 
   const active = (memberships ?? []).find((m) => m.status === "active" || m.status === "expiring_soon");
   const today = todayIst();
