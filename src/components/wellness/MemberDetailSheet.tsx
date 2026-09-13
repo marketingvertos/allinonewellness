@@ -228,6 +228,32 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               </div>
 
               <div className="rounded-lg border p-4 text-sm">
+                <p className="font-medium">Joining date</p>
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Input
+                    type="date"
+                    className="flex-1"
+                    value={joinDate || member.joining_date || ""}
+                    onChange={(e) => setJoinDate(e.target.value)}
+                    disabled={!isManager}
+                  />
+                  {isManager && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!joinDate || joinDate === member.joining_date || updateMember.isPending}
+                      onClick={() => updateMember.mutate({ id: member.id, joining_date: joinDate })}
+                    >
+                      Save
+                    </Button>
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  The day this member joined the centre.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4 text-sm">
                 <MemberLoginCard memberId={member.id} mobileNumber={member.mobile_number} />
                 {!member.user_id && (
                   <p className="mt-3 text-xs text-muted-foreground">
