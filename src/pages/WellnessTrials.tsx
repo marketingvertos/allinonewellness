@@ -145,11 +145,30 @@ export default function WellnessTrials() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <Select
+                      value={modeByTrial[t.id] ?? "cash"}
+                      onValueChange={(v) => setModeByTrial((p) => ({ ...p, [t.id]: v }))}
+                    >
+                      <SelectTrigger className="w-36">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_MODES.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button
                       size="sm"
                       disabled={!planId || createMembership.isPending}
                       onClick={() =>
-                        createMembership.mutate({ memberId: t.member_id, planId, trialId: t.id })
+                        createMembership.mutate({
+                          memberId: t.member_id,
+                          planId,
+                          trialId: t.id,
+                          paymentMode: modeByTrial[t.id] ?? "cash",
+                          paymentDate: todayIst(),
+                        })
                       }
                     >
                       Convert
