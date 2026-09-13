@@ -14,12 +14,14 @@ export const BODY_EVAL_RANGES = {
     label: "Muscle Mass (MM)",
     unit: "kg",
     maleRanges: [
-      { max: 20, label: "Normal", tone: "good" },
-      { max: 25, label: "High", tone: "warn" },
+      { max: 30, label: "Low", tone: "bad" },
+      { max: 37, label: "Normal", tone: "good" },
+      { max: 45, label: "High", tone: "warn" },
       { max: Infinity, label: "Risk", tone: "bad" },
     ] as RangeStop[],
     femaleRanges: [
-      { max: 30, label: "Normal", tone: "good" },
+      { max: 20, label: "Low", tone: "bad" },
+      { max: 27, label: "Normal", tone: "good" },
       { max: 35, label: "High", tone: "warn" },
       { max: Infinity, label: "Risk", tone: "bad" },
     ] as RangeStop[],
