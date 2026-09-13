@@ -236,6 +236,15 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
             <DobInput id="wm-dob" value={form.date_of_birth} onChange={set("date_of_birth")} />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="wm-joining">Joining date</Label>
+            <Input
+              id="wm-joining"
+              type="date"
+              value={form.joining_date}
+              onChange={(e) => set("joining_date")(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
             <Label>Relationship status</Label>
             <Select value={form.marital_status} onValueChange={set("marital_status")}>
               <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
