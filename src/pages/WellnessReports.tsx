@@ -234,15 +234,14 @@ function MiwTab({ month }: { month: string }) {
               onClick={() =>
                 downloadCsv(
                   "miw-challenge",
-                  ["Name", "Mobile", "Start weight", "Current weight", "Change"],
-                  (participants ?? []).map((p) => [
-                    p.wellness_members?.full_name ?? "",
-                    p.wellness_members?.mobile_number ?? "",
-                    p.start_weight ?? "",
-                    p.end_weight ?? "",
-                    p.start_weight != null && p.end_weight != null
-                      ? (Number(p.end_weight) - Number(p.start_weight)).toFixed(1)
-                      : "",
+                  ["Rank", "Name", "Mobile", "Start weight", "Current weight", "Change"],
+                  ranked.map((r, i) => [
+                    i + 1,
+                    r.p.wellness_members?.full_name ?? "",
+                    r.p.wellness_members?.mobile_number ?? "",
+                    r.p.start_weight ?? "",
+                    r.p.end_weight ?? "",
+                    r.change != null ? r.change.toFixed(1) : "",
                   ]),
                 )
               }
