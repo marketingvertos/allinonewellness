@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, todayIst } from "@/lib/formatters";
+import { PAYMENT_MODES } from "@/hooks/useReports";
 import { MemberDetailSheet } from "@/components/wellness/MemberDetailSheet";
 import { StartTrialDialog } from "@/components/wellness/StartTrialDialog";
 import { GuestTrialDialog } from "@/components/wellness/GuestTrialDialog";
@@ -25,6 +26,7 @@ export default function WellnessTrials() {
   const { data: plans } = useWellnessPlans();
   const createMembership = useCreateMembership();
   const [planByTrial, setPlanByTrial] = useState<Record<string, string>>({});
+  const [modeByTrial, setModeByTrial] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<WellnessMember | null>(null);
 
   const [query, setQuery] = useState("");
@@ -143,11 +145,30 @@ export default function WellnessTrials() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <Select
+                      value={modeByTrial[t.id] ?? "cash"}
+                      onValueChange={(v) => setModeByTrial((p) => ({ ...p, [t.id]: v }))}
+                    >
+                      <SelectTrigger className="w-36">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_MODES.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button
                       size="sm"
                       disabled={!planId || createMembership.isPending}
                       onClick={() =>
-                        createMembership.mutate({ memberId: t.member_id, planId, trialId: t.id })
+                        createMembership.mutate({
+                          memberId: t.member_id,
+                          planId,
+                          trialId: t.id,
+                          paymentMode: modeByTrial[t.id] ?? "cash",
+                          paymentDate: todayIst(),
+                        })
                       }
                     >
                       Convert

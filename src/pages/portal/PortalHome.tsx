@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements, useAddWeight } from "@/hooks/useWellness";
-import { useUpcomingEvent, useMyMonthlyAttendance, currentMonthIst, monthLabel } from "@/hooks/useEvents";
+import { useUpcomingEvent, useMyMonthlyAttendance, useWlpAttendance, currentMonthIst, monthLabel } from "@/hooks/useEvents";
+import { useAchievementDefinitions, useUnlockedAchievements } from "@/hooks/useAchievements";
 import { bmiCategory } from "@/components/wellness/bodyEvalConstants";
 import { AchievementsPanel } from "@/components/wellness/AchievementsPanel";
 import { PinkCardPanel } from "@/components/wellness/PinkCardPanel";
@@ -34,6 +35,17 @@ export default function PortalHome() {
   const month = currentMonthIst();
   const { data: familyDay } = useUpcomingEvent("family_day");
   const { data: monthDays } = useMyMonthlyAttendance(identity?.memberId ?? undefined, month);
+  const { data: unlocked } = useUnlockedAchievements(identity?.memberId ?? undefined);
+  const { data: definitions } = useAchievementDefinitions();
+  const { data: wlpRows } = useWlpAttendance(month);
+  const isCoach = (profile?.tags ?? []).includes("coach");
+  const wlpSessions = (wlpRows ?? []).filter((r) => r.member_id === identity?.memberId).length;
+  const myMilestones = (unlocked ?? [])
+    .map((u) => (definitions ?? []).find((d) => d.id === u.achievement_id))
+    .filter((d): d is NonNullable<typeof d> => !!d && d.category !== "referral")
+    .sort((a, b) => b.sort_order - a.sort_order);
+  const topMilestone = myMilestones[0] ?? null;
+
 
   const active = (memberships ?? []).find((m) => m.status === "active" || m.status === "expiring_soon");
   const today = todayIst();
@@ -268,6 +280,21 @@ export default function PortalHome() {
                 {26 - (monthDays ?? 0)} more days to earn the consistency reward.
               </p>
             )}
+            {topMilestone && (
+              <p className="text-muted-foreground">
+                Milestone achieved: <span className="font-semibold text-foreground">{topMilestone.icon} {topMilestone.name}</span>
+              </p>
+            )}
+            {isCoach && (
+              <p className="text-muted-foreground">
+                WLP sessions attended this month:{" "}
+                <span className="font-semibold text-foreground">{wlpSessions}</span>
+                {wlpSessions >= 4 ? " — King/Queen eligible" : ` (${4 - wlpSessions} more for King/Queen)`}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Awards are handed out at the Family Day ceremony.
+            </p>
           </CardContent>
         </Card>
       )}

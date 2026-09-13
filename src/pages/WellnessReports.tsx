@@ -182,6 +182,17 @@ function MiwTab({ month }: { month: string }) {
   const [memberId, setMemberId] = useState("");
   const [startWeight, setStartWeight] = useState("");
 
+  const ranked = useMemo(() => {
+    const rows = (participants ?? []).map((p) => ({
+      p,
+      change:
+        p.start_weight != null && p.end_weight != null
+          ? Number(p.end_weight) - Number(p.start_weight)
+          : null,
+    }));
+    return rows.sort((a, b) => (a.change ?? Infinity) - (b.change ?? Infinity));
+  }, [participants]);
+
   const add = async () => {
     if (!event || !memberId) return;
     await saveParticipant.mutateAsync({
@@ -223,15 +234,14 @@ function MiwTab({ month }: { month: string }) {
               onClick={() =>
                 downloadCsv(
                   "miw-challenge",
-                  ["Name", "Mobile", "Start weight", "Current weight", "Change"],
-                  (participants ?? []).map((p) => [
-                    p.wellness_members?.full_name ?? "",
-                    p.wellness_members?.mobile_number ?? "",
-                    p.start_weight ?? "",
-                    p.end_weight ?? "",
-                    p.start_weight != null && p.end_weight != null
-                      ? (Number(p.end_weight) - Number(p.start_weight)).toFixed(1)
-                      : "",
+                  ["Rank", "Name", "Mobile", "Start weight", "Current weight", "Change"],
+                  ranked.map((r, i) => [
+                    i + 1,
+                    r.p.wellness_members?.full_name ?? "",
+                    r.p.wellness_members?.mobile_number ?? "",
+                    r.p.start_weight ?? "",
+                    r.p.end_weight ?? "",
+                    r.change != null ? r.change.toFixed(1) : "",
                   ]),
                 )
               }
@@ -259,8 +269,14 @@ function MiwTab({ month }: { month: string }) {
             </div>
 
             <div className="space-y-2">
-              {(participants ?? []).map((p) => (
-                <div key={p.id} className="flex flex-wrap items-center gap-3 rounded-md border p-3 text-sm">
+              {ranked.map(({ p, change }, i) => (
+                <div
+                  key={p.id}
+                  className={`flex flex-wrap items-center gap-3 rounded-md border p-3 text-sm ${
+                    i === 0 && change != null ? "border-emerald-500 bg-emerald-500/5" : ""
+                  }`}
+                >
+                  <Badge variant={i === 0 && change != null ? "default" : "outline"}>#{i + 1}</Badge>
                   <span className="flex-1 font-medium">{p.wellness_members?.full_name}</span>
                   <span className="text-muted-foreground">Start {p.start_weight ?? "—"} kg</span>
                   <Input
@@ -278,6 +294,9 @@ function MiwTab({ month }: { month: string }) {
                       })
                     }
                   />
+                  <span className={change != null && change < 0 ? "font-semibold text-emerald-600" : "text-muted-foreground"}>
+                    {change != null ? `${change > 0 ? "+" : ""}${change.toFixed(1)} kg` : "—"}
+                  </span>
                   <Button size="icon" variant="ghost" onClick={() => removeParticipant.mutate(p.id)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
