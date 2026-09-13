@@ -36,6 +36,8 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
   const [mode, setMode] = useState<RenewMode>("extend");
   const [usePink, setUsePink] = useState(false);
   const [pinkCredits, setPinkCredits] = useState(0);
+  const [paymentMode, setPaymentMode] = useState("cash");
+  const [paymentDate, setPaymentDate] = useState(todayIst());
 
   const plan = membershipPlans.find((p) => p.id === planId);
   const { data: member } = useWellnessMember(membership.member_id);
@@ -44,6 +46,7 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
   const planPrice = plan ? Number(plan.price) : 0;
   const maxCredits = Math.min(pinkBalance, Math.floor(planPrice / PINK_CARD_SERVING_VALUE));
   const discount = Math.min(pinkCredits * PINK_CARD_SERVING_VALUE, planPrice);
+  const isEarlyRenewal = todayIst() <= membership.end_date;
 
   useEffect(() => {
     if (!open) return;
