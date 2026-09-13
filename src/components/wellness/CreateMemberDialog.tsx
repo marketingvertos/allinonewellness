@@ -102,6 +102,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       email: form.email.trim() || null,
       gender: form.gender || null,
       date_of_birth: form.date_of_birth || null,
+      joining_date: form.joining_date || todayIst(),
       marital_status: form.marital_status || null,
       anniversary_date: form.marital_status === "married" ? form.anniversary_date || null : null,
       goal: form.goal || null,
