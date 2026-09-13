@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, todayIst } from "@/lib/formatters";
+import { PAYMENT_MODES } from "@/hooks/useReports";
 import { MemberDetailSheet } from "@/components/wellness/MemberDetailSheet";
 import { StartTrialDialog } from "@/components/wellness/StartTrialDialog";
 import { GuestTrialDialog } from "@/components/wellness/GuestTrialDialog";
@@ -25,6 +26,7 @@ export default function WellnessTrials() {
   const { data: plans } = useWellnessPlans();
   const createMembership = useCreateMembership();
   const [planByTrial, setPlanByTrial] = useState<Record<string, string>>({});
+  const [modeByTrial, setModeByTrial] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<WellnessMember | null>(null);
 
   const [query, setQuery] = useState("");
