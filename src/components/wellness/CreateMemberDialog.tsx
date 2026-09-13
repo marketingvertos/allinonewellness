@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { DobInput } from "@/components/ui/dob-input";
+import { todayIst } from "@/lib/formatters";
 import { TagPicker } from "./TagPicker";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -51,6 +52,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
     email: "",
     gender: "",
     date_of_birth: "",
+    joining_date: todayIst(),
     marital_status: "",
     anniversary_date: "",
     goal: "",
@@ -75,6 +77,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       email: "",
       gender: "",
       date_of_birth: "",
+      joining_date: todayIst(),
       marital_status: "",
       anniversary_date: "",
       goal: "",
@@ -99,6 +102,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
       email: form.email.trim() || null,
       gender: form.gender || null,
       date_of_birth: form.date_of_birth || null,
+      joining_date: form.joining_date || todayIst(),
       marital_status: form.marital_status || null,
       anniversary_date: form.marital_status === "married" ? form.anniversary_date || null : null,
       goal: form.goal || null,
@@ -230,6 +234,15 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
           <div className="space-y-2">
             <Label htmlFor="wm-dob">Date of birth</Label>
             <DobInput id="wm-dob" value={form.date_of_birth} onChange={set("date_of_birth")} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="wm-joining">Joining date</Label>
+            <Input
+              id="wm-joining"
+              type="date"
+              value={form.joining_date}
+              onChange={(e) => set("joining_date")(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>Relationship status</Label>

@@ -96,6 +96,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const isManager = useIsWellnessManager();
   const addNote = useAddMemberNote();
 
+  const [joinDate, setJoinDate] = useState("");
   const [planId, setPlanId] = useState("");
   const [weight, setWeight] = useState("");
   const [note, setNote] = useState("");
@@ -224,6 +225,32 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   <p className="mt-2 text-sm font-medium">Age: {ageFromDob(dob ?? member.date_of_birth)} years</p>
                 )}
                 <p className="mt-2 text-xs text-muted-foreground">Used for birthday reminders on the overview page.</p>
+              </div>
+
+              <div className="rounded-lg border p-4 text-sm">
+                <p className="font-medium">Joining date</p>
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Input
+                    type="date"
+                    className="flex-1"
+                    value={joinDate || member.joining_date || ""}
+                    onChange={(e) => setJoinDate(e.target.value)}
+                    disabled={!isManager}
+                  />
+                  {isManager && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!joinDate || joinDate === member.joining_date || updateMember.isPending}
+                      onClick={() => updateMember.mutate({ id: member.id, joining_date: joinDate })}
+                    >
+                      Save
+                    </Button>
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  The day this member joined the centre.
+                </p>
               </div>
 
               <div className="rounded-lg border p-4 text-sm">

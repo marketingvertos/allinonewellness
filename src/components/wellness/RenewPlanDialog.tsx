@@ -15,7 +15,8 @@ import { Label } from "@/components/ui/label";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatCurrency, formatDate, todayIst } from "@/lib/formatters";
+import { PAYMENT_MODES } from "@/hooks/useReports";
 import { Minus, Plus } from "lucide-react";
 
 interface Props {
@@ -36,6 +37,8 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
   const [mode, setMode] = useState<RenewMode>("extend");
   const [usePink, setUsePink] = useState(false);
   const [pinkCredits, setPinkCredits] = useState(0);
+  const [paymentMode, setPaymentMode] = useState("cash");
+  const [paymentDate, setPaymentDate] = useState(todayIst());
 
   const plan = membershipPlans.find((p) => p.id === planId);
   const { data: member } = useWellnessMember(membership.member_id);
@@ -44,6 +47,7 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
   const planPrice = plan ? Number(plan.price) : 0;
   const maxCredits = Math.min(pinkBalance, Math.floor(planPrice / PINK_CARD_SERVING_VALUE));
   const discount = Math.min(pinkCredits * PINK_CARD_SERVING_VALUE, planPrice);
+  const isEarlyRenewal = todayIst() <= membership.end_date;
 
   useEffect(() => {
     if (!open) return;
@@ -52,6 +56,8 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
     setNote("");
     setUsePink(false);
     setPinkCredits(0);
+    setPaymentMode("cash");
+    setPaymentDate(todayIst());
   }, [open, membership]);
 
   useEffect(() => {
@@ -81,6 +87,8 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
       price: price === "" ? null : Number(price),
       mode,
       note: note.trim() || null,
+      paymentMode,
+      paymentDate: paymentDate || null,
     });
     if (usePink && pinkCredits > 0) {
       await redeemPink.mutateAsync({
@@ -184,6 +192,33 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
             <Input id="rp-price" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
           </div>
         </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Payment mode</Label>
+            <Select value={paymentMode} onValueChange={setPaymentMode}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PAYMENT_MODES.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="rp-paydate">Payment date</Label>
+            <Input id="rp-paydate" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+          </div>
+        </div>
+
+        {isEarlyRenewal && (
+          <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+            Early renewal — this member gets <span className="font-semibold">2 bonus servings</span> free,
+            added automatically when you confirm.
+          </div>
+        )}
+
+
 
         <div className="rounded-md border bg-muted/40 p-3 text-sm">
           {mode === "extend" && (

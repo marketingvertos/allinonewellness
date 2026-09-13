@@ -3,6 +3,16 @@ import { formatDistanceToNow } from "date-fns";
 export const APP_TIME_ZONE = "Asia/Kolkata";
 export const APP_LOCALE = "en-IN";
 
+/** Today's date in India, as YYYY-MM-DD. */
+export function todayIst(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: APP_TIME_ZONE });
+}
+
+/** Month key (YYYY-MM) for India's current month. */
+export function currentMonthIst(): string {
+  return todayIst().slice(0, 7);
+}
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat(APP_LOCALE, {
     style: "currency",

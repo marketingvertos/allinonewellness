@@ -13,6 +13,7 @@ import {
   Sparkles,
   Bell,
   MessageSquare,
+  BarChart3,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -39,6 +40,7 @@ const mainNav = [
   { title: "Notifications", icon: Bell, to: "/notifications", end: false },
   { title: "WhatsApp", icon: MessageSquare, to: "/whatsapp", end: true },
   { title: "Achievements", icon: Trophy, to: "/achievements", end: false },
+  { title: "Reports", icon: BarChart3, to: "/reports", end: false },
 ];
 
 export function AppSidebar() {

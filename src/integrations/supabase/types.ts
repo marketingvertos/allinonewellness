@@ -1151,6 +1151,90 @@ export type Database = {
           },
         ]
       }
+      wellness_event_participants: {
+        Row: {
+          created_at: string
+          end_weight: number | null
+          event_id: string
+          id: string
+          member_id: string
+          start_weight: number | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          end_weight?: number | null
+          event_id: string
+          id?: string
+          member_id: string
+          start_weight?: number | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          end_weight?: number | null
+          event_id?: string
+          id?: string
+          member_id?: string
+          start_weight?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_event_participants_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          event_date: string
+          event_type: string
+          id: string
+          is_active: boolean
+          month: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          event_date: string
+          event_type: string
+          id?: string
+          is_active?: boolean
+          month: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          is_active?: boolean
+          month?: string
+          title?: string
+        }
+        Relationships: []
+      }
       wellness_members: {
         Row: {
           activation_code: string
@@ -1299,6 +1383,8 @@ export type Database = {
           id: string
           member_id: string
           membership_code: string
+          payment_date: string | null
+          payment_mode: string
           plan_id: string
           price_paid: number
           remaining_servings: number
@@ -1316,6 +1402,8 @@ export type Database = {
           id?: string
           member_id: string
           membership_code: string
+          payment_date?: string | null
+          payment_mode?: string
           plan_id: string
           price_paid?: number
           remaining_servings: number
@@ -1333,6 +1421,8 @@ export type Database = {
           id?: string
           member_id?: string
           membership_code?: string
+          payment_date?: string | null
+          payment_mode?: string
           plan_id?: string
           price_paid?: number
           remaining_servings?: number
@@ -1363,6 +1453,54 @@ export type Database = {
             columns: ["renewed_from"]
             isOneToOne: false
             referencedRelation: "wellness_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_monthly_rewards: {
+        Row: {
+          created_at: string
+          details: Json
+          event_id: string | null
+          id: string
+          is_delivered: boolean
+          member_id: string
+          month: string
+          reward_type: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          event_id?: string | null
+          id?: string
+          is_delivered?: boolean
+          member_id: string
+          month: string
+          reward_type: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          event_id?: string | null
+          id?: string
+          is_delivered?: boolean
+          member_id?: string
+          month?: string
+          reward_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_monthly_rewards_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_monthly_rewards_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
             referencedColumns: ["id"]
           },
         ]
@@ -1560,6 +1698,41 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "wellness_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_wlp_attendance: {
+        Row: {
+          created_at: string
+          id: string
+          marked_by: string | null
+          member_id: string
+          month: string
+          session_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          marked_by?: string | null
+          member_id: string
+          month: string
+          session_date: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          marked_by?: string | null
+          member_id?: string
+          month?: string
+          session_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_wlp_attendance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
             referencedColumns: ["id"]
           },
         ]
@@ -1806,6 +1979,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      calc_monthly_rewards: { Args: { p_month: string }; Returns: undefined }
       checkin_member: {
         Args: {
           p_member_id: string
@@ -1937,6 +2111,8 @@ export type Database = {
           p_membership_id: string
           p_mode?: string
           p_note?: string
+          p_payment_date?: string
+          p_payment_mode?: string
           p_plan_id: string
           p_price?: number
           p_servings?: number
