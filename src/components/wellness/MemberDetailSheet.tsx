@@ -404,11 +404,50 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="ms-amount">Amount collected</Label>
+                    <Input
+                      id="ms-amount"
+                      inputMode="decimal"
+                      value={payPrice}
+                      onChange={(e) => setPayPrice(e.target.value)}
+                      placeholder={selectedNewPlan ? String(selectedNewPlan.price) : ""}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Payment method</Label>
+                    <Select value={payMode} onValueChange={setPayMode}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_MODES.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ms-paydate">Payment date</Label>
+                    <Input
+                      id="ms-paydate"
+                      type="date"
+                      value={payDate}
+                      onChange={(e) => setPayDate(e.target.value)}
+                    />
+                  </div>
+                </div>
                 <Button
                   size="sm"
                   disabled={!planId || createMembership.isPending}
                   onClick={() =>
-                    createMembership.mutate({ memberId: member.id, planId, trialId: activeTrial?.id })
+                    createMembership.mutate({
+                      memberId: member.id,
+                      planId,
+                      trialId: activeTrial?.id,
+                      price: payPrice === "" ? undefined : Number(payPrice),
+                      paymentMode: payMode,
+                      paymentDate: payDate || todayIst(),
+                    })
                   }
                 >
                   {activeTrial ? "Convert trial to membership" : "Activate membership"}
