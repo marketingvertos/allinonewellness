@@ -308,7 +308,7 @@ export function buildLadder(
 
   const milestones: LadderMilestone[] = list.map((def) => ({
     def,
-    unlocked: unlockedIds.has(def.id) || progress >= Number(def.threshold),
+    unlocked: unlockedIds.has(def.id),
   }));
 
   let visible = milestones;
