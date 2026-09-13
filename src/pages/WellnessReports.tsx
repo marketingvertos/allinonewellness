@@ -182,6 +182,17 @@ function MiwTab({ month }: { month: string }) {
   const [memberId, setMemberId] = useState("");
   const [startWeight, setStartWeight] = useState("");
 
+  const ranked = useMemo(() => {
+    const rows = (participants ?? []).map((p) => ({
+      p,
+      change:
+        p.start_weight != null && p.end_weight != null
+          ? Number(p.end_weight) - Number(p.start_weight)
+          : null,
+    }));
+    return rows.sort((a, b) => (a.change ?? Infinity) - (b.change ?? Infinity));
+  }, [participants]);
+
   const add = async () => {
     if (!event || !memberId) return;
     await saveParticipant.mutateAsync({
