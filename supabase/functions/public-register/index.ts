@@ -135,20 +135,24 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!adminRole?.user_id) return json({ error: "Registration is unavailable right now." }, 503);
 
+    const isMarried = input.marital_status === "married";
     const { data: member, error: insertErr } = await supabase
       .from("wellness_members")
       .insert({
         full_name: input.full_name,
         mobile_number: mobile,
+        email: input.email,
+        gender: input.gender,
         date_of_birth: input.date_of_birth,
-        marital_status: input.anniversary_date ? "married" : null,
-        anniversary_date: input.anniversary_date,
+        marital_status: input.marital_status,
+        anniversary_date: isMarried ? input.anniversary_date : null,
         height: input.height,
         initial_weight: input.joining_weight,
+        target_weight: input.target_weight,
         joining_date: istToday(),
         status: "lead",
-        goal: "weight_loss",
-        member_mode: "physical",
+        goal: input.goal ?? "weight_loss",
+        member_mode: input.member_mode ?? "physical",
         tags: ["public_form"],
         created_by: adminRole.user_id,
       })
@@ -163,8 +167,10 @@ Deno.serve(async (req) => {
     const noteLines = [
       input.city ? `City: ${input.city}` : null,
       input.alternate_mobile ? `Alternate number: ${input.alternate_mobile}` : null,
+      input.referrer_name ? `Introduced by: ${input.referrer_name}` : null,
       input.health_issues ? `Health issues: ${input.health_issues}` : null,
     ].filter(Boolean);
+
     if (noteLines.length) {
       await supabase.from("member_notes").insert({
         member_id: member.id,
