@@ -1,3 +1,6 @@
 project_id = "mnzzbqqzmaydisylyyhd"
 [functions.member-access]
 verify_jwt = false
+
+[functions.bootstrap-admin]
+verify_jwt = false
