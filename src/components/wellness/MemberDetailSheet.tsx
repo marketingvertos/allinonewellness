@@ -33,6 +33,7 @@ import { StartTrialDialog } from "./StartTrialDialog";
 import { RenewPlanDialog } from "./RenewPlanDialog";
 import { SwitchPlanDialog } from "./SwitchPlanDialog";
 import { MemberLoginCard } from "./MemberLoginCard";
+import { EditMemberDialog } from "./EditMemberDialog";
 import { SendWhatsAppDialog } from "@/components/wellness/SendWhatsAppDialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -116,6 +117,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [whatsAppOpen, setWhatsAppOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   // Clear any pending referrer selection when the panel switches member.
   useEffect(() => {
@@ -172,7 +174,13 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <Button variant="outline" onClick={() => setWhatsAppOpen(true)}>
             Send WhatsApp
           </Button>
+          <Button variant="outline" onClick={() => setEditProfileOpen(true)}>
+            <Pencil className="mr-2 h-4 w-4" /> Edit profile
+          </Button>
         </div>
+
+        <EditMemberDialog member={member} open={editProfileOpen} onOpenChange={setEditProfileOpen} />
+
 
         <SendWhatsAppDialog
           memberId={member.id}
