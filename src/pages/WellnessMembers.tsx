@@ -186,6 +186,11 @@ export default function WellnessMembers() {
               badges={
                 <>
                   <ModeBadge mode={m.member_mode} />
+                  {!m.user_id && m.status !== "lead" && (
+                    <Badge variant="outline" className="gap-1 text-destructive">
+                      <KeyRound className="h-3 w-3" /> No login
+                    </Badge>
+                  )}
                   <TagBadges tags={m.tags} />
                   <PinkCardBadge balance={m.pink_card_balance} />
                   <MasterTitleBadge level={m.master_level} size="sm" />
