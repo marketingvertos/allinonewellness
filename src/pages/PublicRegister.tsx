@@ -15,15 +15,8 @@ const TITLE = "Join All In One Wellness — Family Health Club";
 const DESCRIPTION =
   "Register with All In One Wellness Family Health Club. Share your details and our team will contact you on WhatsApp.";
 
-const GOALS = [
-  { value: "weight_loss", label: "Weight loss" },
-  { value: "fat_loss", label: "Fat loss" },
-  { value: "weight_management", label: "Weight management" },
-  { value: "weight_gain", label: "Weight gain" },
-  { value: "general_wellness", label: "General wellness" },
-  { value: "healthy_lifestyle", label: "Healthy lifestyle" },
-  { value: "body_transformation", label: "Body transformation" },
-];
+const GOALS = MEMBER_GOALS;
+
 
 export default function PublicRegister() {
   const [submitting, setSubmitting] = useState(false);
