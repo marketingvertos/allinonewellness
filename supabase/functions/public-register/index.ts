@@ -44,19 +44,38 @@ const optionalNumber = (min: number, max: number) =>
       message: "Out of range",
     });
 
+const optionalEnum = <T extends string>(values: readonly [T, ...T[]]) =>
+  z.enum(values).optional().or(z.literal("")).transform((v) => (v ? (v as T) : null));
+
 const BodySchema = z.object({
   full_name: z.string().trim().min(2).max(100),
   mobile_number: z.string().trim().min(10).max(15),
   alternate_mobile: optionalText(15),
+  email: z.string().trim().email().max(255).optional().or(z.literal("")).transform((v) => (v ? v : null)),
+  gender: optionalEnum(["female", "male", "other"] as const),
+  marital_status: optionalEnum(["single", "married", "prefer_not_say"] as const),
+  member_mode: z.enum(["physical", "virtual"]).optional().default("physical"),
+  goal: optionalEnum([
+    "weight_loss",
+    "fat_loss",
+    "weight_management",
+    "weight_gain",
+    "general_wellness",
+    "healthy_lifestyle",
+    "body_transformation",
+  ] as const),
   date_of_birth: optionalDate,
   anniversary_date: optionalDate,
   city: optionalText(80),
   height: optionalNumber(80, 250),
   joining_weight: optionalNumber(20, 300),
+  target_weight: optionalNumber(20, 300),
+  referrer_name: optionalText(100),
   health_issues: optionalText(1000),
   /** Hidden honeypot — real people never fill this in. */
   website: z.string().max(200).optional(),
 });
+
 
 const last10 = (m: string) => {
   const digits = (m ?? "").replace(/\D/g, "");
