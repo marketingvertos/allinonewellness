@@ -25,6 +25,7 @@ import PortalHome from "./pages/portal/PortalHome";
 import PortalCheckIn from "./pages/portal/PortalCheckIn";
 import PortalHistory from "./pages/portal/PortalHistory";
 import PortalNetwork from "./pages/portal/PortalNetwork";
+import PublicRegister from "./pages/PublicRegister";
 import DisplayWeightChanges from "./pages/display/DisplayWeightChanges";
 import DisplayMilestones from "./pages/display/DisplayMilestones";
 import NotFound from "./pages/NotFound";
@@ -56,6 +57,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Navigate to="/auth" replace />} />
               <Route path="/auth" element={<Auth />} />
+              {/* Public registration form — no login required */}
+              <Route path="/join" element={<PublicRegister />} />
               {/* Public display screens — no login required */}
               <Route path="/display/weight-changes" element={<DisplayWeightChanges />} />
               <Route path="/display/milestones" element={<DisplayMilestones />} />
