@@ -44,19 +44,38 @@ const optionalNumber = (min: number, max: number) =>
       message: "Out of range",
     });
 
+const optionalEnum = <T extends string>(values: readonly [T, ...T[]]) =>
+  z.enum(values).optional().or(z.literal("")).transform((v) => (v ? (v as T) : null));
+
 const BodySchema = z.object({
   full_name: z.string().trim().min(2).max(100),
   mobile_number: z.string().trim().min(10).max(15),
   alternate_mobile: optionalText(15),
+  email: z.string().trim().email().max(255).optional().or(z.literal("")).transform((v) => (v ? v : null)),
+  gender: optionalEnum(["female", "male", "other"] as const),
+  marital_status: optionalEnum(["single", "married", "prefer_not_say"] as const),
+  member_mode: z.enum(["physical", "virtual"]).optional().default("physical"),
+  goal: optionalEnum([
+    "weight_loss",
+    "fat_loss",
+    "weight_management",
+    "weight_gain",
+    "general_wellness",
+    "healthy_lifestyle",
+    "body_transformation",
+  ] as const),
   date_of_birth: optionalDate,
   anniversary_date: optionalDate,
   city: optionalText(80),
   height: optionalNumber(80, 250),
   joining_weight: optionalNumber(20, 300),
+  target_weight: optionalNumber(20, 300),
+  referrer_name: optionalText(100),
   health_issues: optionalText(1000),
   /** Hidden honeypot — real people never fill this in. */
   website: z.string().max(200).optional(),
 });
+
 
 const last10 = (m: string) => {
   const digits = (m ?? "").replace(/\D/g, "");
@@ -116,20 +135,24 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!adminRole?.user_id) return json({ error: "Registration is unavailable right now." }, 503);
 
+    const isMarried = input.marital_status === "married";
     const { data: member, error: insertErr } = await supabase
       .from("wellness_members")
       .insert({
         full_name: input.full_name,
         mobile_number: mobile,
+        email: input.email,
+        gender: input.gender,
         date_of_birth: input.date_of_birth,
-        marital_status: input.anniversary_date ? "married" : null,
-        anniversary_date: input.anniversary_date,
+        marital_status: input.marital_status,
+        anniversary_date: isMarried ? input.anniversary_date : null,
         height: input.height,
         initial_weight: input.joining_weight,
+        target_weight: input.target_weight,
         joining_date: istToday(),
         status: "lead",
-        goal: "weight_loss",
-        member_mode: "physical",
+        goal: input.goal ?? "weight_loss",
+        member_mode: input.member_mode ?? "physical",
         tags: ["public_form"],
         created_by: adminRole.user_id,
       })
@@ -144,8 +167,10 @@ Deno.serve(async (req) => {
     const noteLines = [
       input.city ? `City: ${input.city}` : null,
       input.alternate_mobile ? `Alternate number: ${input.alternate_mobile}` : null,
+      input.referrer_name ? `Introduced by: ${input.referrer_name}` : null,
       input.health_issues ? `Health issues: ${input.health_issues}` : null,
     ].filter(Boolean);
+
     if (noteLines.length) {
       await supabase.from("member_notes").insert({
         member_id: member.id,

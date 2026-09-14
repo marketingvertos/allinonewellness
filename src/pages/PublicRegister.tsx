@@ -7,11 +7,23 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DobInput } from "@/components/ui/dob-input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 const TITLE = "Join All In One Wellness — Family Health Club";
 const DESCRIPTION =
   "Register with All In One Wellness Family Health Club. Share your details and our team will contact you on WhatsApp.";
+
+const GOALS = [
+  { value: "weight_loss", label: "Weight loss" },
+  { value: "fat_loss", label: "Fat loss" },
+  { value: "weight_management", label: "Weight management" },
+  { value: "weight_gain", label: "Weight gain" },
+  { value: "general_wellness", label: "General wellness" },
+  { value: "healthy_lifestyle", label: "Healthy lifestyle" },
+  { value: "body_transformation", label: "Body transformation" },
+];
 
 export default function PublicRegister() {
   const [submitting, setSubmitting] = useState(false);
@@ -21,11 +33,18 @@ export default function PublicRegister() {
     full_name: "",
     mobile_number: "",
     alternate_mobile: "",
+    email: "",
+    gender: "",
     date_of_birth: "",
+    marital_status: "",
     anniversary_date: "",
     city: "",
+    member_mode: "physical",
+    goal: "weight_loss",
     height: "",
     joining_weight: "",
+    target_weight: "",
+    referrer_name: "",
     health_issues: "",
     website: "",
   });
@@ -37,6 +56,13 @@ export default function PublicRegister() {
   }, []);
 
   const set = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
+
+  const setMaritalStatus = (value: string) =>
+    setForm((f) => ({
+      ...f,
+      marital_status: value,
+      anniversary_date: value === "married" ? f.anniversary_date : "",
+    }));
 
   const digits = form.mobile_number.replace(/\D/g, "");
   const valid = form.full_name.trim().length > 1 && digits.length >= 10 && digits.length <= 12;
@@ -137,18 +163,53 @@ export default function PublicRegister() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="pr-email">Email ID</Label>
+                <Input
+                  id="pr-email"
+                  type="email"
+                  maxLength={255}
+                  value={form.email}
+                  onChange={(e) => set("email")(e.target.value)}
+                  placeholder="priya@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <Select value={form.gender} onValueChange={set("gender")}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="pr-dob">Date of birth</Label>
                 <DobInput id="pr-dob" value={form.date_of_birth} onChange={set("date_of_birth")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pr-doa">Anniversary date</Label>
-                <DobInput
-                  id="pr-doa"
-                  value={form.anniversary_date}
-                  onChange={set("anniversary_date")}
-                  showAge={false}
-                />
+                <Label>Relationship status</Label>
+                <Select value={form.marital_status} onValueChange={setMaritalStatus}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single</SelectItem>
+                    <SelectItem value="married">Married</SelectItem>
+                    <SelectItem value="prefer_not_say">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+              {form.marital_status === "married" && (
+                <div className="space-y-2">
+                  <Label htmlFor="pr-doa">Anniversary date</Label>
+                  <DobInput
+                    id="pr-doa"
+                    value={form.anniversary_date}
+                    onChange={set("anniversary_date")}
+                    showAge={false}
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="pr-city">City</Label>
                 <Input
@@ -157,6 +218,29 @@ export default function PublicRegister() {
                   value={form.city}
                   onChange={(e) => set("city")(e.target.value)}
                 />
+              </div>
+              <div className="sm:col-span-2 space-y-2">
+                <Label>How would you like to join?</Label>
+                <ToggleGroup
+                  type="single"
+                  value={form.member_mode}
+                  onValueChange={(v) => v && set("member_mode")(v)}
+                  className="justify-start gap-2"
+                >
+                  <ToggleGroupItem value="physical" className="flex-1 sm:flex-none">At the centre</ToggleGroupItem>
+                  <ToggleGroupItem value="virtual" className="flex-1 sm:flex-none">Online</ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+              <div className="space-y-2">
+                <Label>Your goal</Label>
+                <Select value={form.goal} onValueChange={set("goal")}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {GOALS.map((g) => (
+                      <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pr-height">Height (cm)</Label>
@@ -167,13 +251,32 @@ export default function PublicRegister() {
                   onChange={(e) => set("height")(e.target.value)}
                 />
               </div>
-              <div className="sm:col-span-2 space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="pr-weight">Your weight when joining the club (kg)</Label>
                 <Input
                   id="pr-weight"
                   inputMode="decimal"
                   value={form.joining_weight}
                   onChange={(e) => set("joining_weight")(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pr-target">Target weight (kg)</Label>
+                <Input
+                  id="pr-target"
+                  inputMode="decimal"
+                  value={form.target_weight}
+                  onChange={(e) => set("target_weight")(e.target.value)}
+                />
+              </div>
+              <div className="sm:col-span-2 space-y-2">
+                <Label htmlFor="pr-ref">Who introduced you? (optional)</Label>
+                <Input
+                  id="pr-ref"
+                  maxLength={100}
+                  value={form.referrer_name}
+                  onChange={(e) => set("referrer_name")(e.target.value)}
+                  placeholder="Name of the member who invited you"
                 />
               </div>
               <div className="sm:col-span-2 space-y-2">
