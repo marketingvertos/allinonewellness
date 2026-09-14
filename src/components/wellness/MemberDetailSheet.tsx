@@ -33,6 +33,7 @@ import { StartTrialDialog } from "./StartTrialDialog";
 import { RenewPlanDialog } from "./RenewPlanDialog";
 import { SwitchPlanDialog } from "./SwitchPlanDialog";
 import { MemberLoginCard } from "./MemberLoginCard";
+import { EditMemberDialog } from "./EditMemberDialog";
 import { SendWhatsAppDialog } from "@/components/wellness/SendWhatsAppDialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
