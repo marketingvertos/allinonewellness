@@ -7,6 +7,7 @@ import { MemberDetailSheet } from "@/components/wellness/MemberDetailSheet";
 import { statusLabel, statusVariant } from "@/components/wellness/status";
 import { MEMBER_TAGS, ModeBadge, TagBadges, modeLabel, tagLabel } from "@/components/wellness/memberMeta";
 import { MasterTitleBadge } from "@/components/wellness/MasterTitleBadge";
+import { MissingLoginsBanner } from "@/components/wellness/MissingLoginsBanner";
 import { PinkCardBadge } from "@/components/wellness/PinkCardPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WellnessListRow } from "@/components/wellness/WellnessListRow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate } from "@/lib/formatters";
-import { Download, Plus, Search, Users } from "lucide-react";
+import { Download, KeyRound, Plus, Search, Users } from "lucide-react";
 
 const STATUSES: (WellnessStatus | "all")[] = [
   "all",
@@ -110,6 +111,9 @@ export default function WellnessMembers() {
         </div>
       </PageBanner>
 
+      <MissingLoginsBanner />
+
+
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <div className="relative flex-1 sm:min-w-[16rem]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -182,6 +186,11 @@ export default function WellnessMembers() {
               badges={
                 <>
                   <ModeBadge mode={m.member_mode} />
+                  {!m.user_id && m.status !== "lead" && (
+                    <Badge variant="outline" className="gap-1 text-destructive">
+                      <KeyRound className="h-3 w-3" /> No login
+                    </Badge>
+                  )}
                   <TagBadges tags={m.tags} />
                   <PinkCardBadge balance={m.pink_card_balance} />
                   <MasterTitleBadge level={m.master_level} size="sm" />

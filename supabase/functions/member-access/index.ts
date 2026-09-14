@@ -51,7 +51,63 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action ?? "");
     const memberId = String(body?.memberId ?? "");
-    if (!["status", "create", "reset", "unlink"].includes(action)) return json({ error: "Invalid action" }, 400);
+    if (!["status", "create", "reset", "unlink", "missing_logins", "create_missing"].includes(action))
+      return json({ error: "Invalid action" }, 400);
+
+    // Bulk helpers: every non-lead member that has no portal login yet.
+    if (action === "missing_logins" || action === "create_missing") {
+      const { data: pending, error: pendingErr } = await admin
+        .from("wellness_members")
+        .select("id, full_name, mobile_number")
+        .is("user_id", null)
+        .neq("status", "lead")
+        .order("full_name");
+      if (pendingErr) return json({ error: pendingErr.message }, 400);
+
+      if (action === "missing_logins") return json({ members: pending ?? [] });
+
+      const created: { id: string; full_name: string; mobile_number: string }[] = [];
+      const failed: { full_name: string; mobile_number: string; error: string }[] = [];
+
+      for (const m of pending ?? []) {
+        const mobile = normalizeMobile(m.mobile_number);
+        if (mobile.length !== 10) {
+          failed.push({ full_name: m.full_name, mobile_number: m.mobile_number, error: "Invalid mobile number" });
+          continue;
+        }
+        const memberEmail = `${mobile}@members.vertos.in`;
+        const { data: made, error: madeErr } = await admin.auth.admin.createUser({
+          email: memberEmail,
+          password: DEFAULT_MEMBER_PASSWORD,
+          email_confirm: true,
+          user_metadata: {
+            account_type: "wellness_member",
+            mobile_number: mobile,
+            full_name: m.full_name,
+            must_change_password: true,
+          },
+        });
+        let authId = made?.user?.id ?? null;
+        if (madeErr) {
+          const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+          const existing = list?.users?.find((u) => u.email?.toLowerCase() === memberEmail);
+          if (!existing) {
+            failed.push({ full_name: m.full_name, mobile_number: m.mobile_number, error: madeErr.message });
+            continue;
+          }
+          authId = existing.id;
+          await admin.auth.admin.updateUserById(existing.id, {
+            password: DEFAULT_MEMBER_PASSWORD,
+            user_metadata: { ...existing.user_metadata, must_change_password: true },
+          });
+        }
+        await admin.from("wellness_members").update({ user_id: authId }).eq("id", m.id);
+        created.push({ id: m.id, full_name: m.full_name, mobile_number: mobile });
+      }
+
+      return json({ created, failed, password: DEFAULT_MEMBER_PASSWORD });
+    }
+
     if (!/^[0-9a-f-]{36}$/i.test(memberId)) return json({ error: "Invalid member id" }, 400);
 
     const { data: member, error: memberErr } = await admin
