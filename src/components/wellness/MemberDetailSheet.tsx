@@ -117,6 +117,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [whatsAppOpen, setWhatsAppOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   // Clear any pending referrer selection when the panel switches member.
   useEffect(() => {
