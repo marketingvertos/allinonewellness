@@ -30,6 +30,50 @@ export function useMemberAccessStatus(memberId?: string) {
   });
 }
 
+export interface MemberWithoutLogin {
+  id: string;
+  full_name: string;
+  mobile_number: string;
+}
+
+/** Active members (leads excluded) that still have no portal login. */
+export function useMembersWithoutLogin() {
+  return useQuery({
+    queryKey: ["members-without-login"],
+    staleTime: 60 * 1000,
+    queryFn: async () => {
+      const res = await callMemberAccess<{ members: MemberWithoutLogin[] }>({ action: "missing_logins" });
+      return res.members ?? [];
+    },
+  });
+}
+
+/** Issues portal logins for every member that is missing one. */
+export function useCreateMissingLogins() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: () =>
+      callMemberAccess<{
+        created: MemberWithoutLogin[];
+        failed: { full_name: string; mobile_number: string; error: string }[];
+        password: string;
+      }>({ action: "create_missing" }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["members-without-login"] });
+      qc.invalidateQueries({ queryKey: ["wellness-members"] });
+      toast({
+        title: `${data.created.length} login${data.created.length === 1 ? "" : "s"} created`,
+        description: data.failed.length
+          ? `${data.failed.length} could not be created — check their mobile numbers.`
+          : `Password: ${data.password}`,
+      });
+    },
+    onError: (error: Error) =>
+      toast({ title: "Could not create logins", description: error.message, variant: "destructive" }),
+  });
+}
+
 /** Creates or resets the member's portal login. Returns the credentials to hand over. */
 export function useManageMemberLogin() {
   const qc = useQueryClient();
