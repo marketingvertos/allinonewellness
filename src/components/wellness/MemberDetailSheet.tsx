@@ -174,7 +174,13 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <Button variant="outline" onClick={() => setWhatsAppOpen(true)}>
             Send WhatsApp
           </Button>
+          <Button variant="outline" onClick={() => setEditProfileOpen(true)}>
+            <Pencil className="mr-2 h-4 w-4" /> Edit profile
+          </Button>
         </div>
+
+        <EditMemberDialog member={member} open={editProfileOpen} onOpenChange={setEditProfileOpen} />
+
 
         <SendWhatsAppDialog
           memberId={member.id}
