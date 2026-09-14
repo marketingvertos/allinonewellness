@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WellnessListRow } from "@/components/wellness/WellnessListRow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate } from "@/lib/formatters";
-import { Download, Plus, Search, Users } from "lucide-react";
+import { Download, KeyRound, Plus, Search, Users } from "lucide-react";
 
 const STATUSES: (WellnessStatus | "all")[] = [
   "all",
