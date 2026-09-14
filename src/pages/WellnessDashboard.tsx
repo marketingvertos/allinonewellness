@@ -27,6 +27,7 @@ import { BirthdaysCard } from "@/components/wellness/BirthdaysCard";
 import { ServingTrendChart } from "@/components/wellness/ServingTrendChart";
 import { PendingCheckInsCard } from "@/components/wellness/PendingCheckInsCard";
 import { DisplayScreensCard } from "@/components/wellness/DisplayScreensCard";
+import { PublicRegistrationCard } from "@/components/wellness/PublicRegistrationCard";
 
 const PERIODS = [
   { key: "today", label: "Today" },
@@ -321,6 +322,8 @@ export default function WellnessDashboard() {
         </Card>
 
         <DisplayScreensCard />
+
+        <PublicRegistrationCard />
       </div>
     </div>
   );
