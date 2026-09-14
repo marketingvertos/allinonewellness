@@ -41,7 +41,7 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
+  
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Member state
