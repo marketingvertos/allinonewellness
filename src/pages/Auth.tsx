@@ -151,27 +151,6 @@ export default function Auth() {
     }
   };
 
-  const handleDemoLogin = async () => {
-    setDemoLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("demo-login");
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
-      if (signInError) throw signInError;
-    } catch (error: any) {
-      toast({
-        title: "Demo unavailable",
-        description: sanitizeErrorMessage(error.message || "Could not start the demo"),
-        variant: "destructive",
-      });
-    } finally {
-      setDemoLoading(false);
-    }
-  };
 
   const memberValid = normalizeMobile(mobile).length === 10 && memberPassword.length >= 8;
 
@@ -351,15 +330,6 @@ export default function Auth() {
                   or
                 </span>
               </div>
-
-              <Button
-                variant="secondary"
-                className="mb-3 w-full"
-                onClick={handleDemoLogin}
-                disabled={demoLoading}
-              >
-                {demoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Try demo"}
-              </Button>
 
               <Button
                 variant="outline"
