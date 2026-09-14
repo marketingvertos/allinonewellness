@@ -81,8 +81,8 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
   const community = buildLadder("referral", defs ?? [], unlockedIds, referralCount);
   const health = buildLadder(healthCategory, defs ?? [], unlockedIds, Math.max(0, delta), goalDelta);
 
-  const showHealth =
-    !!member.goal && ["weight_loss", "fat_loss", "weight_gain", "body_transformation"].includes(member.goal);
+  const showHealth = !!member.goal && ["weight_loss", "weight_gain"].includes(member.goal);
+
 
   return (
     <div className={compact ? "space-y-3" : "space-y-4"}>

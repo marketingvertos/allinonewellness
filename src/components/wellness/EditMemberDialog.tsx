@@ -11,15 +11,8 @@ import { TagPicker } from "./TagPicker";
 import { BatchPicker } from "./BatchPicker";
 import { ReferrerPicker } from "./ReferrerPicker";
 
-const GOALS = [
-  { value: "weight_loss", label: "Weight loss" },
-  { value: "fat_loss", label: "Fat loss" },
-  { value: "weight_management", label: "Weight management" },
-  { value: "weight_gain", label: "Weight gain" },
-  { value: "general_wellness", label: "General wellness" },
-  { value: "healthy_lifestyle", label: "Healthy lifestyle" },
-  { value: "body_transformation", label: "Body transformation" },
-];
+import { MEMBER_GOALS as GOALS } from "@/lib/goals";
+
 
 interface Props {
   member: WellnessMember;

@@ -10,20 +10,15 @@ import { DobInput } from "@/components/ui/dob-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CheckCircle2, Loader2 } from "lucide-react";
+import { MEMBER_GOALS } from "@/lib/goals";
+
 
 const TITLE = "Join All In One Wellness — Family Health Club";
 const DESCRIPTION =
   "Register with All In One Wellness Family Health Club. Share your details and our team will contact you on WhatsApp.";
 
-const GOALS = [
-  { value: "weight_loss", label: "Weight loss" },
-  { value: "fat_loss", label: "Fat loss" },
-  { value: "weight_management", label: "Weight management" },
-  { value: "weight_gain", label: "Weight gain" },
-  { value: "general_wellness", label: "General wellness" },
-  { value: "healthy_lifestyle", label: "Healthy lifestyle" },
-  { value: "body_transformation", label: "Body transformation" },
-];
+const GOALS = MEMBER_GOALS;
+
 
 export default function PublicRegister() {
   const [submitting, setSubmitting] = useState(false);
