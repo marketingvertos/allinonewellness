@@ -10,6 +10,8 @@ import { DobInput } from "@/components/ui/dob-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CheckCircle2, Loader2 } from "lucide-react";
+import { MEMBER_GOALS } from "@/lib/goals";
+
 
 const TITLE = "Join All In One Wellness — Family Health Club";
 const DESCRIPTION =
