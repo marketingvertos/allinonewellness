@@ -7,6 +7,7 @@ import { MemberDetailSheet } from "@/components/wellness/MemberDetailSheet";
 import { statusLabel, statusVariant } from "@/components/wellness/status";
 import { MEMBER_TAGS, ModeBadge, TagBadges, modeLabel, tagLabel } from "@/components/wellness/memberMeta";
 import { MasterTitleBadge } from "@/components/wellness/MasterTitleBadge";
+import { MissingLoginsBanner } from "@/components/wellness/MissingLoginsBanner";
 import { PinkCardBadge } from "@/components/wellness/PinkCardPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
