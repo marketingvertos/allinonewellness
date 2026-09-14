@@ -55,15 +55,8 @@ const BodySchema = z.object({
   gender: optionalEnum(["female", "male", "other"] as const),
   marital_status: optionalEnum(["single", "married", "prefer_not_say"] as const),
   member_mode: z.enum(["physical", "virtual"]).optional().default("physical"),
-  goal: optionalEnum([
-    "weight_loss",
-    "fat_loss",
-    "weight_management",
-    "weight_gain",
-    "general_wellness",
-    "healthy_lifestyle",
-    "body_transformation",
-  ] as const),
+  goal: optionalEnum(["weight_loss", "weight_gain"] as const),
+
   date_of_birth: optionalDate,
   anniversary_date: optionalDate,
   city: optionalText(80),
