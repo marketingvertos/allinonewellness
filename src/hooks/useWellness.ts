@@ -350,6 +350,7 @@ export function useStartTrial() {
         .update({ status: "trial" })
         .eq("id", trial.member_id as string);
       if (e2) throw e2;
+      await ensureMemberLogin(trial.member_id as string);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wellness-trials"] });
