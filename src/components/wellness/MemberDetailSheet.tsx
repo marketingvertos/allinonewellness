@@ -33,6 +33,7 @@ import { StartTrialDialog } from "./StartTrialDialog";
 import { RenewPlanDialog } from "./RenewPlanDialog";
 import { SwitchPlanDialog } from "./SwitchPlanDialog";
 import { MemberLoginCard } from "./MemberLoginCard";
+import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
 import { EditMemberDialog } from "./EditMemberDialog";
 import { SendWhatsAppDialog } from "@/components/wellness/SendWhatsAppDialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -102,6 +103,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [planId, setPlanId] = useState("");
   const [payMode, setPayMode] = useState("cash");
   const [payDate, setPayDate] = useState(todayIst());
+  const [showCredentials, setShowCredentials] = useState(false);
   const [payPrice, setPayPrice] = useState("");
   const selectedNewPlan = plans?.find((p) => p.id === planId);
   const [weight, setWeight] = useState("");
@@ -453,17 +455,42 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   size="sm"
                   disabled={!planId || createMembership.isPending}
                   onClick={() =>
-                    createMembership.mutate({
-                      memberId: member.id,
-                      planId,
-                      trialId: activeTrial?.id,
-                      price: payPrice === "" ? undefined : Number(payPrice),
-                      paymentMode: payMode,
-                      paymentDate: payDate || todayIst(),
-                    })
+                    createMembership.mutate(
+                      {
+                        memberId: member.id,
+                        planId,
+                        trialId: activeTrial?.id,
+                        price: payPrice === "" ? undefined : Number(payPrice),
+                        paymentMode: payMode,
+                        paymentDate: payDate || todayIst(),
+                      },
+                      { onSuccess: () => setShowCredentials(true) },
+                    )
                   }
                 >
                   {activeTrial ? "Convert trial to membership" : "Activate membership"}
+                </Button>
+              </div>
+            )}
+
+            {showCredentials && (
+              <div className="space-y-2 rounded-lg border border-primary/40 bg-primary/5 p-4 text-sm">
+                <p className="font-medium">Portal login ready</p>
+                <p className="font-mono">Login ID: {member.mobile_number}</p>
+                <p className="font-mono">Password: {DEFAULT_MEMBER_PASSWORD}</p>
+                <p className="text-xs text-muted-foreground">
+                  {window.location.origin}/auth — the member can change the password after signing in.
+                </p>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    navigator.clipboard.writeText(
+                      `Login ID: ${member.mobile_number}\nPassword: ${DEFAULT_MEMBER_PASSWORD}\nPortal: ${window.location.origin}/auth`,
+                    )
+                  }
+                >
+                  Copy details
                 </Button>
               </div>
             )}

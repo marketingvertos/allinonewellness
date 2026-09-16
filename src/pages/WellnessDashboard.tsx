@@ -16,6 +16,7 @@ import {
 } from "@/hooks/useWellness";
 import { useCoachesAtRisk } from "@/hooks/useAchievements";
 import { PageBanner } from "@/components/PageBanner";
+import { MissingLoginsBanner } from "@/components/wellness/MissingLoginsBanner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -123,6 +124,8 @@ export default function WellnessDashboard() {
           </Button>
         </div>
       </PageBanner>
+
+      <MissingLoginsBanner />
 
       <ToggleGroup
         type="single"
