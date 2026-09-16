@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { InstallAppPrompt } from "@/components/InstallAppPrompt";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { sanitizeErrorMessage } from "@/lib/sanitize";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -47,6 +47,7 @@ export default function Auth() {
   // Member state
   const [mobile, setMobile] = useState("");
   const [memberPassword, setMemberPassword] = useState("");
+  const [showMemberPassword, setShowMemberPassword] = useState(false);
   const [busy, setBusy] = useState(false);
 
   if (loading || (session && identityLoading)) {
@@ -188,13 +189,24 @@ export default function Auth() {
       </div>
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-password`}>Password</Label>
-        <Input
-          id={`${idPrefix}-password`}
-          type="password"
-          placeholder="At least 8 characters"
-          value={memberPassword}
-          onChange={(e) => setMemberPassword(e.target.value)}
-        />
+        <div className="relative">
+          <Input
+            id={`${idPrefix}-password`}
+            type={showMemberPassword ? "text" : "password"}
+            placeholder="At least 8 characters"
+            value={memberPassword}
+            onChange={(e) => setMemberPassword(e.target.value)}
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowMemberPassword((v) => !v)}
+            aria-label={showMemberPassword ? "Hide password" : "Show password"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+          >
+            {showMemberPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
     </div>
   );
