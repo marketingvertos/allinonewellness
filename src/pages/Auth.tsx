@@ -47,6 +47,7 @@ export default function Auth() {
   // Member state
   const [mobile, setMobile] = useState("");
   const [memberPassword, setMemberPassword] = useState("");
+  const [showMemberPassword, setShowMemberPassword] = useState(false);
   const [busy, setBusy] = useState(false);
 
   if (loading || (session && identityLoading)) {

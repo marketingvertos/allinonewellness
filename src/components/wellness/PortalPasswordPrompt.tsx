@@ -16,6 +16,8 @@ export function PortalPasswordPrompt() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const mustChange = (user?.user_metadata as { must_change_password?: boolean } | undefined)?.must_change_password;
   if (!mustChange || done) return null;
