@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeErrorMessage } from "@/lib/sanitize";
+import { ensureMemberLogin } from "@/hooks/useMemberAccess";
 
 function getErrorMessage(error: unknown): string {
   const e = error as { message?: string; details?: string; hint?: string } | null;
