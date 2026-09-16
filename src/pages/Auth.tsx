@@ -189,13 +189,24 @@ export default function Auth() {
       </div>
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-password`}>Password</Label>
-        <Input
-          id={`${idPrefix}-password`}
-          type="password"
-          placeholder="At least 8 characters"
-          value={memberPassword}
-          onChange={(e) => setMemberPassword(e.target.value)}
-        />
+        <div className="relative">
+          <Input
+            id={`${idPrefix}-password`}
+            type={showMemberPassword ? "text" : "password"}
+            placeholder="At least 8 characters"
+            value={memberPassword}
+            onChange={(e) => setMemberPassword(e.target.value)}
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowMemberPassword((v) => !v)}
+            aria-label={showMemberPassword ? "Hide password" : "Show password"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+          >
+            {showMemberPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
     </div>
   );
