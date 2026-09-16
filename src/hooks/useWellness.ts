@@ -386,6 +386,9 @@ export function useCreateMembership() {
         if (error) throw error;
         membershipId = (data as unknown as string) ?? null;
       }
+      // A paying member must always be able to sign in — leads registered
+      // through the public form have no login until this point.
+      await ensureMemberLogin(args.memberId);
       if (membershipId && (args.paymentMode || args.paymentDate)) {
         await supabase
           .from("wellness_memberships")
