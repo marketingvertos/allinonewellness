@@ -153,7 +153,7 @@ export default function Auth() {
   };
 
 
-  const memberValid = normalizeMobile(mobile).length === 10 && memberPassword.length >= 8;
+  const memberValid = normalizeMobile(mobile).length === 10 && memberPassword.length > 0;
 
   const memberSignIn = async () => {
     setBusy(true);

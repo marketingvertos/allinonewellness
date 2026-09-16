@@ -30,7 +30,12 @@ export function PortalPasswordPrompt() {
     });
     setBusy(false);
     if (error) {
-      toast({ title: "Could not update password", description: error.message, variant: "destructive" });
+      const short = /at least|length|short/i.test(error.message);
+      toast({
+        title: "Could not update password",
+        description: short ? "Please use at least 6 characters." : error.message,
+        variant: "destructive",
+      });
       return;
     }
     setDone(true);
@@ -47,7 +52,7 @@ export function PortalPasswordPrompt() {
         <div className="space-y-2">
           <Label htmlFor="new-pw">New password</Label>
           <div className="relative">
-            <Input id="new-pw" type={showNew ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className="pr-10" />
+            <Input id="new-pw" type={showNew ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Any password you like (min 6 characters)" className="pr-10" />
             <button
               type="button"
               onClick={() => setShowNew((v) => !v)}
@@ -72,7 +77,7 @@ export function PortalPasswordPrompt() {
             </button>
           </div>
         </div>
-        <Button className="w-full" disabled={password.length < 8 || password !== confirm || busy} onClick={save}>
+        <Button className="w-full" disabled={password.length < 6 || password !== confirm || busy} onClick={save}>
           {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save password
         </Button>
       </CardContent>
