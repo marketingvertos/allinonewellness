@@ -231,6 +231,10 @@ export function useUpdateWellnessMember() {
         .select()
         .single();
       if (error) throw error;
+      // Moving off "lead" means they now need portal access.
+      if (typeof updates.status === "string" && updates.status !== "lead") {
+        await ensureMemberLogin(id);
+      }
       return data;
     },
     onSuccess: () => {
