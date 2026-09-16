@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeErrorMessage } from "@/lib/sanitize";
+import { ensureMemberLogin } from "@/hooks/useMemberAccess";
 
 function getErrorMessage(error: unknown): string {
   const e = error as { message?: string; details?: string; hint?: string } | null;
@@ -230,6 +231,10 @@ export function useUpdateWellnessMember() {
         .select()
         .single();
       if (error) throw error;
+      // Moving off "lead" means they now need portal access.
+      if (typeof updates.status === "string" && updates.status !== "lead") {
+        await ensureMemberLogin(id);
+      }
       return data;
     },
     onSuccess: () => {
@@ -345,6 +350,7 @@ export function useStartTrial() {
         .update({ status: "trial" })
         .eq("id", trial.member_id as string);
       if (e2) throw e2;
+      await ensureMemberLogin(trial.member_id as string);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wellness-trials"] });
@@ -386,6 +392,9 @@ export function useCreateMembership() {
         if (error) throw error;
         membershipId = (data as unknown as string) ?? null;
       }
+      // A paying member must always be able to sign in — leads registered
+      // through the public form have no login until this point.
+      await ensureMemberLogin(args.memberId);
       if (membershipId && (args.paymentMode || args.paymentDate)) {
         await supabase
           .from("wellness_memberships")

@@ -74,6 +74,21 @@ export function useCreateMissingLogins() {
   });
 }
 
+/**
+ * Creates the member's portal login if they don't already have one.
+ * Safe to call repeatedly — never throws at the caller, so it can't block a sale.
+ */
+export async function ensureMemberLogin(memberId: string) {
+  try {
+    return await callMemberAccess<{ status: string; loginId: string; password?: string }>({
+      action: "ensure",
+      memberId,
+    });
+  } catch {
+    return null;
+  }
+}
+
 /** Creates or resets the member's portal login. Returns the credentials to hand over. */
 export function useManageMemberLogin() {
   const qc = useQueryClient();
