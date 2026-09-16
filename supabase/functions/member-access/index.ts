@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action ?? "");
     const memberId = String(body?.memberId ?? "");
-    if (!["status", "create", "reset", "unlink", "missing_logins", "create_missing"].includes(action))
+    if (!["status", "create", "ensure", "reset", "unlink", "missing_logins", "create_missing"].includes(action))
       return json({ error: "Invalid action" }, 400);
 
     // Bulk helpers: every non-lead member that has no portal login yet.
@@ -130,7 +130,13 @@ Deno.serve(async (req) => {
       return json({ error: "Password must be at least 8 characters." }, 400);
     const password = rawPassword ?? DEFAULT_MEMBER_PASSWORD;
 
-    if (action === "create") {
+    // "ensure" is the idempotent variant used automatically when a member
+    // starts a plan: create the login only when it does not exist yet.
+    if (action === "ensure" && member.user_id) {
+      return json({ status: "exists", loginId: email });
+    }
+
+    if (action === "create" || action === "ensure") {
       if (member.user_id) return json({ error: "This member already has a portal login." }, 409);
 
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
