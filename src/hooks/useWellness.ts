@@ -1864,13 +1864,14 @@ export function useSwitchPlan() {
       carryServings: boolean;
       price?: number | null;
     }) => {
-      const { error } = await supabase.rpc("switch_membership_plan", {
+      const { data, error } = await supabase.rpc("switch_membership_plan", {
         p_membership_id: args.membershipId,
         p_new_plan_id: args.planId,
         p_carry_servings: args.carryServings,
         p_price: args.price ?? null,
       } as never);
       if (error) throw error;
+      return ((data as unknown as string) ?? args.membershipId) as string;
     },
     onSuccess: () => {
       qc.invalidateQueries();
