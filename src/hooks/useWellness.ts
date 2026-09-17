@@ -470,6 +470,26 @@ export function useUpdateMembership() {
   });
 }
 
+export function useIssueServings() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: { membershipId: string; quantity: number; reason?: string }) => {
+      const { error } = await supabase.rpc("issue_servings", {
+        p_membership_id: args.membershipId,
+        p_quantity: args.quantity,
+        p_reason: args.reason ?? "Packed for member",
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
+      t.success("Servings issued");
+    },
+    onError: t.onError,
+  });
+}
+
 export function useAdjustServings() {
   const qc = useQueryClient();
   const t = useToastedMutation();
