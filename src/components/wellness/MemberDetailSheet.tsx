@@ -126,13 +126,17 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
 
   const [joinDate, setJoinDate] = useState("");
   const [planId, setPlanId] = useState("");
-  const [payMode, setPayMode] = useState("cash");
   const [payDate, setPayDate] = useState(todayIst());
   const [showCredentials, setShowCredentials] = useState(false);
   const [editMembershipOpen, setEditMembershipOpen] = useState(false);
   const [issueOpen, setIssueOpen] = useState(false);
-  const [payPrice, setPayPrice] = useState("");
+  const [activationPayments, setActivationPayments] = useState<PaymentLine[]>([]);
+  const recordPayment = useRecordPayment();
   const selectedNewPlan = plans?.find((p) => p.id === planId);
+
+  useEffect(() => {
+    if (selectedNewPlan) setActivationPayments(createDefaultPayment(Number(selectedNewPlan.price)));
+  }, [selectedNewPlan]);
   const [weight, setWeight] = useState("");
   const [note, setNote] = useState("");
   const [dob, setDob] = useState<string | null>(null);
