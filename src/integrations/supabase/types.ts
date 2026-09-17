@@ -2080,6 +2080,10 @@ export type Database = {
       }
       is_wellness_manager: { Args: { _user_id: string }; Returns: boolean }
       is_wellness_staff: { Args: { _user_id: string }; Returns: boolean }
+      issue_servings: {
+        Args: { p_membership_id: string; p_quantity: number; p_reason?: string }
+        Returns: number
+      }
       mark_notification_sent: {
         Args: { p_error?: string; p_log_id: string; p_status?: string }
         Returns: undefined
@@ -2172,6 +2176,7 @@ export type Database = {
         | "manual_adjustment"
         | "renewal_allocation"
         | "refund_adjustment"
+        | "pack_and_issue"
       trial_status:
         | "active"
         | "completed"
@@ -2341,6 +2346,7 @@ export const Constants = {
         "manual_adjustment",
         "renewal_allocation",
         "refund_adjustment",
+        "pack_and_issue",
       ],
       trial_status: [
         "active",

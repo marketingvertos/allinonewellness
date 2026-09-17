@@ -33,6 +33,8 @@ import { StartTrialDialog } from "./StartTrialDialog";
 import { RenewPlanDialog } from "./RenewPlanDialog";
 import { SwitchPlanDialog } from "./SwitchPlanDialog";
 import { EditMembershipDialog } from "./EditMembershipDialog";
+import { IssueServingsDialog } from "./IssueServingsDialog";
+import { servingTxnLabel } from "./servingLabels";
 import { MemberLoginCard } from "./MemberLoginCard";
 import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
 import { EditMemberDialog } from "./EditMemberDialog";
@@ -49,7 +51,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatDate, formatDateTime, todayIst } from "@/lib/formatters";
 import { PAYMENT_MODES } from "@/hooks/useReports";
-import { Pencil, Trash2 } from "lucide-react";
+import { Package, Pencil, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -106,6 +108,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [payDate, setPayDate] = useState(todayIst());
   const [showCredentials, setShowCredentials] = useState(false);
   const [editMembershipOpen, setEditMembershipOpen] = useState(false);
+  const [issueOpen, setIssueOpen] = useState(false);
   const [payPrice, setPayPrice] = useState("");
   const selectedNewPlan = plans?.find((p) => p.id === planId);
   const [weight, setWeight] = useState("");
@@ -398,16 +401,24 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={activeMembership.remaining_servings < 1}
+                    onClick={() => setIssueOpen(true)}
+                  >
+                    <Package className="mr-1 h-4 w-4" /> Issue servings
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => adjustServings.mutate({ membershipId: activeMembership.id, change: 1, note: "Manual credit" })}
                   >
-                    +1 serving
+                    +1 (correction)
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => adjustServings.mutate({ membershipId: activeMembership.id, change: -1, note: "Manual debit" })}
                   >
-                    -1 serving
+                    -1 (correction)
                   </Button>
                 </div>
               </div>
@@ -537,9 +548,15 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <TabsContent value="servings" className="space-y-2 pt-4">
             {ledger?.length ? (
               ledger.map((t) => (
-                <div key={t.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                  <span className="capitalize">{t.txn_type.replace(/_/g, " ")}</span>
-                  <span className={t.change < 0 ? "text-muted-foreground" : "font-medium"}>
+                <div key={t.id} className="flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <p className="font-medium">{servingTxnLabel(t.txn_type)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(t.created_at)}
+                      {t.note ? ` · ${t.note}` : ""}
+                    </p>
+                  </div>
+                  <span className={t.change < 0 ? "shrink-0 text-muted-foreground" : "shrink-0 font-medium"}>
                     {t.change > 0 ? `+${t.change}` : t.change} → {t.balance_after}
                   </span>
                 </div>
@@ -787,6 +804,12 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               membership={activeMembership}
               open={editMembershipOpen}
               onOpenChange={setEditMembershipOpen}
+            />
+            <IssueServingsDialog
+              open={issueOpen}
+              onOpenChange={setIssueOpen}
+              memberId={member.id}
+              memberName={member.full_name}
             />
           </>
         )}

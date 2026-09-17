@@ -1,0 +1,1 @@
+ALTER TYPE public.serving_txn_type ADD VALUE IF NOT EXISTS 'pack_and_issue';
