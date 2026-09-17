@@ -64,15 +64,11 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
     setNote("");
     setUsePink(false);
     setPinkCredits(0);
-    setPaymentMode("cash");
     setPaymentDate(todayIst());
   }, [open, membership]);
 
   useEffect(() => {
-    if (plan) {
-      setServings(plan.total_servings);
-      setPrice(String(plan.price));
-    }
+    if (plan) setServings(plan.total_servings);
   }, [plan]);
 
   // Keep the collected amount in step with the Pink Card discount.
@@ -80,22 +76,25 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
     if (!plan) return;
     const credits = usePink ? Math.min(pinkCredits, maxCredits) : 0;
     setPinkCredits((c) => Math.min(c, maxCredits));
-    setPrice(String(Math.max(Number(plan.price) - credits * PINK_CARD_SERVING_VALUE, 0)));
+    setPayments(createDefaultPayment(Math.max(Number(plan.price) - credits * PINK_CARD_SERVING_VALUE, 0)));
   }, [usePink, pinkCredits, maxCredits, plan]);
 
   useEffect(() => {
     if (usePink && pinkCredits === 0 && maxCredits > 0) setPinkCredits(maxCredits);
   }, [usePink, maxCredits, pinkCredits]);
 
+  const dueAmount = Math.max(planPrice - discount, 0);
+
   const submit = async () => {
-    await renew.mutateAsync({
+    const lines = paymentsPayload(payments);
+    const newMembershipId = await renew.mutateAsync({
       membershipId: membership.id,
       planId,
       servings,
-      price: price === "" ? null : Number(price),
+      price: paymentsTotal(payments),
       mode,
       note: note.trim() || null,
-      paymentMode,
+      paymentMode: lines[0]?.mode ?? "cash",
       paymentDate: paymentDate || null,
     });
     if (usePink && pinkCredits > 0) {
@@ -104,6 +103,15 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
         credits: pinkCredits,
         membershipId: membership.id,
         note: `Renewal discount ${discount}`,
+      });
+    }
+    if (lines.length > 0) {
+      await recordPayment.mutateAsync({
+        membershipId: newMembershipId ?? membership.id,
+        memberId: membership.member_id,
+        payments: lines,
+        context: "renewal",
+        paidOn: paymentDate || null,
       });
     }
     onOpenChange(false);
