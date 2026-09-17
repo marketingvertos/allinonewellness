@@ -32,6 +32,7 @@ import { BatchPicker } from "./BatchPicker";
 import { StartTrialDialog } from "./StartTrialDialog";
 import { RenewPlanDialog } from "./RenewPlanDialog";
 import { SwitchPlanDialog } from "./SwitchPlanDialog";
+import { EditMembershipDialog } from "./EditMembershipDialog";
 import { MemberLoginCard } from "./MemberLoginCard";
 import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
 import { EditMemberDialog } from "./EditMemberDialog";
@@ -388,6 +389,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   <Button size="sm" variant="outline" onClick={() => setSwitchOpen(true)}>
                     Switch plan
                   </Button>
+                  {isManager && (
+                    <Button size="sm" variant="outline" onClick={() => setEditMembershipOpen(true)}>
+                      Edit membership
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
