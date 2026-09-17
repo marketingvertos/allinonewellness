@@ -167,6 +167,9 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
     setReferrerDraft(undefined);
   }, [memberId]);
 
+  const activeMembership = memberships?.find((m) => m.status === "active" || m.status === "expiring_soon");
+  const { data: activePayments } = usePaymentHistory(activeMembership?.id);
+
   if (!member) return null;
 
   const currentReferrer = (member as { referred_by_member_id?: string | null }).referred_by_member_id ?? null;
