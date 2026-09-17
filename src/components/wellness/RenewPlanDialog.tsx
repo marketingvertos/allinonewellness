@@ -204,28 +204,12 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="rp-price">Amount collected</Label>
-            <Input id="rp-price" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Payment mode</Label>
-            <Select value={paymentMode} onValueChange={setPaymentMode}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PAYMENT_MODES.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="rp-paydate">Payment date</Label>
             <Input id="rp-paydate" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
           </div>
         </div>
+
+        <PaymentInput totalAmount={dueAmount} payments={payments} onChange={setPayments} />
 
         {isEarlyRenewal && (
           <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
