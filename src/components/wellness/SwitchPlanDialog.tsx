@@ -28,7 +28,8 @@ export function SwitchPlanDialog({ membership, open, onOpenChange }: Props) {
 
   const [planId, setPlanId] = useState("");
   const [carry, setCarry] = useState("carry");
-  const [price, setPrice] = useState("");
+  const [payments, setPayments] = useState<PaymentLine[]>([]);
+  const recordPayment = useRecordPayment();
 
   const plan = membershipPlans.find((p) => p.id === planId);
 
@@ -36,20 +37,29 @@ export function SwitchPlanDialog({ membership, open, onOpenChange }: Props) {
     if (!open) return;
     setPlanId("");
     setCarry("carry");
-    setPrice("");
+    setPayments([]);
   }, [open]);
 
   useEffect(() => {
-    if (plan) setPrice(String(plan.price));
+    if (plan) setPayments(createDefaultPayment(Number(plan.price)));
   }, [plan]);
 
   const submit = async () => {
-    await switchPlan.mutateAsync({
+    const lines = paymentsPayload(payments);
+    const newMembershipId = await switchPlan.mutateAsync({
       membershipId: membership.id,
       planId,
       carryServings: carry === "carry",
-      price: price === "" ? null : Number(price),
+      price: paymentsTotal(payments),
     });
+    if (lines.length > 0) {
+      await recordPayment.mutateAsync({
+        membershipId: newMembershipId ?? membership.id,
+        memberId: membership.member_id,
+        payments: lines,
+        context: "switch",
+      });
+    }
     onOpenChange(false);
   };
 
