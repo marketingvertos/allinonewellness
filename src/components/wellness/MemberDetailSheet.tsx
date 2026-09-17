@@ -423,6 +423,23 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   <span className="font-semibold">{activeMembership.remaining_servings}</span> of{" "}
                   {activeMembership.total_servings} servings remaining
                 </p>
+                {activePayments && activePayments.length > 0 && (
+                  <div className="space-y-1 rounded-md border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground">Payment breakdown</p>
+                    {activePayments.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between gap-2 text-sm">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className="uppercase">{p.mode}</Badge>
+                          <span className="text-xs text-muted-foreground">{formatDate(p.paid_at)}</span>
+                          {p.reference && (
+                            <span className="text-xs text-muted-foreground">({p.reference})</span>
+                          )}
+                        </span>
+                        <span className="font-medium">{formatCurrency(Number(p.amount))}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" onClick={() => setRenewOpen(true)}>
                     Renew
