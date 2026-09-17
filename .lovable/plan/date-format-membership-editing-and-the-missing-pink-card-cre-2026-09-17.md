@@ -25,7 +25,8 @@ Fix:
 
 - Award the credits when a referrer is added later as well: if the person already has a qualifying membership (28 days or more) or a trial, the referrer gets the credits straight away. The existing one-credit-per-person-per-reason guard stays, so no double awards.
 - Award the credits when a membership's plan is corrected to a qualifying one.
-- Correct today's case: give Shri Chatap the 3 credits he earned from Trappti's membership, recorded in the pink card history with today's date.
+- Correct today's case: give Shri Chatap the 3 credits he earned from Trappti's membership, recorded in the pink card history with today's date.  
+Also Give .. girish 3 serving credits..
 - On the member profile, show the referrer's name next to the pink card so this is easy to spot.
 
 ## Technical notes

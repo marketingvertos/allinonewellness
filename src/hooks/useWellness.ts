@@ -433,6 +433,43 @@ export function useRenewMembership() {
   });
 }
 
+/** Admin correction of an existing membership (plan, dates, payment, servings). */
+export function useUpdateMembership() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: {
+      membershipId: string;
+      planId?: string;
+      startDate?: string;
+      endDate?: string;
+      totalServings?: number;
+      remainingServings?: number;
+      price?: number;
+      paymentMode?: string;
+      paymentDate?: string;
+    }) => {
+      const { error } = await supabase.rpc("admin_update_membership", {
+        p_membership_id: args.membershipId,
+        p_plan_id: args.planId ?? null,
+        p_start_date: args.startDate ?? null,
+        p_end_date: args.endDate ?? null,
+        p_total_servings: args.totalServings ?? null,
+        p_remaining_servings: args.remainingServings ?? null,
+        p_price: args.price ?? null,
+        p_payment_mode: args.paymentMode ?? null,
+        p_payment_date: args.paymentDate ?? null,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
+      t.success("Membership updated");
+    },
+    onError: t.onError,
+  });
+}
+
 export function useAdjustServings() {
   const qc = useQueryClient();
   const t = useToastedMutation();

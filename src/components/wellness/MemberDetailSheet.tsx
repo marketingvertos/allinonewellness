@@ -32,6 +32,7 @@ import { BatchPicker } from "./BatchPicker";
 import { StartTrialDialog } from "./StartTrialDialog";
 import { RenewPlanDialog } from "./RenewPlanDialog";
 import { SwitchPlanDialog } from "./SwitchPlanDialog";
+import { EditMembershipDialog } from "./EditMembershipDialog";
 import { MemberLoginCard } from "./MemberLoginCard";
 import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
 import { EditMemberDialog } from "./EditMemberDialog";
@@ -104,6 +105,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [payMode, setPayMode] = useState("cash");
   const [payDate, setPayDate] = useState(todayIst());
   const [showCredentials, setShowCredentials] = useState(false);
+  const [editMembershipOpen, setEditMembershipOpen] = useState(false);
   const [payPrice, setPayPrice] = useState("");
   const selectedNewPlan = plans?.find((p) => p.id === planId);
   const [weight, setWeight] = useState("");
@@ -245,11 +247,12 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               <div className="rounded-lg border p-4 text-sm">
                 <p className="font-medium">Joining date</p>
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <Input
-                    type="date"
+                  <DobInput
+                    id="wm-joindate"
+                    showAge={false}
                     className="flex-1"
                     value={joinDate || member.joining_date || ""}
-                    onChange={(e) => setJoinDate(e.target.value)}
+                    onChange={setJoinDate}
                     disabled={!isManager}
                   />
                   {isManager && (
@@ -387,6 +390,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   <Button size="sm" variant="outline" onClick={() => setSwitchOpen(true)}>
                     Switch plan
                   </Button>
+                  {isManager && (
+                    <Button size="sm" variant="outline" onClick={() => setEditMembershipOpen(true)}>
+                      Edit membership
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
@@ -542,7 +550,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           </TabsContent>
 
           <TabsContent value="pinkcard" className="space-y-4 pt-4">
-            <PinkCardPanel memberId={member.id} balance={member.pink_card_balance} />
+            <PinkCardPanel
+              memberId={member.id}
+              balance={member.pink_card_balance}
+              referrerId={currentReferrer}
+            />
           </TabsContent>
 
           <TabsContent value="progress" className="space-y-4 pt-4">
@@ -771,6 +783,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <>
             <RenewPlanDialog membership={activeMembership} open={renewOpen} onOpenChange={setRenewOpen} />
             <SwitchPlanDialog membership={activeMembership} open={switchOpen} onOpenChange={setSwitchOpen} />
+            <EditMembershipDialog
+              membership={activeMembership}
+              open={editMembershipOpen}
+              onOpenChange={setEditMembershipOpen}
+            />
           </>
         )}
       </SheetContent>
