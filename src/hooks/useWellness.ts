@@ -404,12 +404,71 @@ export function useCreateMembership() {
           } as never)
           .eq("id", membershipId);
       }
+      return membershipId;
     },
     onSuccess: () => {
       qc.invalidateQueries();
       t.success("Membership activated");
     },
     onError: t.onError,
+  });
+}
+
+/* ------------------------------ Payments ------------------------------ */
+
+export interface WellnessPayment {
+  id: string;
+  membership_id: string;
+  member_id: string;
+  amount: number;
+  mode: string;
+  reference: string | null;
+  note: string | null;
+  context: string;
+  paid_at: string;
+  created_at: string;
+}
+
+export function useRecordPayment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      membershipId: string;
+      memberId: string;
+      payments: { amount: number; mode: string; reference?: string }[];
+      context?: string;
+      paidOn?: string | null;
+    }) => {
+      if (args.payments.length === 0) return;
+      const { error } = await supabase.rpc("record_payment", {
+        p_membership_id: args.membershipId,
+        p_member_id: args.memberId,
+        p_payments: args.payments,
+        p_context: args.context ?? "activation",
+        p_paid_on: args.paidOn ?? null,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wellness-payments"] });
+      qc.invalidateQueries({ queryKey: ["wellness-memberships"] });
+    },
+  });
+}
+
+export function usePaymentHistory(membershipId: string | undefined) {
+  return useQuery({
+    queryKey: ["wellness-payments", membershipId],
+    enabled: !!membershipId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_payments")
+        .select("*")
+        .eq("membership_id", membershipId!)
+        .order("paid_at", { ascending: false });
+      if (error) throw error;
+      return data as unknown as WellnessPayment[];
+    },
   });
 }
 
