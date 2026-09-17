@@ -4,6 +4,7 @@ import {
   useAdjustPinkCard,
   useIsWellnessManager,
   usePinkCardLedger,
+  useRedeemPinkCard,
   useWellnessMember,
 } from "@/hooks/useWellness";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,11 +58,16 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
   const { data: referrer } = useWellnessMember(referrerId ?? undefined);
   const isManager = useIsWellnessManager();
   const adjust = useAdjustPinkCard();
+  const redeem = useRedeemPinkCard();
   const [open, setOpen] = useState(false);
   const [change, setChange] = useState("1");
   const [note, setNote] = useState("");
+  const [redeemOpen, setRedeemOpen] = useState(false);
+  const [credits, setCredits] = useState("0");
+  const [redeemNote, setRedeemNote] = useState("");
 
   const bal = balance ?? 0;
+  const creditsNum = Number(credits) || 0;
 
   return (
     <Card className="border-[hsl(330_70%_55%/0.4)]">
@@ -70,9 +76,24 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
           <HeartHandshake className="h-4 w-4" /> Pink Card
         </CardTitle>
         {!readOnly && isManager && (
-          <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-            Adjust
-          </Button>
+          <div className="flex items-center gap-2">
+            {bal > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setCredits(String(bal));
+                  setRedeemNote("");
+                  setRedeemOpen(true);
+                }}
+              >
+                Mark redeemed
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+              Adjust
+            </Button>
+          </div>
         )}
       </CardHeader>
       <CardContent className="space-y-4">
@@ -156,6 +177,61 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
           <div className="space-y-2">
             <Label htmlFor="pc-note">Note</Label>
             <Input id="pc-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Reason for the change" />
+          </div>
+        </div>
+      </ResponsiveDialog>
+
+      <ResponsiveDialog
+        open={redeemOpen}
+        onOpenChange={setRedeemOpen}
+        title="Mark Pink Card reward as redeemed"
+        description="Deducts the credit and records it in the Pink Card history."
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setRedeemOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={creditsNum <= 0 || creditsNum > bal || redeem.isPending}
+              onClick={async () => {
+                await redeem.mutateAsync({
+                  memberId,
+                  credits: creditsNum,
+                  membershipId: null,
+                  note: redeemNote.trim() || null,
+                });
+                setRedeemOpen(false);
+                setRedeemNote("");
+              }}
+            >
+              Mark redeemed
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="pc-redeem">Servings to redeem</Label>
+            <Input
+              id="pc-redeem"
+              value={credits}
+              onChange={(e) => setCredits(e.target.value.replace(/[^\d]/g, ""))}
+            />
+            <p className="text-xs text-muted-foreground">
+              {creditsNum ? formatCurrency(creditsNum * PINK_CARD_SERVING_VALUE) : "—"} · balance {bal}
+            </p>
+            {creditsNum > bal && (
+              <p className="text-xs text-destructive">Cannot redeem more than the current balance.</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="pc-redeem-note">Note (optional)</Label>
+            <Input
+              id="pc-redeem-note"
+              value={redeemNote}
+              onChange={(e) => setRedeemNote(e.target.value)}
+              placeholder="e.g. adjusted against renewal paid in cash"
+            />
           </div>
         </div>
       </ResponsiveDialog>
