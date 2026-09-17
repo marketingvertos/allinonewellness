@@ -105,6 +105,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [payMode, setPayMode] = useState("cash");
   const [payDate, setPayDate] = useState(todayIst());
   const [showCredentials, setShowCredentials] = useState(false);
+  const [editMembershipOpen, setEditMembershipOpen] = useState(false);
   const [payPrice, setPayPrice] = useState("");
   const selectedNewPlan = plans?.find((p) => p.id === planId);
   const [weight, setWeight] = useState("");
