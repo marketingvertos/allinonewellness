@@ -611,14 +611,32 @@ export function useServingLedger(memberId: string | undefined) {
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      return data as unknown as {
+      const rows = (data ?? []) as unknown as {
         id: string;
         txn_type: string;
         change: number;
         balance_after: number;
         note: string | null;
         created_at: string;
+        created_by: string | null;
       }[];
+
+      const staffIds = [...new Set(rows.map((r) => r.created_by).filter(Boolean))] as string[];
+      const names = new Map<string, string>();
+      if (staffIds.length) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", staffIds);
+        for (const p of profiles ?? []) {
+          if (p.full_name) names.set(p.user_id, p.full_name);
+        }
+      }
+
+      return rows.map((r) => ({
+        ...r,
+        created_by_name: r.created_by ? names.get(r.created_by) ?? null : null,
+      }));
     },
     enabled: !!memberId,
   });
