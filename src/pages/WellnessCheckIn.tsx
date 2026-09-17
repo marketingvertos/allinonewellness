@@ -12,7 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDateTime } from "@/lib/formatters";
-import { Camera, Search } from "lucide-react";
+import { Camera, Package, Search } from "lucide-react";
+import { IssueServingsDialog } from "@/components/wellness/IssueServingsDialog";
 import { CentreQrCard } from "@/components/wellness/CentreQrCard";
 import { QrScannerSheet } from "@/components/wellness/QrScannerSheet";
 import { PendingCheckInsCard } from "@/components/wellness/PendingCheckInsCard";
@@ -28,6 +29,7 @@ export default function WellnessCheckIn() {
   const [query, setQuery] = useState("");
   const [scanning, setScanning] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [issueMember, setIssueMember] = useState<{ id: string; name: string } | null>(null);
 
   const [weights, setWeights] = useState<Record<string, string>>({});
   const { data: members } = useWellnessMembers(query);
@@ -130,6 +132,15 @@ export default function WellnessCheckIn() {
                               value={weights[m.id] ?? ""}
                               onChange={(e) => setWeights((w) => ({ ...w, [m.id]: e.target.value }))}
                             />
+                            <Button
+                              variant="outline"
+                              className="shrink-0"
+                              disabled={!balances?.[m.id]}
+                              onClick={() => setIssueMember({ id: m.id, name: m.full_name })}
+                            >
+                              <Package className="h-4 w-4 sm:mr-2" />
+                              <span className="hidden sm:inline">Issue</span>
+                            </Button>
                             {done ? (
                               <Button
                                 className="flex-1 sm:flex-none"
@@ -211,6 +222,15 @@ export default function WellnessCheckIn() {
       />
 
       <MemberSheetById memberId={selectedMemberId} onClose={() => setSelectedMemberId(null)} />
+
+      {issueMember && (
+        <IssueServingsDialog
+          open={!!issueMember}
+          onOpenChange={(o) => !o && setIssueMember(null)}
+          memberId={issueMember.id}
+          memberName={issueMember.name}
+        />
+      )}
     </div>
   );
 }

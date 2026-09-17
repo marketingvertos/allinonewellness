@@ -1,12 +1,14 @@
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
-import { useMemberAttendance, useWeightHistory } from "@/hooks/useWellness";
+import { useMemberAttendance, useServingLedger, useWeightHistory } from "@/hooks/useWellness";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate, formatDateTime } from "@/lib/formatters";
+import { servingTxnLabel } from "@/components/wellness/servingLabels";
 
 export default function PortalHistory() {
   const { data: identity } = useMemberIdentity();
   const { data: visits } = useMemberAttendance(identity?.memberId ?? undefined);
   const { data: weights } = useWeightHistory(identity?.memberId ?? undefined);
+  const { data: ledger } = useServingLedger(identity?.memberId ?? undefined);
 
   return (
     <div className="space-y-4">
