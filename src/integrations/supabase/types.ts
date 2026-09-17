@@ -2172,6 +2172,7 @@ export type Database = {
         | "manual_adjustment"
         | "renewal_allocation"
         | "refund_adjustment"
+        | "pack_and_issue"
       trial_status:
         | "active"
         | "completed"
@@ -2341,6 +2342,7 @@ export const Constants = {
         "manual_adjustment",
         "renewal_allocation",
         "refund_adjustment",
+        "pack_and_issue",
       ],
       trial_status: [
         "active",

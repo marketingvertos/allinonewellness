@@ -15,6 +15,13 @@
       "when": 1789632197946,
       "tag": "0001_membership_admin_edit_and_pink_card_on_referrer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789648238684,
+      "tag": "0002_add_pack_and_issue_txn_type",
+      "breakpoints": true
     }
   ]
 }
