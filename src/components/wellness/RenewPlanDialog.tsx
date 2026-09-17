@@ -40,13 +40,13 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
 
   const [planId, setPlanId] = useState(membership.plan_id);
   const [servings, setServings] = useState<number>(0);
-  const [price, setPrice] = useState<string>("");
+  const [payments, setPayments] = useState<PaymentLine[]>([]);
   const [note, setNote] = useState("");
   const [mode, setMode] = useState<RenewMode>("extend");
   const [usePink, setUsePink] = useState(false);
   const [pinkCredits, setPinkCredits] = useState(0);
-  const [paymentMode, setPaymentMode] = useState("cash");
   const [paymentDate, setPaymentDate] = useState(todayIst());
+  const recordPayment = useRecordPayment();
 
   const plan = membershipPlans.find((p) => p.id === planId);
   const { data: member } = useWellnessMember(membership.member_id);
