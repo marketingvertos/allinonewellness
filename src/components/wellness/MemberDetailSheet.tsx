@@ -93,6 +93,28 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const { data: measurements } = useBodyMeasurements(memberId);
   const updateMember = useUpdateWellnessMember();
 
+  const visitTimeline = useMemo(() => {
+    const items = [
+      ...(attendance ?? []).map((a) => ({
+        key: `visit-${a.id}`,
+        at: a.visit_time as string,
+        title: "Check-in",
+        note: null as string | null,
+        right: a.serving_deducted ? `1 serving · ${a.remaining_balance_snapshot} left` : "Trial visit",
+      })),
+      ...(ledger ?? [])
+        .filter((t) => t.txn_type === "pack_and_issue")
+        .map((t) => ({
+          key: `pack-${t.id}`,
+          at: t.created_at,
+          title: "Packed / issued",
+          note: [t.note, t.created_by_name ? `by ${t.created_by_name}` : null].filter(Boolean).join(" · ") || null,
+          right: `${Math.abs(t.change)} serving${Math.abs(t.change) === 1 ? "" : "s"} · ${t.balance_after} left`,
+        })),
+    ];
+    return items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  }, [attendance, ledger]);
+
   const createMembership = useCreateMembership();
   const adjustServings = useAdjustServings();
   const checkIn = useCheckIn();
