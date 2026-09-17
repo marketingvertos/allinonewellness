@@ -115,10 +115,9 @@ export function SwitchPlanDialog({ membership, open, onOpenChange }: Props) {
           </RadioGroup>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="sp-price">Amount collected</Label>
-          <Input id="sp-price" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
-        </div>
+        {plan && (
+          <PaymentInput totalAmount={Number(plan.price)} payments={payments} onChange={setPayments} />
+        )}
       </div>
     </ResponsiveDialog>
   );
