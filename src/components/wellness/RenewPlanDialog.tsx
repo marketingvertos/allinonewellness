@@ -3,11 +3,19 @@ import {
   PINK_CARD_SERVING_VALUE,
   RenewMode,
   WellnessMembership,
+  useRecordPayment,
   useRedeemPinkCard,
   useRenewPlan,
   useWellnessMember,
   useWellnessPlans,
 } from "@/hooks/useWellness";
+import {
+  PaymentInput,
+  PaymentLine,
+  createDefaultPayment,
+  paymentsPayload,
+  paymentsTotal,
+} from "./PaymentInput";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
