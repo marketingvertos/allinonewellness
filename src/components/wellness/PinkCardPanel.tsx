@@ -58,11 +58,16 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
   const { data: referrer } = useWellnessMember(referrerId ?? undefined);
   const isManager = useIsWellnessManager();
   const adjust = useAdjustPinkCard();
+  const redeem = useRedeemPinkCard();
   const [open, setOpen] = useState(false);
   const [change, setChange] = useState("1");
   const [note, setNote] = useState("");
+  const [redeemOpen, setRedeemOpen] = useState(false);
+  const [credits, setCredits] = useState("0");
+  const [redeemNote, setRedeemNote] = useState("");
 
   const bal = balance ?? 0;
+  const creditsNum = Number(credits) || 0;
 
   return (
     <Card className="border-[hsl(330_70%_55%/0.4)]">
