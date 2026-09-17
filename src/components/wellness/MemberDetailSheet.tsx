@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   WellnessMember,
@@ -92,6 +92,28 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const { data: notes } = useMemberNotes(memberId);
   const { data: measurements } = useBodyMeasurements(memberId);
   const updateMember = useUpdateWellnessMember();
+
+  const visitTimeline = useMemo(() => {
+    const items = [
+      ...(attendance ?? []).map((a) => ({
+        key: `visit-${a.id}`,
+        at: a.visit_time as string,
+        title: "Check-in",
+        note: null as string | null,
+        right: a.serving_deducted ? `1 serving · ${a.remaining_balance_snapshot} left` : "Trial visit",
+      })),
+      ...(ledger ?? [])
+        .filter((t) => t.txn_type === "pack_and_issue")
+        .map((t) => ({
+          key: `pack-${t.id}`,
+          at: t.created_at,
+          title: "Packed / issued",
+          note: [t.note, t.created_by_name ? `by ${t.created_by_name}` : null].filter(Boolean).join(" · ") || null,
+          right: `${Math.abs(t.change)} serving${Math.abs(t.change) === 1 ? "" : "s"} · ${t.balance_after} left`,
+        })),
+    ];
+    return items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  }, [attendance, ledger]);
 
   const createMembership = useCreateMembership();
   const adjustServings = useAdjustServings();
@@ -531,13 +553,17 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           </TabsContent>
 
           <TabsContent value="attendance" className="space-y-2 pt-4">
-            {attendance?.length ? (
-              attendance.map((a) => (
-                <div key={a.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
-                  <span>{formatDateTime(a.visit_time)}</span>
-                  <span className="shrink-0 text-right text-xs text-muted-foreground sm:text-sm">
-                    {a.serving_deducted ? `1 serving · ${a.remaining_balance_snapshot} left` : "Trial visit"}
-                  </span>
+            {visitTimeline.length ? (
+              visitTimeline.map((item) => (
+                <div key={item.key} className="flex items-start justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <p className="font-medium">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDateTime(item.at)}
+                      {item.note ? ` · ${item.note}` : ""}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-right text-xs text-muted-foreground sm:text-sm">{item.right}</span>
                 </div>
               ))
             ) : (
@@ -552,9 +578,10 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   <div className="min-w-0">
                     <p className="font-medium">{servingTxnLabel(t.txn_type)}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDate(t.created_at)}
-                      {t.note ? ` · ${t.note}` : ""}
+                      {formatDateTime(t.created_at)}
+                      {t.created_by_name ? ` · by ${t.created_by_name}` : ""}
                     </p>
+                    {t.note ? <p className="text-xs text-muted-foreground">{t.note}</p> : null}
                   </div>
                   <span className={t.change < 0 ? "shrink-0 text-muted-foreground" : "shrink-0 font-medium"}>
                     {t.change > 0 ? `+${t.change}` : t.change} → {t.balance_after}
