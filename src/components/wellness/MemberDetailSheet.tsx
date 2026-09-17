@@ -33,6 +33,8 @@ import { StartTrialDialog } from "./StartTrialDialog";
 import { RenewPlanDialog } from "./RenewPlanDialog";
 import { SwitchPlanDialog } from "./SwitchPlanDialog";
 import { EditMembershipDialog } from "./EditMembershipDialog";
+import { IssueServingsDialog } from "./IssueServingsDialog";
+import { servingTxnLabel } from "./servingLabels";
 import { MemberLoginCard } from "./MemberLoginCard";
 import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
 import { EditMemberDialog } from "./EditMemberDialog";
@@ -49,7 +51,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatDate, formatDateTime, todayIst } from "@/lib/formatters";
 import { PAYMENT_MODES } from "@/hooks/useReports";
-import { Pencil, Trash2 } from "lucide-react";
+import { Package, Pencil, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -106,6 +108,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [payDate, setPayDate] = useState(todayIst());
   const [showCredentials, setShowCredentials] = useState(false);
   const [editMembershipOpen, setEditMembershipOpen] = useState(false);
+  const [issueOpen, setIssueOpen] = useState(false);
   const [payPrice, setPayPrice] = useState("");
   const selectedNewPlan = plans?.find((p) => p.id === planId);
   const [weight, setWeight] = useState("");
