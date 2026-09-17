@@ -398,16 +398,24 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={activeMembership.remaining_servings < 1}
+                    onClick={() => setIssueOpen(true)}
+                  >
+                    <Package className="mr-1 h-4 w-4" /> Issue servings
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => adjustServings.mutate({ membershipId: activeMembership.id, change: 1, note: "Manual credit" })}
                   >
-                    +1 serving
+                    +1 (correction)
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => adjustServings.mutate({ membershipId: activeMembership.id, change: -1, note: "Manual debit" })}
                   >
-                    -1 serving
+                    -1 (correction)
                   </Button>
                 </div>
               </div>
