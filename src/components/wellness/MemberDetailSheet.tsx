@@ -548,9 +548,15 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <TabsContent value="servings" className="space-y-2 pt-4">
             {ledger?.length ? (
               ledger.map((t) => (
-                <div key={t.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                  <span className="capitalize">{t.txn_type.replace(/_/g, " ")}</span>
-                  <span className={t.change < 0 ? "text-muted-foreground" : "font-medium"}>
+                <div key={t.id} className="flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <p className="font-medium">{servingTxnLabel(t.txn_type)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(t.created_at)}
+                      {t.note ? ` · ${t.note}` : ""}
+                    </p>
+                  </div>
+                  <span className={t.change < 0 ? "shrink-0 text-muted-foreground" : "shrink-0 font-medium"}>
                     {t.change > 0 ? `+${t.change}` : t.change} → {t.balance_after}
                   </span>
                 </div>
@@ -798,6 +804,12 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               membership={activeMembership}
               open={editMembershipOpen}
               onOpenChange={setEditMembershipOpen}
+            />
+            <IssueServingsDialog
+              open={issueOpen}
+              onOpenChange={setIssueOpen}
+              memberId={member.id}
+              memberName={member.full_name}
             />
           </>
         )}
