@@ -180,6 +180,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const usedPct = activeMembership
     ? Math.round((activeMembership.used_servings / Math.max(activeMembership.total_servings, 1)) * 100)
     : 0;
+  const { data: activePayments } = usePaymentHistory(activeMembership?.id);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
