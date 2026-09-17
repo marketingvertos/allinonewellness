@@ -1838,6 +1838,7 @@ export function useRenewPlan() {
         p_payment_date: args.paymentDate ?? null,
       } as never);
       if (error) throw error;
+      return ((data as unknown as string) ?? args.membershipId) as string;
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries();
