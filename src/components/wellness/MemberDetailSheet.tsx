@@ -167,6 +167,9 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
     setReferrerDraft(undefined);
   }, [memberId]);
 
+  const activeMembership = memberships?.find((m) => m.status === "active" || m.status === "expiring_soon");
+  const { data: activePayments } = usePaymentHistory(activeMembership?.id);
+
   if (!member) return null;
 
   const currentReferrer = (member as { referred_by_member_id?: string | null }).referred_by_member_id ?? null;
@@ -176,11 +179,9 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const todayVisit = attendance?.find((a) => a.visit_date === istToday);
 
   const activeTrial = trials?.find((t) => t.status === "active");
-  const activeMembership = memberships?.find((m) => m.status === "active" || m.status === "expiring_soon");
   const usedPct = activeMembership
     ? Math.round((activeMembership.used_servings / Math.max(activeMembership.total_servings, 1)) * 100)
     : 0;
-  const { data: activePayments } = usePaymentHistory(activeMembership?.id);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
