@@ -76,9 +76,24 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
           <HeartHandshake className="h-4 w-4" /> Pink Card
         </CardTitle>
         {!readOnly && isManager && (
-          <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-            Adjust
-          </Button>
+          <div className="flex items-center gap-2">
+            {bal > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setCredits(String(bal));
+                  setRedeemNote("");
+                  setRedeemOpen(true);
+                }}
+              >
+                Mark redeemed
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+              Adjust
+            </Button>
+          </div>
         )}
       </CardHeader>
       <CardContent className="space-y-4">
