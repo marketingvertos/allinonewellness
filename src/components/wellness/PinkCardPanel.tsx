@@ -4,6 +4,7 @@ import {
   useAdjustPinkCard,
   useIsWellnessManager,
   usePinkCardLedger,
+  useWellnessMember,
 } from "@/hooks/useWellness";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,10 +48,13 @@ interface Props {
   balance: number | null | undefined;
   /** Hide the staff-only manual adjustment control (member portal). */
   readOnly?: boolean;
+  /** Who introduced this member — shown so missing credits are easy to spot. */
+  referrerId?: string | null;
 }
 
-export function PinkCardPanel({ memberId, balance, readOnly }: Props) {
+export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props) {
   const { data: ledger } = usePinkCardLedger(memberId);
+  const { data: referrer } = useWellnessMember(referrerId ?? undefined);
   const isManager = useIsWellnessManager();
   const adjust = useAdjustPinkCard();
   const [open, setOpen] = useState(false);
