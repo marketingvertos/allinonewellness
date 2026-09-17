@@ -4,6 +4,7 @@ import {
   useAdjustPinkCard,
   useIsWellnessManager,
   usePinkCardLedger,
+  useRedeemPinkCard,
   useWellnessMember,
 } from "@/hooks/useWellness";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
