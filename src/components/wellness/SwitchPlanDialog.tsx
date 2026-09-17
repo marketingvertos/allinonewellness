@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { WellnessMembership, useSwitchPlan, useWellnessPlans } from "@/hooks/useWellness";
+import { WellnessMembership, useRecordPayment, useSwitchPlan, useWellnessPlans } from "@/hooks/useWellness";
+import {
+  PaymentInput,
+  PaymentLine,
+  createDefaultPayment,
+  paymentsPayload,
+  paymentsTotal,
+} from "./PaymentInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
