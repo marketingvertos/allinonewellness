@@ -66,10 +66,8 @@ export default function PortalHistory() {
               <div key={t.id} className="flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm">
                 <div className="min-w-0">
                   <p className="font-medium">{servingTxnLabel(t.txn_type)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDate(t.created_at)}
-                    {t.note ? ` · ${t.note}` : ""}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{formatDateTime(t.created_at)}</p>
+                  {t.note ? <p className="text-xs text-muted-foreground">{t.note}</p> : null}
                 </div>
                 <span className="shrink-0 text-muted-foreground">
                   {t.change > 0 ? `+${t.change}` : t.change} → {t.balance_after}
