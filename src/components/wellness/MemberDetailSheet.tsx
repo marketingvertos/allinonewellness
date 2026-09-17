@@ -779,6 +779,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <>
             <RenewPlanDialog membership={activeMembership} open={renewOpen} onOpenChange={setRenewOpen} />
             <SwitchPlanDialog membership={activeMembership} open={switchOpen} onOpenChange={setSwitchOpen} />
+            <EditMembershipDialog
+              membership={activeMembership}
+              open={editMembershipOpen}
+              onOpenChange={setEditMembershipOpen}
+            />
           </>
         )}
       </SheetContent>
