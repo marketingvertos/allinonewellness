@@ -2080,6 +2080,10 @@ export type Database = {
       }
       is_wellness_manager: { Args: { _user_id: string }; Returns: boolean }
       is_wellness_staff: { Args: { _user_id: string }; Returns: boolean }
+      issue_servings: {
+        Args: { p_membership_id: string; p_quantity: number; p_reason?: string }
+        Returns: number
+      }
       mark_notification_sent: {
         Args: { p_error?: string; p_log_id: string; p_status?: string }
         Returns: undefined

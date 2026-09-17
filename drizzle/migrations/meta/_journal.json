@@ -22,6 +22,13 @@
       "when": 1789648238684,
       "tag": "0002_add_pack_and_issue_txn_type",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789648262809,
+      "tag": "0003_issue_servings_rpc",
+      "breakpoints": true
     }
   ]
 }
