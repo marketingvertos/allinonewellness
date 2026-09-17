@@ -26,6 +26,13 @@ import {
   useIsWellnessManager,
   BodyMeasurement,
 } from "@/hooks/useWellness";
+import {
+  PaymentInput,
+  PaymentLine,
+  createDefaultPayment,
+  paymentsPayload,
+  paymentsTotal,
+} from "./PaymentInput";
 import { MemberDashboard } from "./MemberDashboard";
 import { RecordMeasurementDialog } from "./RecordMeasurementDialog";
 import { EditWeightEntryDialog, WeightEntry } from "./EditWeightEntryDialog";
