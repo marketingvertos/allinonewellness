@@ -160,7 +160,7 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
 
         <div className="space-y-2">
           <Label htmlFor="em-join">Joining date</Label>
-          <Input id="em-join" type="date" value={form.joining_date} onChange={(e) => set("joining_date")(e.target.value)} />
+          <DobInput id="em-join" showAge={false} value={form.joining_date} onChange={set("joining_date")} />
         </div>
 
         <div className="space-y-2">
@@ -178,7 +178,7 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
         {form.marital_status === "married" && (
           <div className="space-y-2">
             <Label htmlFor="em-anniv">Anniversary date</Label>
-            <Input id="em-anniv" type="date" value={form.anniversary_date} onChange={(e) => set("anniversary_date")(e.target.value)} />
+            <DobInput id="em-anniv" showAge={false} value={form.anniversary_date} onChange={set("anniversary_date")} />
           </div>
         )}
 

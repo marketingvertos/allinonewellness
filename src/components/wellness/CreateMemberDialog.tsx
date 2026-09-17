@@ -230,11 +230,11 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="wm-joining">Joining date</Label>
-            <Input
+            <DobInput
               id="wm-joining"
-              type="date"
+              showAge={false}
               value={form.joining_date}
-              onChange={(e) => set("joining_date")(e.target.value)}
+              onChange={set("joining_date")}
             />
           </div>
           <div className="space-y-2">
@@ -251,7 +251,7 @@ export function CreateMemberDialog({ open, onOpenChange }: Props) {
           {form.marital_status === "married" && (
             <div className="space-y-2">
               <Label htmlFor="wm-anniv">Anniversary date</Label>
-              <Input id="wm-anniv" type="date" value={form.anniversary_date} onChange={(e) => set("anniversary_date")(e.target.value)} />
+              <DobInput id="wm-anniv" showAge={false} value={form.anniversary_date} onChange={set("anniversary_date")} />
             </div>
           )}
           <div className="space-y-2">

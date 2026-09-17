@@ -245,11 +245,12 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               <div className="rounded-lg border p-4 text-sm">
                 <p className="font-medium">Joining date</p>
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <Input
-                    type="date"
+                  <DobInput
+                    id="wm-joindate"
+                    showAge={false}
                     className="flex-1"
                     value={joinDate || member.joining_date || ""}
-                    onChange={(e) => setJoinDate(e.target.value)}
+                    onChange={setJoinDate}
                     disabled={!isManager}
                   />
                   {isManager && (
