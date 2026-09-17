@@ -180,6 +180,61 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
           </div>
         </div>
       </ResponsiveDialog>
+
+      <ResponsiveDialog
+        open={redeemOpen}
+        onOpenChange={setRedeemOpen}
+        title="Mark Pink Card reward as redeemed"
+        description="Deducts the credit and records it in the Pink Card history."
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setRedeemOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={creditsNum <= 0 || creditsNum > bal || redeem.isPending}
+              onClick={async () => {
+                await redeem.mutateAsync({
+                  memberId,
+                  credits: creditsNum,
+                  membershipId: null,
+                  note: redeemNote.trim() || null,
+                });
+                setRedeemOpen(false);
+                setRedeemNote("");
+              }}
+            >
+              Mark redeemed
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="pc-redeem">Servings to redeem</Label>
+            <Input
+              id="pc-redeem"
+              value={credits}
+              onChange={(e) => setCredits(e.target.value.replace(/[^\d]/g, ""))}
+            />
+            <p className="text-xs text-muted-foreground">
+              {creditsNum ? formatCurrency(creditsNum * PINK_CARD_SERVING_VALUE) : "—"} · balance {bal}
+            </p>
+            {creditsNum > bal && (
+              <p className="text-xs text-destructive">Cannot redeem more than the current balance.</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="pc-redeem-note">Note (optional)</Label>
+            <Input
+              id="pc-redeem-note"
+              value={redeemNote}
+              onChange={(e) => setRedeemNote(e.target.value)}
+              placeholder="e.g. adjusted against renewal paid in cash"
+            />
+          </div>
+        </div>
+      </ResponsiveDialog>
     </Card>
   );
 }
