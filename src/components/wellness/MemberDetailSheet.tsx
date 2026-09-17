@@ -11,6 +11,9 @@ import {
   useAdjustServings,
   useCheckIn,
   useCreateMembership,
+  useRecordPayment,
+  usePaymentHistory,
+
 
   useServingLedger,
   useWeightHistory,
@@ -23,6 +26,13 @@ import {
   useIsWellnessManager,
   BodyMeasurement,
 } from "@/hooks/useWellness";
+import {
+  PaymentInput,
+  PaymentLine,
+  createDefaultPayment,
+  paymentsPayload,
+  paymentsTotal,
+} from "./PaymentInput";
 import { MemberDashboard } from "./MemberDashboard";
 import { RecordMeasurementDialog } from "./RecordMeasurementDialog";
 import { EditWeightEntryDialog, WeightEntry } from "./EditWeightEntryDialog";
@@ -50,7 +60,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatDate, formatDateTime, todayIst } from "@/lib/formatters";
-import { PAYMENT_MODES } from "@/hooks/useReports";
+
 import { Package, Pencil, Trash2 } from "lucide-react";
 import {
   AlertDialog,
@@ -126,13 +136,17 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
 
   const [joinDate, setJoinDate] = useState("");
   const [planId, setPlanId] = useState("");
-  const [payMode, setPayMode] = useState("cash");
   const [payDate, setPayDate] = useState(todayIst());
   const [showCredentials, setShowCredentials] = useState(false);
   const [editMembershipOpen, setEditMembershipOpen] = useState(false);
   const [issueOpen, setIssueOpen] = useState(false);
-  const [payPrice, setPayPrice] = useState("");
+  const [activationPayments, setActivationPayments] = useState<PaymentLine[]>([]);
+  const recordPayment = useRecordPayment();
   const selectedNewPlan = plans?.find((p) => p.id === planId);
+
+  useEffect(() => {
+    if (selectedNewPlan) setActivationPayments(createDefaultPayment(Number(selectedNewPlan.price)));
+  }, [selectedNewPlan]);
   const [weight, setWeight] = useState("");
   const [note, setNote] = useState("");
   const [dob, setDob] = useState<string | null>(null);
@@ -166,6 +180,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const usedPct = activeMembership
     ? Math.round((activeMembership.used_servings / Math.max(activeMembership.total_servings, 1)) * 100)
     : 0;
+  const { data: activePayments } = usePaymentHistory(activeMembership?.id);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -408,6 +423,23 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   <span className="font-semibold">{activeMembership.remaining_servings}</span> of{" "}
                   {activeMembership.total_servings} servings remaining
                 </p>
+                {activePayments && activePayments.length > 0 && (
+                  <div className="space-y-1 rounded-md border bg-muted/30 p-3">
+                    <p className="text-xs font-medium text-muted-foreground">Payment breakdown</p>
+                    {activePayments.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between gap-2 text-sm">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className="uppercase">{p.mode}</Badge>
+                          <span className="text-xs text-muted-foreground">{formatDate(p.paid_at)}</span>
+                          {p.reference && (
+                            <span className="text-xs text-muted-foreground">({p.reference})</span>
+                          )}
+                        </span>
+                        <span className="font-medium">{formatCurrency(Number(p.amount))}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" onClick={() => setRenewOpen(true)}>
                     Renew
@@ -460,54 +492,46 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="ms-amount">Amount collected</Label>
-                    <Input
-                      id="ms-amount"
-                      inputMode="decimal"
-                      value={payPrice}
-                      onChange={(e) => setPayPrice(e.target.value)}
-                      placeholder={selectedNewPlan ? String(selectedNewPlan.price) : ""}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Payment method</Label>
-                    <Select value={payMode} onValueChange={setPayMode}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {PAYMENT_MODES.map((m) => (
-                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ms-paydate">Payment date</Label>
-                    <Input
-                      id="ms-paydate"
-                      type="date"
-                      value={payDate}
-                      onChange={(e) => setPayDate(e.target.value)}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ms-paydate">Payment date</Label>
+                  <Input
+                    id="ms-paydate"
+                    type="date"
+                    value={payDate}
+                    onChange={(e) => setPayDate(e.target.value)}
+                  />
                 </div>
+                {planId && (
+                  <PaymentInput
+                    totalAmount={Number(selectedNewPlan?.price ?? 0)}
+                    payments={activationPayments}
+                    onChange={setActivationPayments}
+                  />
+                )}
                 <Button
                   size="sm"
                   disabled={!planId || createMembership.isPending}
-                  onClick={() =>
-                    createMembership.mutate(
-                      {
+                  onClick={async () => {
+                    const lines = paymentsPayload(activationPayments);
+                    const membershipId = await createMembership.mutateAsync({
+                      memberId: member.id,
+                      planId,
+                      trialId: activeTrial?.id,
+                      price: paymentsTotal(activationPayments) || undefined,
+                      paymentMode: lines[0]?.mode ?? "cash",
+                      paymentDate: payDate || todayIst(),
+                    });
+                    setShowCredentials(true);
+                    if (membershipId && lines.length > 0) {
+                      await recordPayment.mutateAsync({
+                        membershipId,
                         memberId: member.id,
-                        planId,
-                        trialId: activeTrial?.id,
-                        price: payPrice === "" ? undefined : Number(payPrice),
-                        paymentMode: payMode,
-                        paymentDate: payDate || todayIst(),
-                      },
-                      { onSuccess: () => setShowCredentials(true) },
-                    )
-                  }
+                        payments: lines,
+                        context: "activation",
+                        paidOn: payDate || todayIst(),
+                      });
+                    }
+                  }}
                 >
                   {activeTrial ? "Convert trial to membership" : "Activate membership"}
                 </Button>

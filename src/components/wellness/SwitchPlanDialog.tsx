@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { WellnessMembership, useSwitchPlan, useWellnessPlans } from "@/hooks/useWellness";
+import { WellnessMembership, useRecordPayment, useSwitchPlan, useWellnessPlans } from "@/hooks/useWellness";
+import {
+  PaymentInput,
+  PaymentLine,
+  createDefaultPayment,
+  paymentsPayload,
+  paymentsTotal,
+} from "./PaymentInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +28,8 @@ export function SwitchPlanDialog({ membership, open, onOpenChange }: Props) {
 
   const [planId, setPlanId] = useState("");
   const [carry, setCarry] = useState("carry");
-  const [price, setPrice] = useState("");
+  const [payments, setPayments] = useState<PaymentLine[]>([]);
+  const recordPayment = useRecordPayment();
 
   const plan = membershipPlans.find((p) => p.id === planId);
 
@@ -29,20 +37,29 @@ export function SwitchPlanDialog({ membership, open, onOpenChange }: Props) {
     if (!open) return;
     setPlanId("");
     setCarry("carry");
-    setPrice("");
+    setPayments([]);
   }, [open]);
 
   useEffect(() => {
-    if (plan) setPrice(String(plan.price));
+    if (plan) setPayments(createDefaultPayment(Number(plan.price)));
   }, [plan]);
 
   const submit = async () => {
-    await switchPlan.mutateAsync({
+    const lines = paymentsPayload(payments);
+    const newMembershipId = await switchPlan.mutateAsync({
       membershipId: membership.id,
       planId,
       carryServings: carry === "carry",
-      price: price === "" ? null : Number(price),
+      price: paymentsTotal(payments),
     });
+    if (lines.length > 0) {
+      await recordPayment.mutateAsync({
+        membershipId: newMembershipId ?? membership.id,
+        memberId: membership.member_id,
+        payments: lines,
+        context: "switch",
+      });
+    }
     onOpenChange(false);
   };
 
@@ -98,10 +115,9 @@ export function SwitchPlanDialog({ membership, open, onOpenChange }: Props) {
           </RadioGroup>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="sp-price">Amount collected</Label>
-          <Input id="sp-price" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
-        </div>
+        {plan && (
+          <PaymentInput totalAmount={Number(plan.price)} payments={payments} onChange={setPayments} />
+        )}
       </div>
     </ResponsiveDialog>
   );

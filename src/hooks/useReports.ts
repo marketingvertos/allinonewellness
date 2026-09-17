@@ -88,13 +88,32 @@ export function useRevenueReport(from: string, to: string) {
       if (error) throw error;
       const rows = data as unknown as RevenueRow[];
       const total = rows.reduce((sum, r) => sum + Number(r.price_paid ?? 0), 0);
+
+      // Split payments are recorded as individual lines; memberships sold before
+      // that feature only carry a single mode on the membership row.
+      const ids = rows.map((r) => r.id);
+      let lines: { membership_id: string; amount: number; mode: string }[] = [];
+      if (ids.length) {
+        const { data: payData, error: payErr } = await supabase
+          .from("wellness_payments")
+          .select("membership_id, amount, mode")
+          .in("membership_id", ids);
+        if (payErr) throw payErr;
+        lines = (payData ?? []) as unknown as typeof lines;
+      }
+      const withLines = new Set(lines.map((l) => l.membership_id));
+
       const byMode = new Map<string, { total: number; count: number }>();
-      for (const r of rows) {
-        const key = r.payment_mode ?? "cash";
+      const add = (key: string, amount: number) => {
         const cur = byMode.get(key) ?? { total: 0, count: 0 };
-        cur.total += Number(r.price_paid ?? 0);
+        cur.total += amount;
         cur.count += 1;
         byMode.set(key, cur);
+      };
+      for (const l of lines) add(l.mode, Number(l.amount ?? 0));
+      for (const r of rows) {
+        if (withLines.has(r.id)) continue;
+        add(r.payment_mode ?? "cash", Number(r.price_paid ?? 0));
       }
       return { rows, total, count: rows.length, byMode: [...byMode.entries()] };
     },

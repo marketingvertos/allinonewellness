@@ -1600,6 +1600,63 @@ export type Database = {
         }
         Relationships: []
       }
+      wellness_payments: {
+        Row: {
+          amount: number
+          context: string
+          created_at: string
+          id: string
+          member_id: string
+          membership_id: string
+          mode: Database["public"]["Enums"]["payment_mode"]
+          note: string | null
+          paid_at: string
+          recorded_by: string | null
+          reference: string | null
+        }
+        Insert: {
+          amount: number
+          context?: string
+          created_at?: string
+          id?: string
+          member_id: string
+          membership_id: string
+          mode: Database["public"]["Enums"]["payment_mode"]
+          note?: string | null
+          paid_at?: string
+          recorded_by?: string | null
+          reference?: string | null
+        }
+        Update: {
+          amount?: number
+          context?: string
+          created_at?: string
+          id?: string
+          member_id?: string
+          membership_id?: string
+          mode?: Database["public"]["Enums"]["payment_mode"]
+          note?: string | null
+          paid_at?: string
+          recorded_by?: string | null
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_payments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_payments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wellness_plans: {
         Row: {
           active: boolean
@@ -2106,6 +2163,16 @@ export type Database = {
         Args: { p_member_id: string }
         Returns: undefined
       }
+      record_payment: {
+        Args: {
+          p_context?: string
+          p_member_id: string
+          p_membership_id: string
+          p_paid_on?: string
+          p_payments: Json
+        }
+        Returns: undefined
+      }
       redeem_pink_card: {
         Args: {
           p_credits: number
@@ -2170,6 +2237,7 @@ export type Database = {
         | "expired"
         | "cancelled"
         | "queued"
+      payment_mode: "cash" | "upi" | "online" | "card"
       serving_txn_type:
         | "membership_allocation"
         | "daily_deduction"
@@ -2340,6 +2408,7 @@ export const Constants = {
         "cancelled",
         "queued",
       ],
+      payment_mode: ["cash", "upi", "online", "card"],
       serving_txn_type: [
         "membership_allocation",
         "daily_deduction",
