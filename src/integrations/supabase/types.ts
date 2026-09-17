@@ -1966,6 +1966,20 @@ export type Database = {
         Args: { p_change: number; p_membership_id: string; p_note?: string }
         Returns: number
       }
+      admin_update_membership: {
+        Args: {
+          p_end_date?: string
+          p_membership_id: string
+          p_payment_date?: string
+          p_payment_mode?: string
+          p_plan_id?: string
+          p_price?: number
+          p_remaining_servings?: number
+          p_start_date?: string
+          p_total_servings?: number
+        }
+        Returns: undefined
+      }
       approve_checkin_request: {
         Args: { p_request_id: string; p_weight?: number }
         Returns: Json
