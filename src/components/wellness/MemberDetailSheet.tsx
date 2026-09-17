@@ -11,6 +11,9 @@ import {
   useAdjustServings,
   useCheckIn,
   useCreateMembership,
+  useRecordPayment,
+  usePaymentHistory,
+
 
   useServingLedger,
   useWeightHistory,
