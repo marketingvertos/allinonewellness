@@ -550,7 +550,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           </TabsContent>
 
           <TabsContent value="pinkcard" className="space-y-4 pt-4">
-            <PinkCardPanel memberId={member.id} balance={member.pink_card_balance} />
+            <PinkCardPanel
+              memberId={member.id}
+              balance={member.pink_card_balance}
+              referrerId={currentReferrer}
+            />
           </TabsContent>
 
           <TabsContent value="progress" className="space-y-4 pt-4">

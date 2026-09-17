@@ -83,6 +83,11 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
           <p className="text-sm text-muted-foreground">
             {formatCurrency(pinkCardValue(bal))} credit, applied as a discount on the next renewal.
           </p>
+          {referrer?.full_name && (
+            <p className="mt-1 text-sm">
+              Introduced by <span className="font-medium">{referrer.full_name}</span>
+            </p>
+          )}
         </div>
 
         {(ledger ?? []).length === 0 ? (
