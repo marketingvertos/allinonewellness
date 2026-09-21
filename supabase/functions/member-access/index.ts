@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
       .eq("user_id", userData.user.id);
     if (!roles?.length) return json({ error: "Not authorized" }, 403);
     const isManager = roles.some((r) => r.role === "admin" || r.role === "manager");
+    const isAdmin = roles.some((r) => r.role === "admin");
 
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action ?? "");
