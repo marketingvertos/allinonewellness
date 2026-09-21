@@ -113,3 +113,22 @@ export function useManageMemberLogin() {
       toast({ title: "Could not update login", description: error.message, variant: "destructive" }),
   });
 }
+
+/** Permanently deletes a member profile and their portal login. Super admins only. */
+export function useDeleteMember() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (vars: { memberId: string }) =>
+      callMemberAccess<{ status: string; full_name: string }>({ action: "delete", memberId: vars.memberId }),
+    onSuccess: (data) => {
+      qc.invalidateQueries();
+      toast({
+        title: "Profile deleted",
+        description: `${data.full_name} and all their records have been removed.`,
+      });
+    },
+    onError: (error: Error) =>
+      toast({ title: "Could not delete profile", description: error.message, variant: "destructive" }),
+  });
+}
