@@ -5,17 +5,20 @@ Today both the member app and the staff profile show "35 of 66 servings left" wi
 ## What changes
 
 **Member app (My plan card)**
+
 - Big number: servings left, with the word "servings left" under it.
-- Second figure beside it: days left until the plan ends (e.g. "54 days left"), with the end date underneath as it is now.
+- Second figure beside it: days left until the plan ends (e.g. "54 days left"), with the end date underneath as it is now. (Show days left until the plan ends  not date)
 - The progress bar and the "of 66" text are removed.
 - "Renew online" button stays.
 
 **Staff member profile (Plan tab)**
+
 - Same two figures side by side: servings left and days left on the plan, plus plan name, code, dates and payment breakdown as today.
 - Progress bar and "of 66 servings remaining" removed.
 - All action buttons (Renew, Switch plan, Edit membership, Issue servings, corrections) stay.
 
 **Member overview tiles**
+
 - The "Servings left" tile drops the "of 66" subtitle and instead reads "Reduces by one per visit".
 - The existing "Days left on plan" tile stays as is.
 
