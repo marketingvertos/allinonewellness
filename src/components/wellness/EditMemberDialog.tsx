@@ -40,6 +40,7 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
     marital_status: (member as { marital_status?: string | null }).marital_status ?? "",
     anniversary_date: (member as { anniversary_date?: string | null }).anniversary_date ?? "",
     goal: member.goal ?? "",
+    initial_weight: num(member.initial_weight),
     current_weight: num(member.current_weight),
     target_weight: num(member.target_weight),
     height: num(member.height),
@@ -62,6 +63,7 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
       marital_status: (member as { marital_status?: string | null }).marital_status ?? "",
       anniversary_date: (member as { anniversary_date?: string | null }).anniversary_date ?? "",
       goal: member.goal ?? "",
+      initial_weight: num(member.initial_weight),
       current_weight: num(member.current_weight),
       target_weight: num(member.target_weight),
       height: num(member.height),
@@ -86,6 +88,7 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
       marital_status: form.marital_status || null,
       anniversary_date: form.marital_status === "married" ? form.anniversary_date || null : null,
       goal: form.goal || null,
+      initial_weight: form.initial_weight ? Number(form.initial_weight) : null,
       current_weight: form.current_weight ? Number(form.current_weight) : null,
       target_weight: form.target_weight ? Number(form.target_weight) : null,
       height: form.height ? Number(form.height) : null,
@@ -192,6 +195,12 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="em-initial-weight">Weight at joining the club (kg)</Label>
+          <Input id="em-initial-weight" inputMode="decimal" value={form.initial_weight} onChange={(e) => set("initial_weight")(e.target.value)} />
+          <p className="text-xs text-muted-foreground">Weight recorded when the member joined. Used for total gain/loss reporting.</p>
         </div>
 
         <div className="space-y-2">
