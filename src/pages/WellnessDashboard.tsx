@@ -204,8 +204,17 @@ export default function WellnessDashboard() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">Low serving balance</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExpiredOpen(true)}
+              className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              Expired members
+              <Badge variant="destructive">{data?.statusCounts?.expired ?? 0}</Badge>
+            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
             {data?.lowBalance?.length ? (
