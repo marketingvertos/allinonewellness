@@ -71,6 +71,13 @@
       "when": 1790002586157,
       "tag": "0009_zero_servings_grace_10_days",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790002638035,
+      "tag": "0010_refresh_statuses_revive_members",
+      "breakpoints": true
     }
   ]
 }
