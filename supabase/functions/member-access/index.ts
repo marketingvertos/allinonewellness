@@ -120,6 +120,45 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (memberErr || !member) return json({ error: "Member not found" }, 404);
 
+    // Permanent removal of a member profile: full admins only.
+    if (action === "delete") {
+      if (!isAdmin) return json({ error: "Only super admins can delete a member profile." }, 403);
+
+      // Members this person referred keep their records; only the link is cleared.
+      const { data: referred } = await admin
+        .from("wellness_members")
+        .select("id")
+        .eq("referred_by_member_id", memberId);
+      const referredIds = (referred ?? []).map((r) => r.id);
+
+      // FK guards that do not cascade.
+      const { error: payErr } = await admin.from("wellness_payments").delete().eq("member_id", memberId);
+      if (payErr) return json({ error: payErr.message }, 400);
+
+      for (const step of [
+        admin.from("wellness_members").update({ referred_by_member_id: null }).eq("referred_by_member_id", memberId),
+        admin.from("pink_card_ledger").update({ referred_member_id: null }).eq("referred_member_id", memberId),
+        admin.from("whatsapp_messages").update({ member_id: null }).eq("member_id", memberId),
+        admin.from("whatsapp_conversations").update({ member_id: null }).eq("member_id", memberId),
+      ]) {
+        const { error } = await step;
+        if (error) return json({ error: error.message }, 400);
+      }
+
+      const { error: delErr } = await admin.from("wellness_members").delete().eq("id", memberId);
+      if (delErr) return json({ error: delErr.message }, 400);
+
+      if (member.user_id) {
+        await admin.auth.admin.deleteUser(member.user_id).catch(() => undefined);
+      }
+
+      for (const id of referredIds) {
+        await admin.rpc("recalc_network_counts", { p_member_id: id }).catch(() => undefined);
+      }
+
+      return json({ status: "deleted", full_name: member.full_name });
+    }
+
     const email = mobileToEmail(member.mobile_number);
     if (normalizeMobile(member.mobile_number).length !== 10)
       return json({ error: "Member mobile number must be a valid 10-digit number." }, 400);
