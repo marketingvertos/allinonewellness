@@ -54,6 +54,7 @@ function SalesTile({ label, period, mode }: { label: string; period: (typeof PER
 
 export default function WellnessDashboard() {
   const [params, setParams] = useSearchParams();
+  const [expiredOpen, setExpiredOpen] = useState(false);
   const mode = (params.get("mode") as MemberModeFilter) || "all";
   const setMode = (next: string) => {
     if (!next) return;
