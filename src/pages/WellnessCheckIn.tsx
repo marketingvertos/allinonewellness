@@ -155,10 +155,16 @@ export default function WellnessCheckIn() {
                             ) : (
                               <Button
                                 className="flex-1 sm:flex-none"
-                                disabled={checkIn.isPending || balances?.[m.id] === 0}
+                                disabled={
+                                  checkIn.isPending ||
+                                  balances?.[m.id] === 0 ||
+                                  (balances?.[m.id] === undefined && m.status === "expired")
+                                }
                                 onClick={() => submit(m.id, false)}
                               >
-                                {balances?.[m.id] === 0 ? "Renew required" : "Check in"}
+                                {balances?.[m.id] === 0 || (balances?.[m.id] === undefined && m.status === "expired")
+                                  ? "Renew required"
+                                  : "Check in"}
                               </Button>
                             )}
                           </div>
