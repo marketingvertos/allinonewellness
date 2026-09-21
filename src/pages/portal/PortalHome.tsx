@@ -18,7 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { formatDate, todayIst } from "@/lib/formatters";
-import { ChevronRight, QrCode, Scale } from "lucide-react";
+import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
+import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
 
 export default function PortalHome() {
@@ -55,6 +56,7 @@ export default function PortalHome() {
   const recordedToday = history.some((w) => w.recorded_date === today);
   const gaining = profile?.goal === "weight_gain";
   const [weighOpen, setWeighOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
   const [newWeight, setNewWeight] = useState("");
 
   const startWeight = profile?.initial_weight ?? (history[0]?.weight ?? null);
@@ -108,14 +110,32 @@ export default function PortalHome() {
                 <Progress value={(active.remaining_servings / Math.max(active.total_servings, 1)) * 100} />
               </div>
               <p className="text-sm text-muted-foreground">Valid until {formatDate(active.end_date)}</p>
+              <Button variant="outline" className="w-full" onClick={() => setPayOpen(true)}>
+                <CreditCard className="mr-2 h-4 w-4" /> Renew online
+              </Button>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              No active membership right now. Please speak to the front desk to start or renew a plan.
-            </p>
+            <>
+              <p className="text-sm text-muted-foreground">
+                No active membership right now. Pay online to start a plan, or speak to the front desk.
+              </p>
+              <Button className="w-full" onClick={() => setPayOpen(true)}>
+                <CreditCard className="mr-2 h-4 w-4" /> Pay online
+              </Button>
+            </>
           )}
         </CardContent>
       </Card>
+
+      {profile && (
+        <PayOnlineDialog
+          open={payOpen}
+          onOpenChange={setPayOpen}
+          memberName={profile.full_name}
+          pinkBalance={profile.pink_card_balance ?? 0}
+          defaultPlanId={active?.plan_id ?? null}
+        />
+      )}
 
       <Card>
         <CardHeader className="pb-2">

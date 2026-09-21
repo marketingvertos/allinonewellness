@@ -1038,6 +1038,31 @@ export function useMyMemberProfile() {
   });
 }
 
+export interface OnlinePaymentRow {
+  id: string;
+  amount_paise: number;
+  pink_credits: number;
+  status: string;
+  created_at: string;
+}
+
+/** Razorpay payments a member made from the portal. */
+export function useMyOnlinePayments(memberId: string | undefined) {
+  return useQuery({
+    queryKey: ["my-online-payments", memberId],
+    enabled: !!memberId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("razorpay_orders")
+        .select("id, amount_paise, pink_credits, status, created_at")
+        .eq("member_id", memberId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as OnlinePaymentRow[];
+    },
+  });
+}
+
 /* ------------------------------ Plan admin ------------------------------ */
 
 export function usePlanUsage() {
