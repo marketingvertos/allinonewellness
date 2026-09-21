@@ -29,6 +29,8 @@ import { ServingTrendChart } from "@/components/wellness/ServingTrendChart";
 import { PendingCheckInsCard } from "@/components/wellness/PendingCheckInsCard";
 import { DisplayScreensCard } from "@/components/wellness/DisplayScreensCard";
 import { PublicRegistrationCard } from "@/components/wellness/PublicRegistrationCard";
+import { ExpiredMembersSheet } from "@/components/wellness/ExpiredMembersSheet";
+import { useState } from "react";
 
 const PERIODS = [
   { key: "today", label: "Today" },
@@ -52,6 +54,7 @@ function SalesTile({ label, period, mode }: { label: string; period: (typeof PER
 
 export default function WellnessDashboard() {
   const [params, setParams] = useSearchParams();
+  const [expiredOpen, setExpiredOpen] = useState(false);
   const mode = (params.get("mode") as MemberModeFilter) || "all";
   const setMode = (next: string) => {
     if (!next) return;
@@ -201,8 +204,17 @@ export default function WellnessDashboard() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">Low serving balance</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExpiredOpen(true)}
+              className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              Expired members
+              <Badge variant="destructive">{data?.statusCounts?.expired ?? 0}</Badge>
+            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
             {data?.lowBalance?.length ? (
@@ -223,6 +235,8 @@ export default function WellnessDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <ExpiredMembersSheet open={expiredOpen} onOpenChange={setExpiredOpen} mode={mode} />
 
       <ServingTrendChart memberMode={mode} />
 
