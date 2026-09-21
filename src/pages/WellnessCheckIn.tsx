@@ -113,7 +113,9 @@ export default function WellnessCheckIn() {
                             <TagBadges tags={m.tags} />
                             <MasterTitleBadge level={m.master_level} size="sm" />
                             <PinkCardBadge balance={m.pink_card_balance} />
-                            {balances?.[m.id] === undefined ? null : balances[m.id] === 0 ? (
+                            {balances?.[m.id] === undefined ? (
+                              m.status === "expired" ? <Badge variant="destructive">No servings</Badge> : null
+                            ) : balances[m.id] === 0 ? (
                               <Badge variant="destructive">No servings</Badge>
                             ) : balances[m.id] <= 5 ? (
                               <Badge variant="destructive">Low servings · {balances[m.id]} left</Badge>

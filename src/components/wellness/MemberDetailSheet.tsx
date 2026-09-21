@@ -417,7 +417,9 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                 </p>
                 <div className="rounded-md border p-4 text-center">
                   <p className="text-3xl font-bold">{activeMembership.remaining_servings}</p>
-                  <p className="text-xs text-muted-foreground">servings left</p>
+                  <p className="text-xs text-muted-foreground">
+                    {activeMembership.remaining_servings <= 0 ? "Expired — renew to continue" : "servings left"}
+                  </p>
                 </div>
                 {activePayments && activePayments.length > 0 && (
                   <div className="space-y-1 rounded-md border bg-muted/30 p-3">
