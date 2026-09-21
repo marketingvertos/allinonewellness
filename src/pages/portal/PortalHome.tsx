@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
-import { formatDate, todayIst } from "@/lib/formatters";
+import { daysLeftIst, formatDate, todayIst } from "@/lib/formatters";
 import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
 import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
