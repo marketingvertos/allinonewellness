@@ -108,14 +108,32 @@ export default function PortalHome() {
                 <Progress value={(active.remaining_servings / Math.max(active.total_servings, 1)) * 100} />
               </div>
               <p className="text-sm text-muted-foreground">Valid until {formatDate(active.end_date)}</p>
+              <Button variant="outline" className="w-full" onClick={() => setPayOpen(true)}>
+                <CreditCard className="mr-2 h-4 w-4" /> Renew online
+              </Button>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              No active membership right now. Please speak to the front desk to start or renew a plan.
-            </p>
+            <>
+              <p className="text-sm text-muted-foreground">
+                No active membership right now. Pay online to start a plan, or speak to the front desk.
+              </p>
+              <Button className="w-full" onClick={() => setPayOpen(true)}>
+                <CreditCard className="mr-2 h-4 w-4" /> Pay online
+              </Button>
+            </>
           )}
         </CardContent>
       </Card>
+
+      {profile && (
+        <PayOnlineDialog
+          open={payOpen}
+          onOpenChange={setPayOpen}
+          memberName={profile.full_name}
+          pinkBalance={profile.pink_card_balance ?? 0}
+          defaultPlanId={active?.plan_id ?? null}
+        />
+      )}
 
       <Card>
         <CardHeader className="pb-2">
