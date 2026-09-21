@@ -46,6 +46,15 @@ export function ageFromDob(dob: string | null | undefined): number | null {
   return age >= 0 && age < 130 ? age : null;
 }
 
+/** Whole days from today (IST) to a YYYY-MM-DD end date; 0 when today or past. */
+export function daysLeftIst(endDate: string | null | undefined): number {
+  if (!endDate) return 0;
+  const end = Date.parse(`${endDate.slice(0, 10)}T00:00:00+05:30`);
+  if (Number.isNaN(end)) return 0;
+  const today = Date.parse(`${todayIst()}T00:00:00+05:30`);
+  return Math.max(0, Math.round((end - today) / 86400000));
+}
+
 export function formatRelativeDate(date: string | Date): string {
   return formatDistanceToNow(new Date(date), { addSuffix: true });
 }
