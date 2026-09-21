@@ -154,7 +154,7 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
     {
       label: "Servings left",
       value: membership ? `${membership.remaining_servings}` : "—",
-      sub: membership ? `of ${membership.total_servings}` : "No active plan",
+      sub: membership ? "Reduces by one per visit" : "No active plan",
     },
     { label: "Visits this month", value: `${visitsThisMonth}`, sub: `${attendance.length} total` },
     { label: "Days left on plan", value: daysLeft != null ? `${daysLeft}` : "—", sub: membership ? `Ends ${formatDate(membership.end_date)}` : "" },

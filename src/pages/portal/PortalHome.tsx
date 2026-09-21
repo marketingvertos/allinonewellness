@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
-import { formatDate, todayIst } from "@/lib/formatters";
+import { daysLeftIst, formatDate, todayIst } from "@/lib/formatters";
 import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
 import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
@@ -102,14 +102,20 @@ export default function PortalHome() {
                   {active.status === "expiring_soon" ? "Renewal due" : "Active"}
                 </Badge>
               </div>
-              <div>
-                <div className="mb-1 flex items-baseline justify-between text-sm">
-                  <span className="text-3xl font-bold">{active.remaining_servings}</span>
-                  <span className="text-muted-foreground">of {active.total_servings} servings left</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border p-3">
+                  <p className="text-3xl font-bold">{active.remaining_servings}</p>
+                  <p className="text-sm text-muted-foreground">servings left</p>
                 </div>
-                <Progress value={(active.remaining_servings / Math.max(active.total_servings, 1)) * 100} />
+                <div className="rounded-lg border p-3">
+                  <p className="text-3xl font-bold">
+                    {daysLeftIst(active.end_date) || "Expired"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {daysLeftIst(active.end_date) ? "days left" : "plan ended"}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">Valid until {formatDate(active.end_date)}</p>
               <Button variant="outline" className="w-full" onClick={() => setPayOpen(true)}>
                 <CreditCard className="mr-2 h-4 w-4" /> Renew online
               </Button>

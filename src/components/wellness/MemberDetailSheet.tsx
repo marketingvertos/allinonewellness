@@ -57,9 +57,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatCurrency, formatDate, formatDateTime, todayIst } from "@/lib/formatters";
+import { daysLeftIst, formatCurrency, formatDate, formatDateTime, todayIst } from "@/lib/formatters";
 
 import { Package, Pencil, Trash2 } from "lucide-react";
 import {
@@ -179,9 +178,6 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const todayVisit = attendance?.find((a) => a.visit_date === istToday);
 
   const activeTrial = trials?.find((t) => t.status === "active");
-  const usedPct = activeMembership
-    ? Math.round((activeMembership.used_servings / Math.max(activeMembership.total_servings, 1)) * 100)
-    : 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -419,11 +415,20 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   {activeMembership.membership_code} · {formatDate(activeMembership.start_date)} →{" "}
                   {formatDate(activeMembership.end_date)} · {formatCurrency(Number(activeMembership.price_paid))}
                 </p>
-                <Progress value={usedPct} />
-                <p className="text-sm">
-                  <span className="font-semibold">{activeMembership.remaining_servings}</span> of{" "}
-                  {activeMembership.total_servings} servings remaining
-                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-md border p-3">
+                    <p className="text-2xl font-bold">{activeMembership.remaining_servings}</p>
+                    <p className="text-xs text-muted-foreground">servings left</p>
+                  </div>
+                  <div className="rounded-md border p-3">
+                    <p className="text-2xl font-bold">
+                      {daysLeftIst(activeMembership.end_date) || "Expired"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {daysLeftIst(activeMembership.end_date) ? "days left" : "plan ended"}
+                    </p>
+                  </div>
+                </div>
                 {activePayments && activePayments.length > 0 && (
                   <div className="space-y-1 rounded-md border bg-muted/30 p-3">
                     <p className="text-xs font-medium text-muted-foreground">Payment breakdown</p>
