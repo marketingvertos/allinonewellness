@@ -57,6 +57,13 @@
       "when": 1789999173847,
       "tag": "0007_pink_card_reward_ums_only",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790000784472,
+      "tag": "0008_zero_servings_expire",
+      "breakpoints": true
     }
   ]
 }
