@@ -57,7 +57,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { daysLeftIst, formatCurrency, formatDate, formatDateTime, todayIst } from "@/lib/formatters";
 
@@ -179,9 +178,6 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const todayVisit = attendance?.find((a) => a.visit_date === istToday);
 
   const activeTrial = trials?.find((t) => t.status === "active");
-  const usedPct = activeMembership
-    ? Math.round((activeMembership.used_servings / Math.max(activeMembership.total_servings, 1)) * 100)
-    : 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
