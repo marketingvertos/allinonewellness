@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
 
     const { data: member, error: memberErr } = await admin
       .from("wellness_members")
-      .select("id, full_name, mobile_number, user_id")
+      .select("id, full_name, mobile_number, user_id, referred_by_member_id")
       .eq("id", memberId)
       .maybeSingle();
     if (memberErr || !member) return json({ error: "Member not found" }, 404);
@@ -152,7 +152,8 @@ Deno.serve(async (req) => {
         await admin.auth.admin.deleteUser(member.user_id).catch(() => undefined);
       }
 
-      for (const id of referredIds) {
+      const recalcIds = [...referredIds, member.referred_by_member_id].filter(Boolean) as string[];
+      for (const id of recalcIds) {
         await admin.rpc("recalc_network_counts", { p_member_id: id }).catch(() => undefined);
       }
 
