@@ -24,6 +24,7 @@ import {
   useDeleteWeightEntry,
   useDeleteBodyMeasurement,
   useIsWellnessManager,
+  useIsWellnessAdmin,
   BodyMeasurement,
 } from "@/hooks/useWellness";
 import {
@@ -48,6 +49,7 @@ import { servingTxnLabel } from "./servingLabels";
 import { MemberLoginCard } from "./MemberLoginCard";
 import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
 import { EditMemberDialog } from "./EditMemberDialog";
+import { DeleteMemberDialog } from "./DeleteMemberDialog";
 import { SendWhatsAppDialog } from "@/components/wellness/SendWhatsAppDialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -131,6 +133,8 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const deleteWeight = useDeleteWeightEntry();
   const deleteMeasurement = useDeleteBodyMeasurement();
   const isManager = useIsWellnessManager();
+  const isAdmin = useIsWellnessAdmin();
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const addNote = useAddMemberNote();
 
   const [joinDate, setJoinDate] = useState("");
@@ -218,7 +222,20 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <Button variant="outline" onClick={() => setEditProfileOpen(true)}>
             <Pencil className="mr-2 h-4 w-4" /> Edit profile
           </Button>
+          {isAdmin && (
+            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="mr-2 h-4 w-4" /> Delete profile
+            </Button>
+          )}
         </div>
+
+        <DeleteMemberDialog
+          memberId={member.id}
+          memberName={member.full_name}
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          onDeleted={() => onOpenChange(false)}
+        />
 
         <EditMemberDialog member={member} open={editProfileOpen} onOpenChange={setEditProfileOpen} />
 

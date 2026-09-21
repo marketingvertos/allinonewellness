@@ -47,11 +47,14 @@ Deno.serve(async (req) => {
       .eq("user_id", userData.user.id);
     if (!roles?.length) return json({ error: "Not authorized" }, 403);
     const isManager = roles.some((r) => r.role === "admin" || r.role === "manager");
+    const isAdmin = roles.some((r) => r.role === "admin");
 
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action ?? "");
     const memberId = String(body?.memberId ?? "");
-    if (!["status", "create", "ensure", "reset", "unlink", "missing_logins", "create_missing"].includes(action))
+    if (
+      !["status", "create", "ensure", "reset", "unlink", "missing_logins", "create_missing", "delete"].includes(action)
+    )
       return json({ error: "Invalid action" }, 400);
 
     // Bulk helpers: every non-lead member that has no portal login yet.
@@ -112,10 +115,50 @@ Deno.serve(async (req) => {
 
     const { data: member, error: memberErr } = await admin
       .from("wellness_members")
-      .select("id, full_name, mobile_number, user_id")
+      .select("id, full_name, mobile_number, user_id, referred_by_member_id")
       .eq("id", memberId)
       .maybeSingle();
     if (memberErr || !member) return json({ error: "Member not found" }, 404);
+
+    // Permanent removal of a member profile: full admins only.
+    if (action === "delete") {
+      if (!isAdmin) return json({ error: "Only super admins can delete a member profile." }, 403);
+
+      // Members this person referred keep their records; only the link is cleared.
+      const { data: referred } = await admin
+        .from("wellness_members")
+        .select("id")
+        .eq("referred_by_member_id", memberId);
+      const referredIds = (referred ?? []).map((r) => r.id);
+
+      // FK guards that do not cascade.
+      const { error: payErr } = await admin.from("wellness_payments").delete().eq("member_id", memberId);
+      if (payErr) return json({ error: payErr.message }, 400);
+
+      for (const step of [
+        admin.from("wellness_members").update({ referred_by_member_id: null }).eq("referred_by_member_id", memberId),
+        admin.from("pink_card_ledger").update({ referred_member_id: null }).eq("referred_member_id", memberId),
+        admin.from("whatsapp_messages").update({ member_id: null }).eq("member_id", memberId),
+        admin.from("whatsapp_conversations").update({ member_id: null }).eq("member_id", memberId),
+      ]) {
+        const { error } = await step;
+        if (error) return json({ error: error.message }, 400);
+      }
+
+      const { error: delErr } = await admin.from("wellness_members").delete().eq("id", memberId);
+      if (delErr) return json({ error: delErr.message }, 400);
+
+      if (member.user_id) {
+        await admin.auth.admin.deleteUser(member.user_id).catch(() => undefined);
+      }
+
+      const recalcIds = [...referredIds, member.referred_by_member_id].filter(Boolean) as string[];
+      for (const id of recalcIds) {
+        await admin.rpc("recalc_network_counts", { p_member_id: id }).catch(() => undefined);
+      }
+
+      return json({ status: "deleted", full_name: member.full_name });
+    }
 
     const email = mobileToEmail(member.mobile_number);
     if (normalizeMobile(member.mobile_number).length !== 10)

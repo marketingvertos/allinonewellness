@@ -127,6 +127,22 @@ export function useIsWellnessManager() {
   return data ?? false;
 }
 
+/** True only for full admin accounts (super admins) — used for destructive actions. */
+export function useIsWellnessAdmin() {
+  const { data } = useQuery({
+    queryKey: ["wellness-admin-role"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (!uid) return false;
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
+      return (roles ?? []).some((r) => r.role === "admin");
+    },
+  });
+  return data ?? false;
+}
+
 /* ------------------------------- Members ------------------------------- */
 
 export type MemberModeFilter = "all" | "physical" | "virtual";
