@@ -63,10 +63,6 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
     return attendance.filter((a) => a.visit_date?.startsWith(prefix)).length;
   }, [attendance]);
 
-  const daysLeft = membership
-    ? Math.max(0, Math.round((new Date(`${membership.end_date}T00:00:00`).getTime() - Date.now()) / 86400000))
-    : null;
-
   const weightSeries = weights.map((w) => ({
     date: formatDate(w.recorded_date).slice(0, 6),
     weight: Number(w.weight),
@@ -157,7 +153,6 @@ export function MemberDashboard({ member, membership, weights, attendance, measu
       sub: membership ? "Reduces by one per visit" : "No active plan",
     },
     { label: "Visits this month", value: `${visitsThisMonth}`, sub: `${attendance.length} total` },
-    { label: "Days left on plan", value: daysLeft != null ? `${daysLeft}` : "—", sub: membership ? `Ends ${formatDate(membership.end_date)}` : "" },
   ];
 
   return (
