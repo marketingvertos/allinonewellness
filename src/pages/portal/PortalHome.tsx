@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
-import { daysLeftIst, formatDate, todayIst } from "@/lib/formatters";
+import { formatDate, todayIst } from "@/lib/formatters";
 import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
 import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
@@ -102,19 +102,9 @@ export default function PortalHome() {
                   {active.status === "expiring_soon" ? "Renewal due" : "Active"}
                 </Badge>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border p-3">
-                  <p className="text-3xl font-bold">{active.remaining_servings}</p>
-                  <p className="text-sm text-muted-foreground">servings left</p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="text-3xl font-bold">
-                    {daysLeftIst(active.end_date) || "Expired"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {daysLeftIst(active.end_date) ? "days left" : "plan ended"}
-                  </p>
-                </div>
+              <div className="rounded-lg border p-4 text-center">
+                <p className="text-4xl font-bold">{active.remaining_servings}</p>
+                <p className="text-sm text-muted-foreground">servings left</p>
               </div>
               <Button variant="outline" className="w-full" onClick={() => setPayOpen(true)}>
                 <CreditCard className="mr-2 h-4 w-4" /> Renew online
