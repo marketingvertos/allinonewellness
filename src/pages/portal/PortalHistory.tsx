@@ -1,7 +1,7 @@
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
-import { useMemberAttendance, useServingLedger, useWeightHistory } from "@/hooks/useWellness";
+import { useMemberAttendance, useServingLedger, useWeightHistory, useMyOnlinePayments } from "@/hooks/useWellness";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate, formatDateTime } from "@/lib/formatters";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/formatters";
 import { servingTxnLabel } from "@/components/wellness/servingLabels";
 
 export default function PortalHistory() {
@@ -9,9 +9,36 @@ export default function PortalHistory() {
   const { data: visits } = useMemberAttendance(identity?.memberId ?? undefined);
   const { data: weights } = useWeightHistory(identity?.memberId ?? undefined);
   const { data: ledger } = useServingLedger(identity?.memberId ?? undefined);
+  const { data: onlinePayments } = useMyOnlinePayments(identity?.memberId ?? undefined);
 
   return (
     <div className="space-y-4">
+      {onlinePayments?.length ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Online payments</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {onlinePayments.map((p) => (
+              <div key={p.id} className="flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <p className="font-medium">{formatCurrency(p.amount_paise / 100)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDateTime(p.created_at)}</p>
+                  {p.pink_credits > 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      {p.pink_credits} Pink Card serving{p.pink_credits === 1 ? "" : "s"} used
+                    </p>
+                  ) : null}
+                </div>
+                <span className="shrink-0 text-muted-foreground">
+                  {p.status === "paid" ? "Paid" : p.status === "failed" ? "Failed" : "Pending"}
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">My visits</CardTitle>
