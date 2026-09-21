@@ -153,10 +153,10 @@ export default function WellnessCheckIn() {
                             ) : (
                               <Button
                                 className="flex-1 sm:flex-none"
-                                disabled={checkIn.isPending}
+                                disabled={checkIn.isPending || balances?.[m.id] === 0}
                                 onClick={() => submit(m.id, false)}
                               >
-                                Check in
+                                {balances?.[m.id] === 0 ? "Renew required" : "Check in"}
                               </Button>
                             )}
                           </div>
