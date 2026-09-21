@@ -1469,6 +1469,7 @@ export type Database = {
           price_paid: number
           remaining_servings: number
           renewed_from: string | null
+          servings_exhausted_on: string | null
           start_date: string
           status: Database["public"]["Enums"]["membership_status"]
           total_servings: number
@@ -1488,6 +1489,7 @@ export type Database = {
           price_paid?: number
           remaining_servings: number
           renewed_from?: string | null
+          servings_exhausted_on?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["membership_status"]
           total_servings: number
@@ -1507,6 +1509,7 @@ export type Database = {
           price_paid?: number
           remaining_servings?: number
           renewed_from?: string | null
+          servings_exhausted_on?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["membership_status"]
           total_servings?: number

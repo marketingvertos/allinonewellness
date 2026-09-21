@@ -5,7 +5,7 @@ const LABELS: Record<WellnessStatus, string> = {
   trial: "Trial",
   active_member: "Active",
   renewal_due: "Renewal due",
-  expired: "Expired",
+  expired: "Membership Expired",
   inactive: "Inactive",
 };
 
