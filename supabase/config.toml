@@ -1,4 +1,5 @@
 project_id = "mnzzbqqzmaydisylyyhd"
 [functions.member-access]
 verify_jwt = false
-
+[functions.razorpay-webhook]
+verify_jwt = false
