@@ -55,7 +55,7 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
   const planPrice = plan ? Number(plan.price) : 0;
   const maxCredits = Math.min(pinkBalance, Math.floor(planPrice / PINK_CARD_SERVING_VALUE));
   const discount = Math.min(pinkCredits * PINK_CARD_SERVING_VALUE, planPrice);
-  const isEarlyRenewal = todayIst() <= membership.end_date;
+  const isEarlyRenewal = plan?.plan_type === "membership" && todayIst() <= membership.end_date;
 
   useEffect(() => {
     if (!open) return;
