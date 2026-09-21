@@ -56,6 +56,7 @@ export default function PortalHome() {
   const recordedToday = history.some((w) => w.recorded_date === today);
   const gaining = profile?.goal === "weight_gain";
   const [weighOpen, setWeighOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
   const [newWeight, setNewWeight] = useState("");
 
   const startWeight = profile?.initial_weight ?? (history[0]?.weight ?? null);
