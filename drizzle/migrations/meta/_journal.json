@@ -36,6 +36,13 @@
       "when": 1789650612300,
       "tag": "0004_wellness_payments_split",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789993575991,
+      "tag": "0005_razorpay_online_payments",
+      "breakpoints": true
     }
   ]
 }

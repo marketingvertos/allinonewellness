@@ -721,6 +721,86 @@ export type Database = {
         }
         Relationships: []
       }
+      razorpay_orders: {
+        Row: {
+          amount_paise: number
+          context: string
+          created_at: string
+          failure_reason: string | null
+          id: string
+          member_id: string
+          membership_id: string | null
+          pink_credits: number
+          plan_id: string | null
+          razorpay_order_id: string
+          razorpay_payment_id: string | null
+          renew_membership_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_paise: number
+          context?: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          member_id: string
+          membership_id?: string | null
+          pink_credits?: number
+          plan_id?: string | null
+          razorpay_order_id: string
+          razorpay_payment_id?: string | null
+          renew_membership_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_paise?: number
+          context?: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          member_id?: string
+          membership_id?: string | null
+          pink_credits?: number
+          plan_id?: string | null
+          razorpay_order_id?: string
+          razorpay_payment_id?: string | null
+          renew_membership_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "razorpay_orders_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "razorpay_orders_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "razorpay_orders_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "razorpay_orders_renew_membership_id_fkey"
+            columns: ["renew_membership_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       serving_transactions: {
         Row: {
           attendance_id: string | null
@@ -2103,6 +2183,10 @@ export type Database = {
         }[]
       }
       expire_stale_checkin_requests: { Args: never; Returns: undefined }
+      fulfil_online_payment: {
+        Args: { p_order_id: string; p_payment_id: string }
+        Returns: Json
+      }
       get_network_summary: {
         Args: { member_ids: string[] }
         Returns: {
@@ -2131,6 +2215,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_payment_service: { Args: never; Returns: boolean }
       is_team_member: {
         Args: { _target_user_id: string; _user_id: string }
         Returns: boolean
