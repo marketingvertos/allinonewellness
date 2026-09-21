@@ -236,6 +236,8 @@ export default function WellnessDashboard() {
         </Card>
       </div>
 
+      <ExpiredMembersSheet open={expiredOpen} onOpenChange={setExpiredOpen} mode={mode} />
+
       <ServingTrendChart memberMode={mode} />
 
       <div className="grid gap-4 lg:grid-cols-2">
