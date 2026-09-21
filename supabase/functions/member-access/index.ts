@@ -52,7 +52,9 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action ?? "");
     const memberId = String(body?.memberId ?? "");
-    if (!["status", "create", "ensure", "reset", "unlink", "missing_logins", "create_missing"].includes(action))
+    if (
+      !["status", "create", "ensure", "reset", "unlink", "missing_logins", "create_missing", "delete"].includes(action)
+    )
       return json({ error: "Invalid action" }, 400);
 
     // Bulk helpers: every non-lead member that has no portal login yet.
