@@ -22,7 +22,7 @@ export function ExpiredMembersSheet({ open, onOpenChange, mode }: Props) {
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
           <SheetHeader className="border-b p-4 text-left">
-            <SheetTitle>Expired members</SheetTitle>
+            <SheetTitle>Membership Expired</SheetTitle>
             <SheetDescription>
               {members?.length ?? 0} member{(members?.length ?? 0) === 1 ? "" : "s"} with no active membership. Tap one to
               see the full profile.
@@ -40,7 +40,7 @@ export function ExpiredMembersSheet({ open, onOpenChange, mode }: Props) {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-medium">{m.full_name}</span>
-                    <Badge variant="destructive">Expired</Badge>
+                    <Badge variant="destructive">Membership Expired</Badge>
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     <span>{m.mobile_number}</span>

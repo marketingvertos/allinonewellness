@@ -212,7 +212,7 @@ export default function WellnessDashboard() {
               onClick={() => setExpiredOpen(true)}
               className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
-              Expired members
+              Membership Expired
               <Badge variant="destructive">{data?.statusCounts?.expired ?? 0}</Badge>
             </Button>
           </CardHeader>
