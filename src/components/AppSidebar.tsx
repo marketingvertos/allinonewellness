@@ -39,6 +39,7 @@ const mainNav = [
   { title: "Batches", icon: Layers, to: "/batches", end: false },
   { title: "Notifications", icon: Bell, to: "/notifications", end: false },
   { title: "WhatsApp", icon: MessageSquare, to: "/whatsapp", end: true },
+  { title: "WhatsApp templates", icon: FileText, to: "/whatsapp/templates", end: false },
   { title: "Achievements", icon: Trophy, to: "/achievements", end: false },
   { title: "Reports", icon: BarChart3, to: "/reports", end: false },
 ];
