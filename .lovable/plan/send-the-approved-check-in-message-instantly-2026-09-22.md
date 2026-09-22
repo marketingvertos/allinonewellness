@@ -4,7 +4,7 @@
 
 ## What I found
 
-- Automatic WhatsApp sending is switched **off** in settings, so nothing in the queue goes out. 358 messages are sitting unsent, the oldest from 17 Sep.
+- Automatic WhatsApp sending is switched **off** in settings, so nothing in the queue goes out. 358 messages are sitting unsent, the oldest from 17 Sep. (Start send message from tomorrow  skip the queue of old messages)  from tomorrow ... start sending 
 - Even when switched on, the queue is only drained every 10 minutes, so a member could wait up to 10 minutes after their attendance is marked.
 - Attendance itself is wired correctly: every check-in (QR approval, front-desk entry, barcode) already queues one check-in message per member per day.
 
