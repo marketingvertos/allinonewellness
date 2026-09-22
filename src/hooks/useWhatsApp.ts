@@ -36,7 +36,8 @@ export interface WhatsAppConversation {
   last_direction: string | null;
   last_message_preview: string | null;
   last_message_at: string | null;
-  wellness_members?: { id: string; full_name: string } | null;
+  archived_at: string | null;
+  wellness_members?: { id: string; full_name: string; status: string } | null;
 }
 
 export interface WhatsAppMessage {
