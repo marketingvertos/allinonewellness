@@ -1924,6 +1924,7 @@ export type Database = {
       }
       whatsapp_conversations: {
         Row: {
+          archived_at: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -1937,6 +1938,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -1950,6 +1952,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
