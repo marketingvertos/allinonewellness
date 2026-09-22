@@ -338,11 +338,19 @@ Deno.serve(async (req) => {
             .eq("provider_message_id", providerId)
             .maybeSingle();
           if (!existing || !canUpgradeStatus(existing.status, next)) continue;
+          const err = st.errors?.[0];
+          const errText = err
+            ? [
+              err.title || err.message || "Delivery failed",
+              err.code ? `code ${err.code}` : null,
+              err.error_data?.details || null,
+            ].filter(Boolean).join(" · ")
+            : "Delivery failed";
           await applyMessageStatus(
             supabase,
             existing.id,
             next as "sent" | "delivered" | "read" | "failed",
-            st.errors?.[0]?.title || "Delivery failed",
+            errText,
           );
           statuses++;
         }
