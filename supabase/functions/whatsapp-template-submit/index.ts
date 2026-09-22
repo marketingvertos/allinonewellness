@@ -111,7 +111,10 @@ Deno.serve(async (req) => {
       parsed = JSON.parse(text);
     } catch { /* keep raw */ }
 
-    if (res.ok) {
+    const alreadyExists =
+      (parsed as { error?: { error_subcode?: number } }).error?.error_subcode === 2388024;
+
+    if (res.ok || alreadyExists) {
       await supabase
         .from("wellness_notification_templates")
         .update({
