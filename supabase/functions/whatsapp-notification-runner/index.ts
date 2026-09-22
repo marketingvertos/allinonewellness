@@ -266,15 +266,59 @@ Deno.serve(async (req) => {
           member.initial_weight !== undefined
         ? Number(member.initial_weight)
         : null;
+      const pair = weightPairs.get(item.member_id) ?? [];
+      const trial = trials.get(item.member_id);
+      const payment = payments.get(item.member_id);
+      const issuedPack = issued.get(item.member_id);
+      const planName =
+        (membership as { wellness_plans?: { name?: string } } | undefined)?.wellness_plans?.name ||
+        "";
+      const exhausted = membership?.servings_exhausted_on
+        ? Math.max(
+          0,
+          10 - Math.floor(
+            (Date.now() - new Date(`${membership.servings_exhausted_on}T00:00:00+05:30`).getTime()) /
+              86400000,
+          ),
+        )
+        : null;
+      const trialDaysLeft = trial?.end_date
+        ? Math.max(
+          0,
+          Math.ceil(
+            (new Date(`${trial.end_date}T00:00:00+05:30`).getTime() - Date.now()) / 86400000,
+          ),
+        )
+        : null;
       const vars: Record<string, string> = {
         name: (member.full_name || "").split(" ")[0] || member.full_name || "",
         full_name: member.full_name || "",
+        mobile: member.mobile_number || "",
+        activation_code: member.activation_code || "",
+        joining_date: fmtDate(member.joining_date),
         code: membership?.membership_code || "",
+        plan_name: planName,
+        total_servings: String(membership?.total_servings ?? ""),
+        used_servings: String(membership?.used_servings ?? ""),
+        price: payment
+          ? new Intl.NumberFormat("en-IN").format(payment.amount)
+          : membership?.price_paid !== undefined && membership?.price_paid !== null
+          ? new Intl.NumberFormat("en-IN").format(Number(membership.price_paid))
+          : "",
+        payment_mode: payment?.mode || "",
         end_date: fmtDate(membership?.end_date),
         remaining: String(membership?.remaining_servings ?? ""),
         servings: String(membership?.remaining_servings ?? ""),
+        renewal_days_left: exhausted === null ? "" : String(exhausted),
+        trial_end_date: fmtDate(trial?.end_date),
+        trial_days_left: trialDaysLeft === null ? "" : String(trialDaysLeft),
+        milestone: milestones.get(item.member_id) || "",
+        issued_servings: issuedPack ? String(issuedPack.qty) : "",
+        issue_reason: issuedPack?.note || "",
         used_today: "1",
         weight: fmtWeight(latestWeight),
+        last_weight: pair.length > 1 ? fmtWeight(pair[1]) : "",
+        daily_change: pair.length > 1 ? fmtChange(pair[0], pair[1]) : "N/A",
         start_weight: fmtWeight(startWeight),
         weight_change: fmtChange(latestWeight, startWeight),
         date: fmtDate(new Date().toISOString()),
