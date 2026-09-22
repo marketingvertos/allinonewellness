@@ -92,8 +92,36 @@ export default function WellnessNotifications() {
       channel: t.channel,
       message_template: t.message_template,
       active: t.active,
+      template_name: t.template_name ?? "",
+      template_language: t.template_language ?? "",
+      variables: t.variables ?? [],
     });
     setOpen(true);
+  };
+
+  const approved = useWhatsAppTemplates(open && form.channel === "whatsapp");
+  const chosen = approved.data?.find((t) => t.name === form.template_name) || null;
+
+  const pickApprovedTemplate = (name: string) => {
+    if (name === "__none__") {
+      setForm((f) => ({ ...f, template_name: "", template_language: "", variables: [] }));
+      return;
+    }
+    const tpl = approved.data?.find((t) => t.name === name);
+    setForm((f) => ({
+      ...f,
+      template_name: name,
+      template_language: tpl?.language ?? "en",
+      variables: Array.from({ length: tpl?.variable_count ?? 0 }, (_, i) => f.variables[i] ?? "name"),
+    }));
+  };
+
+  const setVariable = (index: number, value: string) => {
+    setForm((f) => {
+      const next = [...f.variables];
+      next[index] = value;
+      return { ...f, variables: next };
+    });
   };
 
   const submit = async () => {
@@ -104,6 +132,9 @@ export default function WellnessNotifications() {
       channel: form.channel,
       message_template: form.message_template.trim(),
       active: form.active,
+      template_name: form.template_name || null,
+      template_language: form.template_name ? form.template_language || "en" : null,
+      variables: form.template_name ? form.variables : [],
       ...(editing ? {} : { created_by: user.id }),
     });
     setOpen(false);
