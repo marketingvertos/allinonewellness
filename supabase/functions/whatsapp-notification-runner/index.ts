@@ -104,7 +104,9 @@ Deno.serve(async (req) => {
     const memberIds = [...new Set(queue.map((q) => q.member_id))];
     const { data: memberRows } = await supabase
       .from("wellness_members")
-      .select("id, full_name, mobile_number, initial_weight, current_weight")
+      .select(
+        "id, full_name, mobile_number, initial_weight, current_weight, joining_date, activation_code",
+      )
       .in("id", memberIds);
     const members = new Map(
       (memberRows || []).map((m) => [m.id, m]),
@@ -112,12 +114,86 @@ Deno.serve(async (req) => {
 
     const { data: membershipRows } = await supabase
       .from("wellness_memberships")
-      .select("member_id, membership_code, end_date, remaining_servings, status")
+      .select(
+        "member_id, membership_code, end_date, remaining_servings, total_servings, used_servings, price_paid, servings_exhausted_on, status, wellness_plans(name)",
+      )
       .in("member_id", memberIds)
       .in("status", ["active", "expiring_soon"]);
     const memberships = new Map<string, typeof membershipRows[number]>();
     for (const m of membershipRows || []) {
       if (!memberships.has(m.member_id)) memberships.set(m.member_id, m);
+    }
+
+    // active trials
+    const { data: trialRows } = await supabase
+      .from("wellness_trials")
+      .select("member_id, end_date, status")
+      .in("member_id", memberIds)
+      .eq("status", "active");
+    const trials = new Map<string, { end_date: string | null }>();
+    for (const t of trialRows || []) {
+      if (!trials.has(t.member_id)) trials.set(t.member_id, t);
+    }
+
+    // most recent unlocked milestone
+    const { data: achievementRows } = await supabase
+      .from("member_achievements")
+      .select("member_id, unlocked_at, achievement_definitions(name)")
+      .in("member_id", memberIds)
+      .order("unlocked_at", { ascending: false })
+      .limit(200);
+    const milestones = new Map<string, string>();
+    for (const a of achievementRows || []) {
+      const name = (a as { achievement_definitions?: { name?: string } })
+        .achievement_definitions?.name;
+      if (name && !milestones.has(a.member_id)) milestones.set(a.member_id, name);
+    }
+
+    // most recent payment
+    const { data: paymentRows } = await supabase
+      .from("wellness_payments")
+      .select("member_id, amount, mode, paid_at")
+      .in("member_id", memberIds)
+      .order("paid_at", { ascending: false })
+      .limit(200);
+    const payments = new Map<string, { amount: number; mode: string }>();
+    for (const p of paymentRows || []) {
+      if (!payments.has(p.member_id)) {
+        payments.set(p.member_id, { amount: Number(p.amount), mode: String(p.mode) });
+      }
+    }
+
+    // most recent packed-and-issued servings
+    const { data: issuedRows } = await supabase
+      .from("serving_transactions")
+      .select("member_id, change, note, created_at")
+      .in("member_id", memberIds)
+      .eq("txn_type", "pack_and_issue")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    const issued = new Map<string, { qty: number; note: string }>();
+    for (const s of issuedRows || []) {
+      if (!issued.has(s.member_id)) {
+        issued.set(s.member_id, { qty: Math.abs(Number(s.change)), note: s.note || "" });
+      }
+    }
+
+    // two most recent weight readings per member
+    const { data: weightHistory } = await supabase
+      .from("weight_tracking")
+      .select("member_id, weight, recorded_date, created_at")
+      .in("member_id", memberIds)
+      .order("recorded_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(400);
+    const weightPairs = new Map<string, number[]>();
+    for (const w of weightHistory || []) {
+      if (w.weight === null) continue;
+      const list = weightPairs.get(w.member_id) ?? [];
+      if (list.length < 2) {
+        list.push(Number(w.weight));
+        weightPairs.set(w.member_id, list);
+      }
     }
 
     // today's recorded weight per member (IST), then the latest approved check-in weight
