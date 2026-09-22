@@ -51,11 +51,19 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const { data: rows, error } = await supabase
+  let only: string[] | null = null;
+  try {
+    const parsedBody = await req.json();
+    if (Array.isArray(parsedBody?.triggers)) only = parsedBody.triggers as string[];
+  } catch { /* no body */ }
+
+  let query = supabase
     .from("wellness_notification_templates")
     .select("id, trigger_key, message_template, channel, active")
     .eq("channel", "whatsapp")
     .eq("active", true);
+  if (only) query = query.in("trigger_key", only);
+  const { data: rows, error } = await query;
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
