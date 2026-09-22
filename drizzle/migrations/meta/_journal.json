@@ -78,6 +78,13 @@
       "when": 1790002638035,
       "tag": "0010_refresh_statuses_revive_members",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790074641535,
+      "tag": "0011_whatsapp_two_way_inbox",
+      "breakpoints": true
     }
   ]
 }
