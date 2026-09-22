@@ -36,14 +36,26 @@ const empty = {
 };
 
 const TRIGGERS = [
+  "member_created",
+  "login_credentials",
+  "trial_started",
+  "trial_ending",
   "membership_activated",
   "membership_renewed",
+  "plan_switched",
+  "checkin_approved",
+  "checkin_rejected",
+  "servings_issued",
+  "serving_balance",
   "serving_balance_5",
   "serving_balance_3",
   "serving_balance_1",
-  "trial_ending",
-  "checkin_approved",
+  "serving_balance_0",
   "renewal_due",
+  "renewal_reminder",
+  "membership_expired",
+  "payment_received",
+  "milestone_achieved",
   "birthday",
   "anniversary",
 ];
