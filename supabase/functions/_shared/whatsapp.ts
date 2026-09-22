@@ -37,7 +37,7 @@ export interface WhatsAppConfig {
   automationEnabled: boolean;
 }
 
-export const META_DEFAULT_API_URL = "https://graph.facebook.com/v21.0";
+export const META_DEFAULT_API_URL = "https://graph.facebook.com/v25.0";
 export const WACHAT_DEFAULT_API_URL = "https://panel.wachatsender.com/api/v1";
 
 export async function loadWhatsAppConfig(
@@ -93,7 +93,10 @@ export async function loadWhatsAppConfig(
   return {
     provider,
     apiUrl,
-    apiKey: pick("whatsapp_api_key", "WHATSAPP_API_KEY"),
+    apiKey: provider === "meta"
+      ? (Deno.env.get("META_ACCESS_TOKEN") ||
+        pick("whatsapp_api_key", "WHATSAPP_API_KEY"))
+      : pick("whatsapp_api_key", "WHATSAPP_API_KEY"),
     phoneNumberId,
     vendorUid,
     verifyToken: pick("whatsapp_verify_token", "WHATSAPP_VERIFY_TOKEN"),
