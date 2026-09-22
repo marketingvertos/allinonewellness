@@ -335,6 +335,70 @@ export default function WellnessNotifications() {
                 onChange={(e) => setForm({ ...form, message_template: e.target.value })}
               />
             </div>
+
+            {form.channel === "whatsapp" && (
+              <div className="space-y-3 rounded-md border p-3">
+                <div>
+                  <p className="text-sm font-medium">Approved WhatsApp template</p>
+                  <p className="text-xs text-muted-foreground">
+                    Needed to reach members outside WhatsApp's 24-hour reply window. The free text
+                    above is used inside that window.
+                  </p>
+                </div>
+                {approved.isLoading && (
+                  <p className="text-xs text-muted-foreground">Reading templates…</p>
+                )}
+                {approved.error && (
+                  <p className="text-xs text-destructive">{(approved.error as Error).message}</p>
+                )}
+                <Select
+                  value={form.template_name || "__none__"}
+                  onValueChange={pickApprovedTemplate}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Free text only" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Free text only</SelectItem>
+                    {(approved.data || []).map((t) => (
+                      <SelectItem key={`${t.name}-${t.language}`} value={t.name}>
+                        {t.name} ({t.language})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {chosen && (
+                  <>
+                    <p className="whitespace-pre-wrap rounded-md bg-muted p-2 text-xs">
+                      {chosen.body}
+                    </p>
+                    {Array.from({ length: chosen.variable_count }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="w-12 text-xs text-muted-foreground">
+                          {`{{${i + 1}}}`}
+                        </span>
+                        <Select
+                          value={form.variables[i] || "name"}
+                          onValueChange={(v) => setVariable(i, v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MEMBER_FIELDS.map((f) => (
+                              <SelectItem key={f.value} value={f.value}>
+                                {f.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
             <div className="flex items-center justify-between rounded-md border px-3 py-2">
               <div>
                 <p className="text-sm font-medium">Active</p>
