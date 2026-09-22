@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
-const META_DEFAULT_URL = "https://graph.facebook.com/v21.0";
+const META_DEFAULT_URL = "https://graph.facebook.com/v25.0";
 const WACHAT_DEFAULT_URL = "https://panel.wachatsender.com/api/v1";
 
 const EMPTY: WhatsAppSettingsValues = {
