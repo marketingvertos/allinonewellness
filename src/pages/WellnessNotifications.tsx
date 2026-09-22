@@ -72,6 +72,22 @@ const MEMBER_FIELDS = [
   { value: "weight_change", label: "Total weight change" },
   { value: "used_today", label: "Servings used today" },
   { value: "date", label: "Today's date" },
+  { value: "mobile", label: "Mobile number" },
+  { value: "activation_code", label: "Activation code" },
+  { value: "joining_date", label: "Joining date" },
+  { value: "plan_name", label: "Plan name" },
+  { value: "total_servings", label: "Total servings in plan" },
+  { value: "used_servings", label: "Servings used so far" },
+  { value: "price", label: "Amount paid" },
+  { value: "payment_mode", label: "Payment mode" },
+  { value: "renewal_days_left", label: "Days left to renew" },
+  { value: "trial_end_date", label: "Trial end date" },
+  { value: "trial_days_left", label: "Trial days left" },
+  { value: "milestone", label: "Milestone achieved" },
+  { value: "issued_servings", label: "Servings issued" },
+  { value: "issue_reason", label: "Reason for issue" },
+  { value: "daily_change", label: "Weight change since last visit" },
+  { value: "last_weight", label: "Previous weight" },
 ];
 
 function renderMessage(template: string, name: string) {
