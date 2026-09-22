@@ -77,6 +77,7 @@ const App = () => (
                 <Route path="/reports" element={<WellnessReports />} />
                 <Route path="/whatsapp" element={<WhatsAppInbox />} />
                 <Route path="/whatsapp/logs" element={<WhatsAppLogs />} />
+                <Route path="/whatsapp/templates" element={<WhatsAppTemplates />} />
                 <Route path="/whatsapp-test" element={<WhatsAppTest />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
