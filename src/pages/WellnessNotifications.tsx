@@ -260,6 +260,11 @@ export default function WellnessNotifications() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-muted-foreground">
                     <p>{t.message_template}</p>
+                    <p className="text-xs">
+                      {t.template_name
+                        ? `Approved template: ${t.template_name} (${t.template_language || "en"})`
+                        : "Free text only — works inside the 24-hour reply window."}
+                    </p>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(t)}>
                         <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
