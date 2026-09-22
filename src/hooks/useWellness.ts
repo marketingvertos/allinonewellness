@@ -1510,6 +1510,9 @@ export interface NotificationTemplate {
   channel: string;
   message_template: string;
   active: boolean;
+  template_name: string | null;
+  template_language: string | null;
+  variables: string[] | null;
 }
 
 export interface NotificationLogEntry {
