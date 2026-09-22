@@ -20,6 +20,7 @@ import WellnessNotifications from "./pages/WellnessNotifications";
 import WellnessReports from "./pages/WellnessReports";
 import WhatsAppInbox from "./pages/WhatsAppInbox";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
+import WhatsAppTest from "./pages/WhatsAppTest";
 import { PortalLayout } from "./pages/portal/PortalLayout";
 import PortalHome from "./pages/portal/PortalHome";
 import PortalCheckIn from "./pages/portal/PortalCheckIn";
@@ -75,6 +76,7 @@ const App = () => (
                 <Route path="/reports" element={<WellnessReports />} />
                 <Route path="/whatsapp" element={<WhatsAppInbox />} />
                 <Route path="/whatsapp/logs" element={<WhatsAppLogs />} />
+                <Route path="/whatsapp-test" element={<WhatsAppTest />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
               {/* Legacy wellness paths — keep printed QR posters and old links working */}
