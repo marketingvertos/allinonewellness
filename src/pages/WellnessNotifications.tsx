@@ -9,6 +9,7 @@ import {
   useNotificationTemplates,
   useSaveNotificationTemplate,
 } from "@/hooks/useWellness";
+import { useWhatsAppTemplates } from "@/hooks/useWhatsApp";
 import { PageBanner } from "@/components/PageBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
