@@ -2,7 +2,7 @@
 // WhatsApp Business Account: list (all statuses), create (submit for approval)
 // and delete. The access token never leaves the server.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders, json, loadWhatsAppConfig, serviceClient } from "../_shared/whatsapp.ts";
 
 interface MetaComponent {
