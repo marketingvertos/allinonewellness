@@ -4,7 +4,7 @@
 // conversations, message logs and API activity are recorded in one place.
 // The provider layer (WachatSender / Meta) lives in `whatsapp.ts`.
 
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import {
   buildSendRequest,
   last10,
