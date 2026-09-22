@@ -2245,6 +2245,13 @@ export type Database = {
         Args: { _member_id: string; _user_id: string }
         Returns: boolean
       }
+      queue_birthday_notifications: { Args: never; Returns: undefined }
+      queue_member_notification: {
+        Args: { p_dedupe?: string; p_member_id: string; p_trigger: string }
+        Returns: undefined
+      }
+      queue_renewal_reminder_notifications: { Args: never; Returns: undefined }
+      queue_trial_ending_notifications: { Args: never; Returns: undefined }
       recalc_all_member_achievements: { Args: never; Returns: undefined }
       recalc_member_achievements: {
         Args: { p_member_id: string }
