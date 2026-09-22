@@ -297,6 +297,85 @@ export function useWhatsAppTemplates(enabled: boolean) {
   });
 }
 
+export interface WhatsAppTemplateFull extends WhatsAppTemplate {
+  id: string | null;
+  status: string;
+  rejected_reason: string | null;
+  header: string;
+  footer: string;
+  buttons: unknown[];
+}
+
+interface TemplatesResponse {
+  success: boolean;
+  error?: string;
+  templates?: WhatsAppTemplateFull[];
+}
+
+async function callTemplates(body: Record<string, unknown>): Promise<TemplatesResponse> {
+  const { data, error } = await supabase.functions.invoke("whatsapp-templates", { body });
+  if (error) {
+    const parsed = await readFunctionError(error);
+    if (parsed) throw new Error(parsed.error || "Could not reach WhatsApp");
+    throw error;
+  }
+  return data as TemplatesResponse;
+}
+
+/** Every template on the WhatsApp Business account, whatever its Meta status. */
+export function useAllWhatsAppTemplates() {
+  return useQuery({
+    queryKey: ["whatsapp-templates-all"],
+    queryFn: async (): Promise<WhatsAppTemplateFull[]> => {
+      const result = await callTemplates({ action: "list", approved_only: false });
+      if (!result.success) throw new Error(result.error || "Could not read templates");
+      return result.templates || [];
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
+export interface CreateTemplateInput {
+  name: string;
+  language: string;
+  category: string;
+  components: unknown[];
+}
+
+export function useCreateWhatsAppTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateTemplateInput) => {
+      const result = await callTemplates({ action: "create", ...input });
+      if (!result.success) throw new Error(result.error || "Meta rejected the template");
+      return result;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["whatsapp-templates-all"] });
+      qc.invalidateQueries({ queryKey: ["whatsapp-templates"] });
+      toast.success("Sent to Meta for approval");
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+}
+
+export function useDeleteWhatsAppTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ name, template_id }: { name: string; template_id?: string | null }) => {
+      const result = await callTemplates({ action: "delete", name, template_id });
+      if (!result.success) throw new Error(result.error || "Meta refused the deletion");
+      return result;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["whatsapp-templates-all"] });
+      qc.invalidateQueries({ queryKey: ["whatsapp-templates"] });
+      toast.success("Template deleted");
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+}
+
 export interface SendWhatsAppInput {
   member_id?: string | null;
   phone?: string | null;

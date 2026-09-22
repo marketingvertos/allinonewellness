@@ -2,7 +2,7 @@
 // Credentials are stored in the admin-only `integration_credentials` table so
 // they can be managed from Settings, with env secrets as a fallback.
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
