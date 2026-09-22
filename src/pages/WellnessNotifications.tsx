@@ -29,6 +29,9 @@ const empty = {
   channel: "whatsapp",
   message_template: "",
   active: true,
+  template_name: "",
+  template_language: "",
+  variables: [] as string[],
 };
 
 const TRIGGERS = [
@@ -38,7 +41,24 @@ const TRIGGERS = [
   "serving_balance_3",
   "serving_balance_1",
   "trial_ending",
+  "checkin_approved",
+  "renewal_due",
   "birthday",
+  "anniversary",
+];
+
+/** Member details the automatic message can insert into a template variable. */
+const MEMBER_FIELDS = [
+  { value: "name", label: "First name" },
+  { value: "full_name", label: "Full name" },
+  { value: "remaining", label: "Servings left" },
+  { value: "code", label: "Membership code" },
+  { value: "end_date", label: "Plan end date" },
+  { value: "weight", label: "Latest weight" },
+  { value: "start_weight", label: "Weight at joining" },
+  { value: "weight_change", label: "Total weight change" },
+  { value: "used_today", label: "Servings used today" },
+  { value: "date", label: "Today's date" },
 ];
 
 function renderMessage(template: string, name: string) {
