@@ -332,7 +332,12 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const templateVars = (tpl?.variables || []).map((v) => vars[v] ?? "");
+      // Meta rejects empty template parameters — never send a blank value.
+      const templateVars = (tpl?.variables || []).map((v) => {
+        const value = (vars[v] ?? "").trim();
+        if (value) return value;
+        return v === "daily_change" || v === "weight_change" ? "N/A" : "—";
+      });
 
       const result = await sendWhatsApp(supabase, cfg, {
         to,
