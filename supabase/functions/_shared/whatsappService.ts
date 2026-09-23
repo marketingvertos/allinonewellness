@@ -248,11 +248,13 @@ export async function sendWhatsApp(
 
   let messageId: string | null = null;
   if (!meta.skipMessageRow) {
-    const errorDetail = [
-      redactSecrets(outcome.error),
-      outcome.errorCode ? `code ${outcome.errorCode}` : null,
-      outcome.errorDetails,
-    ].filter(Boolean).join(" · ") || null;
+    const errorDetail = outcome.accountBlocked
+      ? ACCOUNT_BLOCKED_MESSAGE
+      : [
+        redactSecrets(outcome.error),
+        outcome.errorCode ? `code ${outcome.errorCode}` : null,
+        outcome.errorDetails,
+      ].filter(Boolean).join(" · ") || null;
 
     const { data: inserted } = await supabase
       .from("whatsapp_messages")

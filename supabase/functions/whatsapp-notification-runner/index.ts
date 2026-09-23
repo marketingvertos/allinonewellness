@@ -2,6 +2,7 @@
 // Invoked on a schedule (pg_cron) and manually from the Notifications screen.
 
 import {
+  ACCOUNT_BLOCKED_MESSAGE,
   corsHeaders,
   validateConfig,
   json,
