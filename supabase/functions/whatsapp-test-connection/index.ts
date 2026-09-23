@@ -48,6 +48,62 @@ Deno.serve(async (req) => {
     if (!isManager) return json({ error: "Forbidden: manager access required" }, 403);
 
     const body = (await req.json()) as Payload;
+
+    if (body.action === "status") {
+      const cfg = await loadWhatsAppConfig(supabase);
+      if (isWachat(cfg)) {
+        return json({
+          success: false,
+          error: "Account status is only available for the Meta Cloud API",
+        }, 200);
+      }
+      if (!cfg.apiKey || !cfg.phoneNumberId) {
+        return json({ success: false, error: "WhatsApp is not configured yet" }, 200);
+      }
+      const { data: cred } = await supabase
+        .from("integration_credentials")
+        .select("value")
+        .eq("key", "whatsapp_waba_id")
+        .maybeSingle();
+      const wabaId = String(cred?.value || "").trim();
+
+      const ask = async (path: string, fields: string) => {
+        const res = await fetch(`${cfg.apiUrl}/${path}?fields=${fields}`, {
+          headers: { Authorization: `Bearer ${cfg.apiKey}` },
+        });
+        const payload = await res.json().catch(() => ({}));
+        return { ok: res.ok, status: res.status, payload };
+      };
+
+      const number = await ask(
+        cfg.phoneNumberId,
+        "display_phone_number,verified_name,quality_rating,messaging_limit_tier,name_status,code_verification_status,platform_type,throughput",
+      );
+      const account = wabaId
+        ? await ask(
+          wabaId,
+          "name,account_review_status,business_verification_status,country,currency,timezone_id",
+        )
+        : null;
+
+      const firstError = !number.ok
+        ? number.payload?.error
+        : account && !account.ok
+        ? account.payload?.error
+        : null;
+
+      return json({
+        success: number.ok && (!account || account.ok),
+        api_url: cfg.apiUrl,
+        number: number.ok ? number.payload : null,
+        account: account?.ok ? account.payload : null,
+        error: firstError
+          ? redactSecrets(`${firstError.message}${firstError.code ? ` · code ${firstError.code}` : ""}`)
+          : null,
+        blocked: /api access blocked/i.test(String(firstError?.message || "")),
+      }, 200);
+    }
+
     const to = toE164(body.phone);
     if (!to) {
       return json({ success: false, error: "Enter a valid 10-digit mobile number" }, 200);
