@@ -6,6 +6,7 @@
 
 import { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import {
+  ACCOUNT_BLOCKED_MESSAGE,
   buildSendRequest,
   last10,
   parseSendResponse,
