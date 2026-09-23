@@ -372,12 +372,15 @@ export function parseSendResponse(
   }
 
   if (!httpOk) {
+    const message = result?.error?.message || `WhatsApp API returned ${httpStatus}`;
+    const code = result?.error?.code ?? null;
     return {
       ok: false,
       providerMessageId: null,
-      error: result?.error?.message || `WhatsApp API returned ${httpStatus}`,
-      errorCode: result?.error?.code ?? null,
+      error: message,
+      errorCode: code,
       errorDetails: result?.error?.error_data?.details ?? null,
+      accountBlocked: isAccountBlocked(code, message),
     };
   }
   return {
