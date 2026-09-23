@@ -369,12 +369,30 @@ Deno.serve(async (req) => {
             whatsapp_message_id: result.messageId,
           })
           .eq("id", item.id);
+      } else if (result.accountBlocked) {
+        // Account-level block at Meta: nothing in the queue can go out. Keep the
+        // item queued without burning an attempt and stop the batch.
+        blocked = true;
+        await supabase
+          .from("wellness_notification_log")
+          .update({
+            status: "queued",
+            error_message: ACCOUNT_BLOCKED_MESSAGE,
+            last_attempt_at: new Date().toISOString(),
+          })
+          .eq("id", item.id);
+        break;
       } else {
         await markFailed(result.error || "WhatsApp send failed");
       }
     }
 
-    return json({ processed: queue.length, sent, failed });
+    return json({
+      processed: queue.length,
+      sent,
+      failed,
+      ...(blocked ? { blocked: true, reason: ACCOUNT_BLOCKED_MESSAGE } : {}),
+    });
   } catch (e) {
     console.error("whatsapp-notification-runner error", e);
     return json({ error: e instanceof Error ? e.message : "Unexpected error" }, 500);
