@@ -171,6 +171,45 @@ export function useTestWhatsAppConnection() {
   });
 }
 
+export interface WhatsAppAccountStatus {
+  success: boolean;
+  api_url?: string;
+  blocked?: boolean;
+  error?: string | null;
+  number?: {
+    display_phone_number?: string;
+    verified_name?: string;
+    quality_rating?: string;
+    messaging_limit_tier?: string;
+    name_status?: string;
+    code_verification_status?: string;
+    platform_type?: string;
+  } | null;
+  account?: {
+    name?: string;
+    account_review_status?: string;
+    business_verification_status?: string;
+  } | null;
+}
+
+/** Asks Meta about the connected number and business account. */
+export function useWhatsAppAccountStatus() {
+  return useMutation({
+    mutationFn: async (): Promise<WhatsAppAccountStatus> => {
+      const { data, error } = await supabase.functions.invoke("whatsapp-test-connection", {
+        body: { action: "status" },
+      });
+      if (error) {
+        const parsed = await readFunctionError(error);
+        if (parsed) return parsed as unknown as WhatsAppAccountStatus;
+        return { success: false, error: errText(error) };
+      }
+      return data as WhatsAppAccountStatus;
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+}
+
 export type ConversationFilter = "all" | "unread" | "archived";
 
 export function useWhatsAppConversations(search = "", filter: ConversationFilter = "all") {
