@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import {
   useSaveWhatsAppSettings,
   useTestWhatsAppConnection,
+  useWhatsAppAccountStatus,
   useWhatsAppSettings,
   type WhatsAppSettingsValues,
 } from "@/hooks/useWhatsApp";
@@ -39,6 +40,7 @@ export function WhatsAppSettings() {
   const { data, isLoading } = useWhatsAppSettings();
   const save = useSaveWhatsAppSettings();
   const test = useTestWhatsAppConnection();
+  const status = useWhatsAppAccountStatus();
 
   const [form, setForm] = useState<WhatsAppSettingsValues>(EMPTY);
   const [testPhone, setTestPhone] = useState("");
@@ -149,8 +151,66 @@ export function WhatsAppSettings() {
     );
   }
 
+  const st = status.data;
+
   return (
     <div className="space-y-6">
+      {!isWachat && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Account health</CardTitle>
+            <CardDescription>
+              Ask Meta whether your number can send right now — quality rating, sending limit and
+              any restriction on the business account.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button variant="outline" onClick={() => status.mutate()} disabled={status.isPending}>
+              {status.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Check WhatsApp account status
+            </Button>
+
+            {st && (
+              st.success ? (
+                <div className="space-y-1 rounded-md border p-3 text-sm">
+                  <p className="font-medium">
+                    {st.number?.verified_name || "Connected number"}
+                    {st.number?.display_phone_number ? ` · ${st.number.display_phone_number}` : ""}
+                  </p>
+                  <p className="text-muted-foreground">
+                    Quality: {st.number?.quality_rating ?? "—"} · Sending limit:{" "}
+                    {st.number?.messaging_limit_tier ?? "—"} · Name status:{" "}
+                    {st.number?.name_status ?? "—"}
+                  </p>
+                  <p className="text-muted-foreground">
+                    Business account: {st.account?.name ?? "—"} · Review:{" "}
+                    {st.account?.account_review_status ?? "—"} · Verification:{" "}
+                    {st.account?.business_verification_status ?? "—"}
+                  </p>
+                </div>
+              ) : (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>
+                    {st.blocked ? "Meta has blocked API access" : "Could not read the account"}
+                  </AlertTitle>
+                  <AlertDescription className="space-y-1">
+                    <p>{st.error || "Meta did not answer."}</p>
+                    {st.blocked && (
+                      <p>
+                        Sending is paused until this is cleared in WhatsApp Manager — check the
+                        number for a red banner, your business verification status and any policy
+                        notice. Queued messages will go out automatically once access is restored.
+                      </p>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>WhatsApp Business API</CardTitle>
