@@ -11,6 +11,8 @@ import {
 import { redactSecrets, sendWhatsApp } from "../_shared/whatsappService.ts";
 
 interface Payload {
+  /** "status" asks Meta about the account instead of sending a test message. */
+  action?: string;
   phone?: string;
   template_name?: string | null;
   template_language?: string | null;
