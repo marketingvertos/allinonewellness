@@ -230,6 +230,7 @@ Deno.serve(async (req) => {
 
     let sent = 0;
     let failed = 0;
+    let blocked = false;
 
     for (const item of queue) {
       const member = members.get(item.member_id);
