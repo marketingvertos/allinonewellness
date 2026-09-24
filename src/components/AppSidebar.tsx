@@ -15,6 +15,7 @@ import {
   MessageSquare,
   BarChart3,
   FileText,
+  CalendarCheck,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -35,6 +36,7 @@ const mainNav = [
   { title: "Dashboard", icon: LayoutDashboard, to: "/dashboard", end: true },
   { title: "Members", icon: Users, to: "/members", end: false },
   { title: "Check-in", icon: ScanLine, to: "/checkin", end: false },
+  { title: "Attendance", icon: CalendarCheck, to: "/attendance", end: false },
   { title: "Plans", icon: ClipboardList, to: "/plans", end: false },
   { title: "Trials", icon: Sparkles, to: "/trials", end: false },
   { title: "Batches", icon: Layers, to: "/batches", end: false },

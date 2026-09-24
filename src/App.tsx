@@ -12,6 +12,7 @@ import Settings from "./pages/Settings";
 import WellnessDashboard from "./pages/WellnessDashboard";
 import WellnessMembers from "./pages/WellnessMembers";
 import WellnessCheckIn from "./pages/WellnessCheckIn";
+import WellnessAttendance from "./pages/WellnessAttendance";
 import WellnessPlans from "./pages/WellnessPlans";
 import WellnessAchievements from "./pages/WellnessAchievements";
 import WellnessBatches from "./pages/WellnessBatches";
@@ -68,6 +69,7 @@ const App = () => (
                 <Route path="/dashboard" element={<WellnessDashboard />} />
                 <Route path="/members" element={<WellnessMembers />} />
                 <Route path="/checkin" element={<WellnessCheckIn />} />
+                <Route path="/attendance" element={<WellnessAttendance />} />
                 <Route path="/plans" element={<WellnessPlans />} />
                 <Route path="/qr" element={<Navigate to="/checkin?tab=qr" replace />} />
                 <Route path="/achievements" element={<WellnessAchievements />} />
