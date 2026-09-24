@@ -60,6 +60,8 @@ function SalesTile({ label, period, mode, onClick }: { label: string; period: (t
 export default function WellnessDashboard() {
   const [params, setParams] = useSearchParams();
   const [expiredOpen, setExpiredOpen] = useState(false);
+  const [salesDrillDown, setSalesDrillDown] = useState<{ period: (typeof PERIODS)[number]["key"]; label: string } | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const mode = (params.get("mode") as MemberModeFilter) || "all";
   const setMode = (next: string) => {
     if (!next) return;
@@ -183,10 +185,23 @@ export default function WellnessDashboard() {
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PERIODS.map((p) => (
-            <SalesTile key={p.key} label={p.label} period={p.key} mode={mode} />
+            <SalesTile key={p.key} label={p.label} period={p.key} mode={mode} onClick={() => setSalesDrillDown({ period: p.key, label: p.label })} />
           ))}
         </CardContent>
       </Card>
+
+      {salesDrillDown && (
+        <SalesDrillDownSheet
+          open={!!salesDrillDown}
+          onOpenChange={(open) => !open && setSalesDrillDown(null)}
+          period={salesDrillDown.period}
+          periodLabel={salesDrillDown.label}
+          memberMode={mode}
+          onSelectMember={(id) => setSelectedMemberId(id)}
+        />
+      )}
+
+      <MemberSheetById memberId={selectedMemberId} onClose={() => setSelectedMemberId(null)} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
