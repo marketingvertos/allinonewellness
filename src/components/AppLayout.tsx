@@ -8,6 +8,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { NotificationCenter } from "./NotificationCenter";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { RealtimeAlertStack } from "./wellness/RealtimeAlertStack";
 
 
 export function AppLayout() {
@@ -61,6 +62,7 @@ export function AppLayout() {
             <Outlet />
           </div>
         </main>
+        {identity?.isStaff && <RealtimeAlertStack />}
       </div>
     </SidebarProvider>
   );
