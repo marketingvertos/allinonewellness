@@ -2399,3 +2399,131 @@ export function useRedeemPinkCard() {
     onError: t.onError,
   });
 }
+
+// ---------- Attendance Register ----------
+
+export interface AttendanceRow {
+  memberId: string;
+  name: string;
+  mobile: string;
+  memberMode: string;
+  status: string;
+  planName: string | null;
+  remainingServings: number | null;
+  dayMap: Record<string, boolean>;
+  presentDays: number;
+  absentDays: number;
+  percentage: number;
+}
+
+export interface AttendanceRegisterResult {
+  rows: AttendanceRow[];
+  dates: string[];
+  countedDates: string[];
+  today: string;
+  totalMembers: number;
+  todayPresent: number;
+  todayAbsent: number;
+  avgAttendance: number;
+  bestAttendee: { name: string; percentage: number } | null;
+}
+
+function isoDateRange(from: string, to: string): string[] {
+  const out: string[] = [];
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const [ty, tm, td] = to.split("-").map(Number);
+  const d = new Date(Date.UTC(fy, fm - 1, fd));
+  const end = Date.UTC(ty, tm - 1, td);
+  while (d.getTime() <= end && out.length < 400) {
+    out.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return out;
+}
+
+export function useAttendanceRegister(from: string, to: string, memberMode?: MemberModeFilter) {
+  return useQuery({
+    queryKey: ["attendance-register", from, to, memberMode],
+    enabled: !!from && !!to && from <= to,
+    queryFn: async (): Promise<AttendanceRegisterResult> => {
+      let mq = supabase
+        .from("wellness_members")
+        .select("id, full_name, mobile_number, member_mode, status")
+        .in("status", ["active_member", "renewal_due", "trial", "expired"]);
+      if (memberMode && memberMode !== "all") mq = mq.eq("member_mode", memberMode);
+      const { data: members, error: mErr } = await mq.limit(5000);
+      if (mErr) throw mErr;
+      const ids = (members ?? []).map((m) => m.id);
+
+      const mship: Record<string, { planName: string | null; remaining: number | null }> = {};
+      if (ids.length) {
+        const { data: ms } = await supabase
+          .from("wellness_memberships")
+          .select("member_id, status, remaining_servings, wellness_plans(name)")
+          .in("member_id", ids)
+          .in("status", ["active", "expiring_soon", "queued"]);
+        const rank: Record<string, number> = { active: 0, expiring_soon: 1, queued: 2 };
+        const sorted = [...(ms ?? [])].sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9));
+        for (const m of sorted) {
+          if (!mship[m.member_id]) {
+            mship[m.member_id] = {
+              planName: (m.wellness_plans as { name?: string } | null)?.name ?? null,
+              remaining: m.remaining_servings,
+            };
+          }
+        }
+      }
+
+      const attSet: Record<string, Set<string>> = {};
+      const pageSize = 1000;
+      for (let page = 0; page < 50; page++) {
+        const { data, error } = await supabase
+          .from("wellness_attendance")
+          .select("member_id, visit_date")
+          .gte("visit_date", from)
+          .lte("visit_date", to)
+          .order("visit_date")
+          .range(page * pageSize, page * pageSize + pageSize - 1);
+        if (error) throw error;
+        for (const a of data ?? []) (attSet[a.member_id] ??= new Set()).add(a.visit_date);
+        if (!data || data.length < pageSize) break;
+      }
+
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      const dates = isoDateRange(from, to);
+      const countedDates = dates.filter((d) => d <= today);
+      let todayPresent = 0;
+
+      const rows: AttendanceRow[] = (members ?? []).map((m) => {
+        const visited = attSet[m.id] ?? new Set<string>();
+        const dayMap: Record<string, boolean> = {};
+        for (const d of dates) dayMap[d] = visited.has(d);
+        const presentDays = countedDates.filter((d) => visited.has(d)).length;
+        const absentDays = countedDates.length - presentDays;
+        if (visited.has(today)) todayPresent++;
+        return {
+          memberId: m.id,
+          name: m.full_name,
+          mobile: m.mobile_number ?? "",
+          memberMode: m.member_mode,
+          status: m.status,
+          planName: mship[m.id]?.planName ?? null,
+          remainingServings: mship[m.id]?.remaining ?? null,
+          dayMap,
+          presentDays,
+          absentDays,
+          percentage: countedDates.length ? Math.round((presentDays / countedDates.length) * 100) : 0,
+        };
+      });
+      rows.sort((a, b) => a.name.localeCompare(b.name));
+      const totalMembers = rows.length;
+      const avgAttendance = totalMembers ? Math.round(rows.reduce((s, r) => s + r.percentage, 0) / totalMembers) : 0;
+      const best = rows.length ? rows.reduce((a, b) => (b.percentage > a.percentage ? b : a)) : null;
+      return {
+        rows, dates, countedDates, today, totalMembers, todayPresent,
+        todayAbsent: totalMembers - todayPresent, avgAttendance,
+        bestAttendee: best && best.presentDays > 0 ? { name: best.name, percentage: best.percentage } : null,
+      };
+    },
+  });
+}
