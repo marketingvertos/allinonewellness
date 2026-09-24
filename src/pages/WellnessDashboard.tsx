@@ -30,6 +30,8 @@ import { PendingCheckInsCard } from "@/components/wellness/PendingCheckInsCard";
 import { DisplayScreensCard } from "@/components/wellness/DisplayScreensCard";
 import { PublicRegistrationCard } from "@/components/wellness/PublicRegistrationCard";
 import { ExpiredMembersSheet } from "@/components/wellness/ExpiredMembersSheet";
+import { SalesDrillDownSheet } from "@/components/wellness/SalesDrillDownSheet";
+import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { useState } from "react";
 
 const PERIODS = [
@@ -39,22 +41,27 @@ const PERIODS = [
   { key: "last_month", label: "Last month" },
 ] as const;
 
-function SalesTile({ label, period, mode }: { label: string; period: (typeof PERIODS)[number]["key"]; mode: MemberModeFilter }) {
+function SalesTile({ label, period, mode, onClick }: { label: string; period: (typeof PERIODS)[number]["key"]; mode: MemberModeFilter; onClick: () => void }) {
   const { data } = useSalesAnalytics(periodRange(period), mode);
   return (
-    <div className="rounded-lg border p-3">
+    <button
+      onClick={onClick}
+      className="w-full cursor-pointer rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-accent/40"
+    >
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-xl font-bold">{formatCurrency(data?.revenue ?? 0)}</p>
       <p className="text-xs text-muted-foreground">
         {data?.memberships ?? 0} sold · {data?.servings ?? 0} servings
       </p>
-    </div>
+    </button>
   );
 }
 
 export default function WellnessDashboard() {
   const [params, setParams] = useSearchParams();
   const [expiredOpen, setExpiredOpen] = useState(false);
+  const [salesDrillDown, setSalesDrillDown] = useState<{ period: (typeof PERIODS)[number]["key"]; label: string } | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const mode = (params.get("mode") as MemberModeFilter) || "all";
   const setMode = (next: string) => {
     if (!next) return;
@@ -178,10 +185,23 @@ export default function WellnessDashboard() {
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PERIODS.map((p) => (
-            <SalesTile key={p.key} label={p.label} period={p.key} mode={mode} />
+            <SalesTile key={p.key} label={p.label} period={p.key} mode={mode} onClick={() => setSalesDrillDown({ period: p.key, label: p.label })} />
           ))}
         </CardContent>
       </Card>
+
+      {salesDrillDown && (
+        <SalesDrillDownSheet
+          open={!!salesDrillDown}
+          onOpenChange={(open) => !open && setSalesDrillDown(null)}
+          period={salesDrillDown.period}
+          periodLabel={salesDrillDown.label}
+          memberMode={mode}
+          onSelectMember={(id) => setSelectedMemberId(id)}
+        />
+      )}
+
+      <MemberSheetById memberId={selectedMemberId} onClose={() => setSelectedMemberId(null)} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

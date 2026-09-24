@@ -2281,6 +2281,128 @@ export function useSalesAnalytics(range: PeriodRange, memberMode?: MemberModeFil
   });
 }
 
+/* --------------------------- Sales drill-down --------------------------- */
+
+export interface SalesDrillDownRow {
+  id: string;
+  memberId: string;
+  memberName: string;
+  mobile: string;
+  planName: string;
+  pricePaid: number;
+  paymentMode: string;
+  totalServings: number;
+  isRenewal: boolean;
+  createdAt: string;
+  payments: { amount: number; mode: string; paidAt: string; note: string | null }[];
+}
+
+export interface SalesDrillDownResult {
+  rows: SalesDrillDownRow[];
+  totalRevenue: number;
+  totalMemberships: number;
+  totalServings: number;
+  byCash: number;
+  byUpi: number;
+  byOnline: number;
+  byCard: number;
+}
+
+/** Memberships sold in an IST date range, with split-payment detail. */
+export function useSalesDrillDown(from: string, to: string, memberMode?: MemberModeFilter, enabled = true) {
+  return useQuery({
+    queryKey: ["sales-drilldown", from, to, memberMode ?? "all"],
+    enabled,
+    queryFn: async (): Promise<SalesDrillDownResult> => {
+      const ids = await memberIdsForMode(memberMode);
+      let msQ = supabase
+        .from("wellness_memberships")
+        .select(
+          "id, member_id, plan_id, price_paid, payment_mode, total_servings, renewed_from, created_at, " +
+            "wellness_members(full_name, mobile_number, member_mode), wellness_plans(name, price)",
+        )
+        .gte("created_at", `${from}T00:00:00+05:30`)
+        .lte("created_at", `${to}T23:59:59+05:30`)
+        .order("created_at", { ascending: false });
+      if (ids) msQ = msQ.in("member_id", ids);
+      const { data: memberships, error: msErr } = await msQ;
+      if (msErr) throw msErr;
+
+      const msRows = (memberships ?? []) as unknown as {
+        id: string;
+        member_id: string;
+        plan_id: string;
+        price_paid: number;
+        payment_mode: string;
+        total_servings: number;
+        renewed_from: string | null;
+        created_at: string;
+        wellness_members: { full_name: string; mobile_number: string; member_mode: string } | null;
+        wellness_plans: { name: string; price: number } | null;
+      }[];
+
+      const msIds = msRows.map((m) => m.id);
+      let payments: { membership_id: string; amount: number; mode: string; paid_at: string; note: string | null }[] = [];
+      if (msIds.length > 0) {
+        const { data: payRows, error: pErr } = await supabase
+          .from("wellness_payments")
+          .select("membership_id, amount, mode, paid_at, note")
+          .in("membership_id", msIds)
+          .order("paid_at", { ascending: true });
+        if (pErr) throw pErr;
+        payments = (payRows ?? []) as typeof payments;
+      }
+
+      const paymentsByMs: Record<string, typeof payments> = {};
+      for (const p of payments) (paymentsByMs[p.membership_id] ??= []).push(p);
+
+      let byCash = 0,
+        byUpi = 0,
+        byOnline = 0,
+        byCard = 0;
+      const tally = (mode: string, amt: number) => {
+        if (mode === "cash") byCash += amt;
+        else if (mode === "upi") byUpi += amt;
+        else if (mode === "online") byOnline += amt;
+        else if (mode === "card") byCard += amt;
+      };
+
+      const rows: SalesDrillDownRow[] = msRows.map((m) => {
+        const legs = paymentsByMs[m.id] ?? [];
+        if (legs.length > 0) {
+          for (const p of legs) tally(p.mode, Number(p.amount));
+        } else {
+          tally(m.payment_mode, Number(m.price_paid));
+        }
+        return {
+          id: m.id,
+          memberId: m.member_id,
+          memberName: m.wellness_members?.full_name ?? "Member",
+          mobile: m.wellness_members?.mobile_number ?? "",
+          planName: m.wellness_plans?.name ?? "Plan",
+          pricePaid: Number(m.price_paid),
+          paymentMode: m.payment_mode,
+          totalServings: m.total_servings,
+          isRenewal: m.renewed_from != null,
+          createdAt: m.created_at,
+          payments: legs.map((p) => ({ amount: Number(p.amount), mode: p.mode, paidAt: p.paid_at, note: p.note })),
+        };
+      });
+
+      return {
+        rows,
+        totalRevenue: rows.reduce((s, r) => s + r.pricePaid, 0),
+        totalMemberships: rows.length,
+        totalServings: rows.reduce((s, r) => s + r.totalServings, 0),
+        byCash,
+        byUpi,
+        byOnline,
+        byCard,
+      };
+    },
+  });
+}
+
 /** Remaining servings of the active membership, keyed by member id. */
 export function useMemberBalances(memberIds: string[]) {
   const key = [...memberIds].sort().join(",");
