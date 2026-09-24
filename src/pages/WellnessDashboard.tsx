@@ -30,6 +30,8 @@ import { PendingCheckInsCard } from "@/components/wellness/PendingCheckInsCard";
 import { DisplayScreensCard } from "@/components/wellness/DisplayScreensCard";
 import { PublicRegistrationCard } from "@/components/wellness/PublicRegistrationCard";
 import { ExpiredMembersSheet } from "@/components/wellness/ExpiredMembersSheet";
+import { SalesDrillDownSheet } from "@/components/wellness/SalesDrillDownSheet";
+import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { useState } from "react";
 
 const PERIODS = [
@@ -39,16 +41,19 @@ const PERIODS = [
   { key: "last_month", label: "Last month" },
 ] as const;
 
-function SalesTile({ label, period, mode }: { label: string; period: (typeof PERIODS)[number]["key"]; mode: MemberModeFilter }) {
+function SalesTile({ label, period, mode, onClick }: { label: string; period: (typeof PERIODS)[number]["key"]; mode: MemberModeFilter; onClick: () => void }) {
   const { data } = useSalesAnalytics(periodRange(period), mode);
   return (
-    <div className="rounded-lg border p-3">
+    <button
+      onClick={onClick}
+      className="w-full cursor-pointer rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-accent/40"
+    >
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-xl font-bold">{formatCurrency(data?.revenue ?? 0)}</p>
       <p className="text-xs text-muted-foreground">
         {data?.memberships ?? 0} sold · {data?.servings ?? 0} servings
       </p>
-    </div>
+    </button>
   );
 }
 
