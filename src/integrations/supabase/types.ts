@@ -2229,7 +2229,12 @@ export type Database = {
       is_wellness_manager: { Args: { _user_id: string }; Returns: boolean }
       is_wellness_staff: { Args: { _user_id: string }; Returns: boolean }
       issue_servings: {
-        Args: { p_membership_id: string; p_quantity: number; p_reason?: string }
+        Args: {
+          p_dates?: string[]
+          p_membership_id: string
+          p_quantity: number
+          p_reason?: string
+        }
         Returns: number
       }
       mark_notification_sent: {
@@ -2329,6 +2334,7 @@ export type Database = {
         | "barcode_scan"
         | "admin_manual"
         | "staff_entry"
+        | "serving_issue"
       membership_status:
         | "active"
         | "expiring_soon"
@@ -2498,6 +2504,7 @@ export const Constants = {
         "barcode_scan",
         "admin_manual",
         "staff_entry",
+        "serving_issue",
       ],
       membership_status: [
         "active",
