@@ -13,7 +13,10 @@ import {
   usePinkCardBalances,
   PINK_CARD_SERVING_VALUE,
   useWellnessStats,
+  useTodayServingsIssued,
 } from "@/hooks/useWellness";
+import { ServingsIssuedSheet } from "@/components/wellness/ServingsIssuedSheet";
+import { Package } from "lucide-react";
 import { useCoachesAtRisk } from "@/hooks/useAchievements";
 import { PageBanner } from "@/components/PageBanner";
 import { MissingLoginsBanner } from "@/components/wellness/MissingLoginsBanner";
@@ -40,6 +43,31 @@ const PERIODS = [
   { key: "month", label: "This month" },
   { key: "last_month", label: "Last month" },
 ] as const;
+
+function ServingsIssuedCard({ mode }: { mode: MemberModeFilter }) {
+  const { data } = useTodayServingsIssued(mode);
+  const [open, setOpen] = useState(false);
+  const members = data?.totalMembers ?? 0;
+  return (
+    <>
+      <Card>
+        <CardContent className="p-3">
+          <button onClick={() => setOpen(true)} className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-accent/40">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2"><Package className="h-5 w-5 text-primary" /></div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Servings issued today</p>
+                <p className="text-2xl font-bold">{data?.totalServings ?? 0}</p>
+              </div>
+            </div>
+            <Badge variant="secondary">{members} {members === 1 ? "member" : "members"}</Badge>
+          </button>
+        </CardContent>
+      </Card>
+      <ServingsIssuedSheet open={open} onOpenChange={setOpen} memberMode={mode} />
+    </>
+  );
+}
 
 function SalesTile({ label, period, mode, onClick }: { label: string; period: (typeof PERIODS)[number]["key"]; mode: MemberModeFilter; onClick: () => void }) {
   const { data } = useSalesAnalytics(periodRange(period), mode);
@@ -189,6 +217,9 @@ export default function WellnessDashboard() {
           ))}
         </CardContent>
       </Card>
+
+      <ServingsIssuedCard mode={mode} />
+
 
       {salesDrillDown && (
         <SalesDrillDownSheet

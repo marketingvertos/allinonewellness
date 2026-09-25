@@ -45,6 +45,7 @@ const mainNav = [
   { title: "WhatsApp templates", icon: FileText, to: "/whatsapp/templates", end: false },
   { title: "Achievements", icon: Trophy, to: "/achievements", end: false },
   { title: "Reports", icon: BarChart3, to: "/reports", end: false },
+  { title: "Serving Reports", icon: Package, to: "/serving-reports", end: false },
 ];
 
 export function AppSidebar() {
