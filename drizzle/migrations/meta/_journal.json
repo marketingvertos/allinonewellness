@@ -120,6 +120,13 @@
       "when": 1790358289160,
       "tag": "0016_add_serving_issue_checkin_method",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790358358355,
+      "tag": "0017_issue_servings_with_dates",
+      "breakpoints": true
     }
   ]
 }
