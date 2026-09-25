@@ -16,6 +16,7 @@ import {
   BarChart3,
   FileText,
   CalendarCheck,
+  Package,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
