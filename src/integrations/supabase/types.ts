@@ -2329,6 +2329,7 @@ export type Database = {
         | "barcode_scan"
         | "admin_manual"
         | "staff_entry"
+        | "serving_issue"
       membership_status:
         | "active"
         | "expiring_soon"
@@ -2498,6 +2499,7 @@ export const Constants = {
         "barcode_scan",
         "admin_manual",
         "staff_entry",
+        "serving_issue",
       ],
       membership_status: [
         "active",

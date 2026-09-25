@@ -113,6 +113,13 @@
       "when": 1790277994995,
       "tag": "0015_realtime_member_achievements",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790358289160,
+      "tag": "0016_add_serving_issue_checkin_method",
+      "breakpoints": true
     }
   ]
 }
