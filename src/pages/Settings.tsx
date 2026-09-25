@@ -4,9 +4,10 @@ import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { TeamSettings } from "@/components/settings/TeamSettings";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
 import { ConnectorSettings } from "@/components/settings/ConnectorSettings";
+import { BackupSettings } from "@/components/settings/BackupSettings";
 import { WhatsAppSettings } from "@/components/settings/WhatsAppSettings";
 
-const TABS = ["profile", "team", "notifications", "whatsapp", "connectors"] as const;
+const TABS = ["profile", "team", "notifications", "whatsapp", "backup", "connectors"] as const;
 
 export default function Settings() {
   const [params, setParams] = useSearchParams();
@@ -32,6 +33,7 @@ export default function Settings() {
           <TabsTrigger value="team">Team</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+          <TabsTrigger value="backup">Backup</TabsTrigger>
           <TabsTrigger value="connectors">Connectors</TabsTrigger>
         </TabsList>
 
@@ -39,6 +41,7 @@ export default function Settings() {
         <TabsContent value="team"><TeamSettings /></TabsContent>
         <TabsContent value="notifications"><NotificationSettings /></TabsContent>
         <TabsContent value="whatsapp"><WhatsAppSettings /></TabsContent>
+        <TabsContent value="backup"><BackupSettings /></TabsContent>
         <TabsContent value="connectors"><ConnectorSettings /></TabsContent>
       </Tabs>
     </div>
