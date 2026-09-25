@@ -140,7 +140,7 @@ export default function WellnessDashboard() {
   const modeQuery = mode === "all" ? "" : `&mode=${mode}`;
   const cards = [
     { title: "Total members", value: data?.totalMembers ?? 0, icon: Users, to: `/members?status=all${modeQuery}` },
-    { title: "Check-ins today", value: data?.checkinsToday ?? 0, icon: CalendarCheck, to: "/checkin?tab=today" },
+    { title: "Check-ins today", value: data?.checkinsToday ?? 0, icon: CalendarCheck, to: "/attendance" },
     { title: "Active memberships", value: data?.activeMemberships ?? 0, icon: BadgeCheck, to: `/members?status=active_member${modeQuery}` },
     { title: "Active trials", value: trials?.length ?? 0, icon: Sparkles, to: "/trials" },
     { title: "Trials ending today", value: trialsEndingToday, icon: AlertTriangle, to: "/trials" },
