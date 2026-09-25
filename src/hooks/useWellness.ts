@@ -549,11 +549,12 @@ export function useIssueServings() {
   const qc = useQueryClient();
   const t = useToastedMutation();
   return useMutation({
-    mutationFn: async (args: { membershipId: string; quantity: number; reason?: string }) => {
+    mutationFn: async (args: { membershipId: string; quantity: number; reason?: string; dates?: string[] }) => {
       const { error } = await supabase.rpc("issue_servings", {
         p_membership_id: args.membershipId,
         p_quantity: args.quantity,
         p_reason: args.reason ?? "Packed for member",
+        p_dates: args.dates?.length ? args.dates : null,
       } as never);
       if (error) throw error;
     },
@@ -2524,6 +2525,8 @@ export function useRedeemPinkCard() {
 
 // ---------- Attendance Register ----------
 
+export type AttendanceMark = "visit" | "serving";
+
 export interface AttendanceRow {
   memberId: string;
   name: string;
@@ -2532,8 +2535,10 @@ export interface AttendanceRow {
   status: string;
   planName: string | null;
   remainingServings: number | null;
-  dayMap: Record<string, boolean>;
+  dayMap: Record<string, AttendanceMark | null>;
   presentDays: number;
+  visitDays: number;
+  servingDays: number;
   absentDays: number;
   percentage: number;
 }
@@ -2596,18 +2601,23 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
         }
       }
 
-      const attSet: Record<string, Set<string>> = {};
+      const attMap: Record<string, Map<string, AttendanceMark>> = {};
       const pageSize = 1000;
       for (let page = 0; page < 50; page++) {
         const { data, error } = await supabase
           .from("wellness_attendance")
-          .select("member_id, visit_date")
+          .select("member_id, visit_date, checkin_method")
           .gte("visit_date", from)
           .lte("visit_date", to)
           .order("visit_date")
           .range(page * pageSize, page * pageSize + pageSize - 1);
         if (error) throw error;
-        for (const a of data ?? []) (attSet[a.member_id] ??= new Set()).add(a.visit_date);
+        for (const a of data ?? []) {
+          (attMap[a.member_id] ??= new Map()).set(
+            a.visit_date,
+            (a.checkin_method as string) === "serving_issue" ? "serving" : "visit",
+          );
+        }
         if (!data || data.length < pageSize) break;
       }
 
@@ -2617,10 +2627,12 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
       let todayPresent = 0;
 
       const rows: AttendanceRow[] = (members ?? []).map((m) => {
-        const visited = attSet[m.id] ?? new Set<string>();
-        const dayMap: Record<string, boolean> = {};
-        for (const d of dates) dayMap[d] = visited.has(d);
-        const presentDays = countedDates.filter((d) => visited.has(d)).length;
+        const visited = attMap[m.id] ?? new Map<string, AttendanceMark>();
+        const dayMap: Record<string, AttendanceMark | null> = {};
+        for (const d of dates) dayMap[d] = visited.get(d) ?? null;
+        const counted = countedDates.filter((d) => visited.has(d));
+        const presentDays = counted.length;
+        const servingDays = counted.filter((d) => visited.get(d) === "serving").length;
         const absentDays = countedDates.length - presentDays;
         if (visited.has(today)) todayPresent++;
         return {
@@ -2633,6 +2645,8 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
           remainingServings: mship[m.id]?.remaining ?? null,
           dayMap,
           presentDays,
+          visitDays: presentDays - servingDays,
+          servingDays,
           absentDays,
           percentage: countedDates.length ? Math.round((presentDays / countedDates.length) * 100) : 0,
         };
@@ -2648,4 +2662,120 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
       };
     },
   });
+}
+
+// ---------- Servings issued (packed) ----------
+
+export interface ServingIssuedRow {
+  id: string;
+  memberId: string;
+  memberName: string;
+  mobile: string;
+  planName: string;
+  quantity: number;
+  reason: string | null;
+  issuedAt: string;
+  markedDates: string[];
+}
+
+export interface ServingIssuedResult {
+  rows: ServingIssuedRow[];
+  totalServings: number;
+  totalMembers: number;
+}
+
+async function fetchServingsIssued(from: string, to: string, mode?: MemberModeFilter): Promise<ServingIssuedResult> {
+  const ids = await memberIdsForMode(mode);
+  let q = supabase
+    .from("serving_transactions")
+    .select("id, member_id, membership_id, change, note, created_at, wellness_members(full_name, mobile_number), wellness_memberships(wellness_plans(name))")
+    .eq("txn_type", "pack_and_issue" as never)
+    .gte("created_at", `${from}T00:00:00+05:30`)
+    .lte("created_at", `${to}T23:59:59.999+05:30`)
+    .order("created_at", { ascending: false })
+    .limit(5000);
+  if (ids) q = q.in("member_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+  const { data, error } = await q;
+  if (error) throw error;
+  type Txn = {
+    id: string; member_id: string; membership_id: string; change: number; note: string | null; created_at: string;
+    wellness_members: { full_name?: string; mobile_number?: string } | null;
+    wellness_memberships: { wellness_plans?: { name?: string } | null } | null;
+  };
+  const txns = (data ?? []) as unknown as Txn[];
+
+  // Packed dates are stored as attendance rows; match them by who issued them, when.
+  const byMember: Record<string, { date: string; created: string }[]> = {};
+  const memberIds = [...new Set(txns.map((t) => t.member_id))];
+  if (memberIds.length) {
+    const { data: att } = await supabase
+      .from("wellness_attendance")
+      .select("member_id, visit_date, created_at")
+      .eq("checkin_method", "serving_issue" as never)
+      .in("member_id", memberIds)
+      .gte("created_at", `${from}T00:00:00+05:30`)
+      .lte("created_at", `${to}T23:59:59.999+05:30`)
+      .order("visit_date");
+    for (const a of att ?? []) (byMember[a.member_id] ??= []).push({ date: a.visit_date, created: a.created_at });
+  }
+
+  const rows: ServingIssuedRow[] = txns.map((t) => {
+    const ts = new Date(t.created_at).getTime();
+    const marked = (byMember[t.member_id] ?? [])
+      .filter((a) => Math.abs(new Date(a.created).getTime() - ts) < 5000)
+      .map((a) => a.date);
+    return {
+      id: t.id,
+      memberId: t.member_id,
+      memberName: t.wellness_members?.full_name ?? "Member",
+      mobile: t.wellness_members?.mobile_number ?? "",
+      planName: t.wellness_memberships?.wellness_plans?.name ?? "Plan",
+      quantity: Math.abs(t.change),
+      reason: t.note,
+      issuedAt: t.created_at,
+      markedDates: marked,
+    };
+  });
+  return {
+    rows,
+    totalServings: rows.reduce((s, r) => s + r.quantity, 0),
+    totalMembers: new Set(rows.map((r) => r.memberId)).size,
+  };
+}
+
+export function useTodayServingsIssued(mode?: MemberModeFilter) {
+  return useQuery({
+    queryKey: ["serving-issued-today", mode ?? "all"],
+    queryFn: () => {
+      const today = istDateStr(new Date());
+      return fetchServingsIssued(today, today, mode);
+    },
+    refetchInterval: 30_000,
+  });
+}
+
+export function useServingsIssuedReport(from: string, to: string, mode?: MemberModeFilter) {
+  return useQuery({
+    queryKey: ["serving-report", from, to, mode ?? "all"],
+    enabled: !!from && !!to && from <= to,
+    queryFn: () => fetchServingsIssued(from, to, mode),
+  });
+}
+
+/** Dates (within the list) where the member already has attendance. */
+export function useMemberAttendanceOnDates(memberId: string | undefined, dates: string[]) {
+  return useQuery({
+    queryKey: ["member-attendance-dates", memberId, dates.join(",")],
+    enabled: !!memberId && dates.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_attendance")
+        .select("visit_date")
+        .eq("member_id", memberId!)
+        .in("visit_date", dates);
+      if (error) throw error;
+      return new Set((data ?? []).map((d) => d.visit_date as string));
+    },
+  });
+}
 }
