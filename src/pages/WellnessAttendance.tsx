@@ -78,11 +78,11 @@ export default function WellnessAttendance() {
   const exportCsv = () => {
     if (!data) return;
     const header = ["Sr.", "Member", "Mobile", "Mode", "Plan", "Servings Left",
-      ...data.dates.map((d) => fmt(d, { day: "2-digit", month: "short" })), "Present", "Absent", "Attendance %"];
+      ...data.dates.map((d) => fmt(d, { day: "2-digit", month: "short" })), "Present", "Visits", "Servings issued", "Absent", "Attendance %"];
     const lines = rows.map((r, i) => [
       i + 1, r.name, r.mobile, r.memberMode, r.planName ?? "", r.remainingServings ?? "",
-      ...data.dates.map((d) => (d > data.today ? "-" : r.dayMap[d] ? "P" : "A")),
-      r.presentDays, r.absentDays, `${r.percentage}%`,
+      ...data.dates.map((d) => (d > data.today ? "-" : r.dayMap[d] === "serving" ? "S" : r.dayMap[d] ? "P" : "A")),
+      r.presentDays, r.visitDays, r.servingDays, r.absentDays, `${r.percentage}%`,
     ]);
     const csv = [header, ...lines]
       .map((l) => l.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
@@ -197,16 +197,21 @@ export default function WellnessAttendance() {
                       {data.dates.map((d) => {
                         const future = d > data.today;
                         const on = r.dayMap[d];
+                        const serving = on === "serving";
                         return (
-                          <td key={d} className={cn("p-1 text-center",
-                            future ? "bg-muted/40 text-muted-foreground"
+                          <td key={d} title={serving ? "Serving issued (packed)" : undefined} className={cn("p-1 text-center",
+                            serving ? "bg-accent text-accent-foreground font-bold text-xs"
+                              : future ? "bg-muted/40 text-muted-foreground"
                               : on ? "bg-primary/15 text-primary" : "bg-destructive/10 text-destructive",
                             d === data.today && "ring-1 ring-inset ring-primary")}>
-                            {future ? "-" : on ? <Check className="mx-auto h-3.5 w-3.5" /> : <X className="mx-auto h-3.5 w-3.5" />}
+                            {serving ? "S" : future ? "-" : on ? <Check className="mx-auto h-3.5 w-3.5" /> : <X className="mx-auto h-3.5 w-3.5" />}
                           </td>
                         );
                       })}
-                      <td className="p-2 text-center font-medium">{r.presentDays}</td>
+                      <td className="p-2 text-center font-medium" title={`${r.visitDays} visits + ${r.servingDays} servings`}>
+                        {r.presentDays}
+                        {r.servingDays > 0 && <div className="text-[10px] font-normal text-muted-foreground">{r.visitDays}+{r.servingDays}S</div>}
+                      </td>
                       <td className="p-2 text-center">{r.absentDays}</td>
                       <td className="p-2 text-center"><Badge variant={pctVariant(r.percentage)}>{r.percentage}%</Badge></td>
                     </tr>
@@ -216,6 +221,11 @@ export default function WellnessAttendance() {
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className="flex flex-wrap gap-4 border-t p-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><Check className="h-3.5 w-3.5 text-primary" /> Club visit</span>
+              <span><span className="rounded bg-accent px-1 font-bold text-accent-foreground">S</span> Serving issued (packed)</span>
+              <span className="flex items-center gap-1"><X className="h-3.5 w-3.5 text-destructive" /> Absent</span>
             </div>
           </CardContent>
         </Card>
@@ -258,6 +268,9 @@ function MemberList({ title, tone, rows, onSelect }: {
               <p className="truncate font-medium">{r.name}</p>
               <p className="truncate text-xs text-muted-foreground">{r.planName ?? "No active plan"}</p>
             </div>
+            {tone === "present" && Object.values(r.dayMap).includes("serving") && (
+              <Badge variant="outline" className="shrink-0 text-[10px]">Serving issued</Badge>
+            )}
             {r.remainingServings !== null && (
               <span className="shrink-0 text-xs text-muted-foreground">{r.remainingServings} left</span>
             )}
