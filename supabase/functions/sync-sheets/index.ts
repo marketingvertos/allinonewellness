@@ -158,7 +158,7 @@ async function sync(sb: any) {
   if (!id) {
     const created = await gw("/spreadsheets", {
       method: "POST",
-      body: JSON.stringify({ properties: { title: "All In One Wellness — CRM Backup", timeZone: TZ, locale: "en_IN" }, sheets: Object.keys(tabs).map((t) => ({ properties: { title: t } })) }),
+      body: JSON.stringify({ properties: { title: "All In One Wellness — CRM Backup", timeZone: TZ, locale: "en_GB" }, sheets: Object.keys(tabs).map((t) => ({ properties: { title: t } })) }),
     });
     id = created.spreadsheetId as string;
     await setCred(sb, "sheets_backup_id", id);
