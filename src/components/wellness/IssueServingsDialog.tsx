@@ -1,10 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-import { useIssueServings, useMemberships } from "@/hooks/useWellness";
+import { format } from "date-fns";
+import { useIssueServings, useMemberAttendanceOnDates, useMemberships } from "@/hooks/useWellness";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
-import { Minus, Plus } from "lucide-react";
+import { CalendarIcon, Minus, Plus } from "lucide-react";
+import { todayIst } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
+
+const isoToLocal = (iso: string) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+const addIsoDays = (iso: string, n: number) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+};
 
 interface Props {
   open: boolean;
@@ -25,19 +39,38 @@ export function IssueServingsDialog({ open, onOpenChange, memberId, memberName }
 
   const [qty, setQty] = useState(1);
   const [reason, setReason] = useState("");
+  const [dates, setDates] = useState<string[]>([todayIst()]);
 
   useEffect(() => {
     if (open) {
       setQty(1);
       setReason("");
+      setDates([todayIst()]);
     }
   }, [open]);
 
-  const valid = !!membership && qty >= 1 && qty <= remaining;
+  // Keep one date per serving; new rows continue after the last picked date.
+  useEffect(() => {
+    setDates((prev) => {
+      if (prev.length === qty) return prev;
+      if (prev.length > qty) return prev.slice(0, qty);
+      const next = [...prev];
+      while (next.length < qty) {
+        let d = addIsoDays(next[next.length - 1] ?? todayIst(), 1);
+        while (next.includes(d)) d = addIsoDays(d, 1);
+        next.push(d);
+      }
+      return next;
+    });
+  }, [qty]);
+
+  const { data: existing } = useMemberAttendanceOnDates(open ? memberId : undefined, dates);
+  const unique = new Set(dates).size === dates.length;
+  const valid = !!membership && qty >= 1 && qty <= remaining && unique && dates.length === qty;
 
   const submit = async () => {
     if (!membership) return;
-    await issue.mutateAsync({ membershipId: membership.id, quantity: qty, reason: reason.trim() || undefined });
+    await issue.mutateAsync({ membershipId: membership.id, quantity: qty, reason: reason.trim() || undefined, dates });
     onOpenChange(false);
   };
 
@@ -98,6 +131,47 @@ export function IssueServingsDialog({ open, onOpenChange, memberId, memberName }
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                Serving dates ({qty} {qty === 1 ? "day" : "days"})
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Each date is marked present (serving issued) in the attendance register.
+              </p>
+              <div className="grid gap-2">
+                {dates.map((d, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="w-12 text-xs text-muted-foreground">Day {i + 1}</span>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex-1 justify-start font-normal">
+                          <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                          {format(isoToLocal(d), "EEE, dd MMM yyyy")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={isoToLocal(d)}
+                          onSelect={(v) => {
+                            if (!v) return;
+                            const iso = format(v, "yyyy-MM-dd");
+                            setDates((prev) => prev.map((x, j) => (j === i ? iso : x)));
+                          }}
+                          disabled={(v) => dates.some((x, j) => j !== i && x === format(v, "yyyy-MM-dd"))}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {existing?.has(d) && (
+                      <span className="text-[11px] text-muted-foreground">Already present, skipped</span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
