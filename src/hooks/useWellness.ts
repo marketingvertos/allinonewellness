@@ -2778,4 +2778,3 @@ export function useMemberAttendanceOnDates(memberId: string | undefined, dates: 
     },
   });
 }
-}
