@@ -20,6 +20,8 @@ import WellnessBatches from "./pages/WellnessBatches";
 import WellnessTrials from "./pages/WellnessTrials";
 import WellnessNotifications from "./pages/WellnessNotifications";
 import WellnessReports from "./pages/WellnessReports";
+import RevenueReport from "./pages/RevenueReport";
+import CheckInReportPage from "./pages/CheckInReportPage";
 import WhatsAppInbox from "./pages/WhatsAppInbox";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
 import WhatsAppTemplates from "./pages/WhatsAppTemplates";
@@ -50,6 +52,11 @@ function LegacyPortalAuthRedirect() {
   return <Navigate to={next ? `/auth?next=${encodeURIComponent(next)}` : "/auth"} replace />;
 }
 
+function LegacyReportsRedirect() {
+  const [params] = useSearchParams();
+  return <Navigate to={params.get("tab") === "revenue" ? "/reports/revenue" : "/reports/events"} replace />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
@@ -71,14 +78,18 @@ const App = () => (
                 <Route path="/members" element={<WellnessMembers />} />
                 <Route path="/checkin" element={<WellnessCheckIn />} />
                 <Route path="/attendance" element={<WellnessAttendance />} />
-                <Route path="/serving-reports" element={<ServingReports />} />
+                <Route path="/servings" element={<ServingReports />} />
+                <Route path="/serving-reports" element={<Navigate to="/servings" replace />} />
                 <Route path="/plans" element={<WellnessPlans />} />
                 <Route path="/qr" element={<Navigate to="/checkin?tab=qr" replace />} />
                 <Route path="/achievements" element={<WellnessAchievements />} />
                 <Route path="/batches" element={<WellnessBatches />} />
                 <Route path="/trials" element={<WellnessTrials />} />
                 <Route path="/notifications" element={<WellnessNotifications />} />
-                <Route path="/reports" element={<WellnessReports />} />
+                <Route path="/reports" element={<LegacyReportsRedirect />} />
+                <Route path="/reports/events" element={<WellnessReports />} />
+                <Route path="/reports/revenue" element={<RevenueReport />} />
+                <Route path="/reports/checkin" element={<CheckInReportPage />} />
                 <Route path="/whatsapp" element={<WhatsAppInbox />} />
                 <Route path="/whatsapp/logs" element={<WhatsAppLogs />} />
                 <Route path="/whatsapp/templates" element={<WhatsAppTemplates />} />

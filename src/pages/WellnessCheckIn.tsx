@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCheckInWithWeight, useMemberBalances, useTodayAttendance, useWellnessMembers } from "@/hooks/useWellness";
 import { TagBadges } from "@/components/wellness/memberMeta";
@@ -52,12 +52,15 @@ export default function WellnessCheckIn() {
     setWeights((w) => ({ ...w, [memberId]: "" }));
   };
 
+  if (tab === "today") return <Navigate to="/attendance" replace />;
+  if (tab === "reports") return <Navigate to="/reports/checkin" replace />;
+
   return (
     <div className="space-y-6">
       <div className="print:hidden">
         <PageBanner
           title="Check-in"
-          description="Approve QR requests, record today's weight, and review attendance reports — all in one place."
+          description="Check members in, approve QR requests and print the centre QR poster."
         />
       </div>
 
@@ -68,8 +71,6 @@ export default function WellnessCheckIn() {
         <TabsList className="flex w-full justify-start gap-1 overflow-x-auto whitespace-nowrap print:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabsTrigger value="checkin">Check in</TabsTrigger>
           <TabsTrigger value="pending">Approvals</TabsTrigger>
-          <TabsTrigger value="today">Today</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="qr">QR poster</TabsTrigger>
         </TabsList>
 
@@ -182,39 +183,6 @@ export default function WellnessCheckIn() {
           <PendingCheckInsCard />
         </TabsContent>
 
-        <TabsContent value="today" className="pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Today&apos;s attendance ({today?.length ?? 0})</CardTitle>
-              <CardDescription>Tap a member to open their profile.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {today?.length ? (
-                today.map((a) => (
-                  <button
-                    key={a.id}
-                    onClick={() => setSelectedMemberId(a.member_id)}
-                    className="flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm transition-colors hover:bg-muted/50"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{a.wellness_members?.full_name}</p>
-                      <p className="text-xs text-muted-foreground">{formatDateTime(a.visit_time)}</p>
-                    </div>
-                    <span className="shrink-0 text-right text-xs text-muted-foreground sm:text-sm">
-                      {a.serving_deducted ? `${a.remaining_balance_snapshot} servings left` : "Trial visit"}
-                    </span>
-                  </button>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No check-ins recorded today.</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="reports" className="pt-4">
-          <CheckInReports onSelectMember={setSelectedMemberId} />
-        </TabsContent>
 
         <TabsContent value="qr" className="pt-4">
           <QrPosterPanel />

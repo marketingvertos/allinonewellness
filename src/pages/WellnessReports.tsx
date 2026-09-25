@@ -428,7 +428,7 @@ function WlpTab({ month }: { month: string }) {
 
 /* ----------------------------- Revenue tab ---------------------------- */
 
-function RevenueTab() {
+export function RevenueTab() {
   const today = todayIst();
   const [preset, setPreset] = useState("month");
   const [from, setFrom] = useState(`${today.slice(0, 7)}-01`);
@@ -559,7 +559,7 @@ export default function WellnessReports() {
 
   return (
     <div className="space-y-6">
-      <PageBanner title="Reports" description="Events, rewards and money, month by month.">
+      <PageBanner title="Events & Programs" description="Family Day, Lifestyle Day, MIW Challenge and WLP, month by month.">
         <div className="flex w-full items-center gap-2 sm:w-auto">
           <CalendarDays className="h-4 w-4 text-muted-foreground" />
           <MonthPicker value={month} onChange={setMonth} />
@@ -572,7 +572,6 @@ export default function WellnessReports() {
           <TabsTrigger value="lifestyle">Lifestyle Day</TabsTrigger>
           <TabsTrigger value="miw">MIW Challenge</TabsTrigger>
           <TabsTrigger value="wlp">WLP King &amp; Queen</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
         </TabsList>
 
         <TabsContent value="family" className="mt-4">
@@ -586,9 +585,6 @@ export default function WellnessReports() {
         </TabsContent>
         <TabsContent value="wlp" className="mt-4">
           <WlpTab month={month} />
-        </TabsContent>
-        <TabsContent value="revenue" className="mt-4">
-          <RevenueTab />
         </TabsContent>
       </Tabs>
     </div>
