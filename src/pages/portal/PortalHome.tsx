@@ -22,6 +22,7 @@ import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
 import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
 import { PromotionCards } from "@/components/portal/PromotionCards";
+import { Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export default function PortalHome() {
   const { data: identity } = useMemberIdentity();
@@ -69,9 +70,26 @@ export default function PortalHome() {
   const changeText = (delta: number) =>
     `${delta > 0 ? "+" : ""}${delta.toFixed(1)} kg`;
 
-  const maxW = history.length ? Math.max(...history.map((w) => Number(w.weight))) : 0;
-  const minW = history.length ? Math.min(...history.map((w) => Number(w.weight))) : 0;
-  const span = Math.max(maxW - minW, 1);
+  const sortedHistory = [...history].sort((a, b) => a.recorded_date.localeCompare(b.recorded_date));
+  const deltaSeries = sortedHistory.slice(1).map((w, i) => ({
+    id: w.id,
+    date: w.recorded_date,
+    label: formatDate(w.recorded_date).slice(0, 6),
+    weight: Number(w.weight),
+    delta: Number((Number(w.weight) - Number(sortedHistory[i].weight)).toFixed(1)),
+  }));
+  const monthPrefix = today.slice(0, 7);
+  const monthStats = deltaSeries
+    .filter((d) => d.date.startsWith(monthPrefix))
+    .reduce(
+      (s, d) => {
+        if (d.delta > 0) { s.upCount++; s.upKg += d.delta; }
+        else if (d.delta < 0) { s.downCount++; s.downKg += -d.delta; }
+        else s.sameCount++;
+        return s;
+      },
+      { upCount: 0, upKg: 0, downCount: 0, downKg: 0, sameCount: 0 },
+    );
 
   const saveWeight = async () => {
     const value = Number(newWeight);
@@ -175,29 +193,48 @@ export default function PortalHome() {
 
             {history.length > 1 && (
               <div>
-                <div className="flex h-28 items-end gap-1 rounded-md border bg-muted/30 p-2">
-                  {history.slice(-14).map((w, i, arr) => {
-                    const prev = i > 0 ? Number(arr[i - 1].weight) : Number(w.weight);
-                    const delta = Number(w.weight) - prev;
-                    const good = delta === 0 ? null : isGood(delta);
-                    const height = 8 + ((Number(w.weight) - minW) / span) * 80;
-                    return (
-                      <div key={w.id} className="flex flex-1 flex-col items-center justify-end gap-1">
-                        <span
-                          className={`h-2.5 w-2.5 rounded-full ${
-                            good === null
-                              ? "bg-muted-foreground"
-                              : good
-                                ? "bg-emerald-500"
-                                : "bg-destructive"
-                          }`}
-                          style={{ marginBottom: `${height}px` }}
-                          title={`${formatDate(w.recorded_date)} — ${w.weight} kg`}
-                        />
-                      </div>
-                    );
-                  })}
+                <div className="h-36 w-full rounded-md border bg-muted/30 p-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={deltaSeries.slice(-14)} margin={{ left: -24, right: 6, top: 8, bottom: 0 }}>
+                      <XAxis dataKey="label" fontSize={9} tickLine={false} axisLine={false} interval="preserveStartEnd" stroke="hsl(var(--muted-foreground))" />
+                      <YAxis fontSize={9} width={34} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                      <ReferenceLine y={0} stroke="hsl(var(--border))" />
+                      <Tooltip
+                        cursor={{ fill: "hsl(var(--muted))" }}
+                        contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--popover-foreground))", fontSize: 12 }}
+                        formatter={(v: number, _n, p) => [`${changeText(v)} (now ${p.payload.weight} kg)`, "Change"]}
+                        labelFormatter={(_l, p) => (p?.[0] ? formatDate(p[0].payload.date) : "")}
+                      />
+                      <Bar dataKey="delta" radius={[3, 3, 3, 3]}>
+                        {deltaSeries.slice(-14).map((d) => (
+                          <Cell
+                            key={d.id}
+                            fill={d.delta === 0 ? "hsl(var(--muted-foreground))" : isGood(d.delta) ? "hsl(142 71% 40%)" : "hsl(var(--destructive))"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-center text-xs">
+                  <div className={`rounded-md border p-2 ${gaining ? "border-emerald-500/40" : "border-destructive/40"}`}>
+                    <p className="text-muted-foreground">Increased this month</p>
+                    <p className={`text-base font-semibold ${gaining ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
+                      {monthStats.upCount} visit{monthStats.upCount === 1 ? "" : "s"} · +{monthStats.upKg.toFixed(1)} kg
+                    </p>
+                  </div>
+                  <div className={`rounded-md border p-2 ${gaining ? "border-destructive/40" : "border-emerald-500/40"}`}>
+                    <p className="text-muted-foreground">Reduced this month</p>
+                    <p className={`text-base font-semibold ${gaining ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"}`}>
+                      {monthStats.downCount} visit{monthStats.downCount === 1 ? "" : "s"} · −{monthStats.downKg.toFixed(1)} kg
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-2 text-center text-xs text-muted-foreground">
+                  {monthStats.upCount + monthStats.downCount + monthStats.sameCount === 0
+                    ? "No readings this month yet"
+                    : <>Net change this month: <span className="font-semibold text-foreground">{changeText(monthStats.upKg - monthStats.downKg)}</span></>}
+                </p>
                 <div className="mt-2 flex justify-between text-xs">
                   <span className="text-muted-foreground">
                     Latest change:{" "}
