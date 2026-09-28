@@ -37,6 +37,8 @@ function reasonLabel(reason: string, referredName?: string | null) {
       return referredName ? `Membership referral — ${referredName}` : "Membership referral";
     case "renewal_redemption":
       return "Redeemed at renewal";
+    case "referral_reversal":
+      return referredName ? `Referral reversed — ${referredName}` : "Referral reversed";
     case "manual_adjustment":
       return "Manual adjustment";
     default:
