@@ -2171,6 +2171,9 @@ export function useStartGuestTrial() {
       duration_days?: number;
       height?: number | null;
       weight?: number | null;
+      referred_by_member_id?: string | null;
+      referrer_name?: string | null;
+      referrer_mobile?: string | null;
     }) => {
       const duration = args.duration_days ?? 3;
 
@@ -2188,6 +2191,7 @@ export function useStartGuestTrial() {
           height: args.height ?? null,
           initial_weight: args.weight ?? null,
           current_weight: args.weight ?? null,
+          referred_by_member_id: args.referred_by_member_id ?? null,
           created_by: args.created_by,
         } as never)
         .select("id")
@@ -2216,6 +2220,18 @@ export function useStartGuestTrial() {
           recorded_by: args.created_by,
         } as never);
       }
+
+      // Referrer who is not on the member list is kept as a note on the guest.
+      const outsideName = args.referrer_name?.trim();
+      if (!args.referred_by_member_id && outsideName) {
+        const phone = args.referrer_mobile?.trim();
+        await supabase.from("member_notes").insert({
+          member_id: memberId,
+          note: `Referred by / helped by: ${outsideName}${phone ? ` · ${phone}` : ""} (not a club member)`,
+          created_by: args.created_by,
+        } as never);
+      }
+
 
       let loginError: string | null = null;
       try {
