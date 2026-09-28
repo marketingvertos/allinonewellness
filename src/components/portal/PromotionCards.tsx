@@ -23,7 +23,7 @@ export function PromotionCards({ memberId, memberMode }: { memberId: string; mem
           <Card
             key={promo.id}
             className={cn(
-              "overflow-hidden border-l-4",
+              "overflow-hidden border-l-8",
               color.card,
             )}
           >
@@ -34,7 +34,7 @@ export function PromotionCards({ memberId, memberMode }: { memberId: string; mem
               <div className="flex items-start gap-2">
                 <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-2xl leading-none", color.icon)}>{promo.icon}</span>
                 <div>
-                  <h3 className="font-semibold">{promo.title}</h3>
+                  <h3 className={cn("font-semibold", color.title)}>{promo.title}</h3>
                   {promo.description && <p className="text-sm text-muted-foreground">{promo.description}</p>}
                 </div>
               </div>
@@ -46,11 +46,11 @@ export function PromotionCards({ memberId, memberMode }: { memberId: string; mem
                   </div>
                   <Progress value={Math.min(100, (count / target) * 100)} className={cn("h-2.5", color.progress)} />
                   {qualified ? (
-                    <div className="rounded-md bg-primary/10 p-3 text-center">
-                      <p className="flex items-center justify-center gap-1 text-sm font-semibold text-primary">
+                    <div className={cn("rounded-md p-3 text-center", color.banner)}>
+                      <p className="flex items-center justify-center gap-1 text-sm font-semibold">
                         <CheckCircle className="h-4 w-4" /> Congratulations! You qualified 🎉
                       </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <p className="mt-1 text-xs opacity-90">
                         {progress?.reward_claimed ? "✅ Reward received" : "Your coach will give you the reward."}
                       </p>
                     </div>
