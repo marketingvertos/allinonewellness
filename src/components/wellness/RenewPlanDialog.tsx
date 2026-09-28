@@ -224,7 +224,7 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
           {mode === "extend" && (
             <p>
               <span className="font-medium">{membership.remaining_servings} left</span> + {servings} new ={" "}
-              <span className="font-semibold">{membership.remaining_servings + servings} servings</span>
+              <span className="font-semibold">{membership.remaining_servings + servings + (isEarlyRenewal ? 2 : 0)} servings</span>{isEarlyRenewal ? " (incl. +2 bonus)" : ""}
               {plan ? ` · plan extended by ${plan.duration_days} days` : ""}
             </p>
           )}
