@@ -195,7 +195,7 @@ export default function PortalHome() {
               <div>
                 <div className="h-44 w-full rounded-md border bg-muted/30 p-1">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={deltaSeries.slice(-14)} margin={{ left: -24, right: 6, top: 16, bottom: 10 }}>
+                    <BarChart data={deltaSeries.slice(-14)} margin={{ left: -24, right: 6, top: 16, bottom: 14 }}>
                       <XAxis dataKey="label" fontSize={9} tickLine={false} axisLine={false} interval="preserveStartEnd" stroke="hsl(var(--muted-foreground))" />
                       <YAxis fontSize={9} width={34} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
                       <ReferenceLine y={0} stroke="hsl(var(--border))" />
@@ -216,7 +216,7 @@ export default function PortalHome() {
                               : isGood(delta)
                                 ? "hsl(142 71% 40%)"
                                 : "hsl(var(--destructive))";
-                          const labelY = delta >= 0 ? y - 4 : y + height + 12;
+                          const labelY = delta >= 0 ? y - 4 : y + 14;
                           return (
                             <text x={x + width / 2} y={labelY} fill={color} fontSize={10} fontWeight={600} textAnchor="middle">
                               {delta === 0 ? "0.0" : changeText(delta)}
