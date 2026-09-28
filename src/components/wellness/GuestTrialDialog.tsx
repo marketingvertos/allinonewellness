@@ -55,6 +55,10 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
       setDuration("3");
       setHeight("");
       setWeight("");
+      setReferrerMode("member");
+      setReferrerId(null);
+      setOtherName("");
+      setOtherMobile("");
       setCreated(null);
     }
   }, [open, defaultName, today]);
@@ -75,7 +79,11 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
       duration_days: servings,
       height: height ? Number(height) : null,
       weight: weight ? Number(weight) : null,
+      referred_by_member_id: referrerMode === "member" ? referrerId : null,
+      referrer_name: referrerMode === "other" ? otherName : null,
+      referrer_mobile: referrerMode === "other" ? otherMobile : null,
     });
+
     setCreated({ mobile: digits, loginError: result.loginError });
   };
 
