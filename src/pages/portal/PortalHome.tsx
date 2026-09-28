@@ -79,6 +79,9 @@ export default function PortalHome() {
     delta: Number((Number(w.weight) - Number(sortedHistory[i].weight)).toFixed(1)),
   }));
   const monthPrefix = today.slice(0, 7);
+  const elapsedMonthDays = Number(today.slice(8, 10));
+  const presentDays = Math.min(monthDays ?? 0, elapsedMonthDays);
+  const absentDays = Math.max(0, elapsedMonthDays - presentDays);
   const monthStats = deltaSeries
     .filter((d) => d.date.startsWith(monthPrefix))
     .reduce(
@@ -175,7 +178,7 @@ export default function PortalHome() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Progress</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
                 <p className="text-muted-foreground">Start</p>
@@ -193,11 +196,11 @@ export default function PortalHome() {
 
             {history.length > 1 && (
               <div>
-                <div className="h-44 w-full rounded-md border bg-muted/30 p-1">
+                <div className="h-52 w-full rounded-md border bg-muted/30 p-1">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={deltaSeries.slice(-14)} margin={{ left: -24, right: 6, top: 16, bottom: 14 }}>
+                    <BarChart data={deltaSeries.slice(-14)} margin={{ left: -24, right: 12, top: 24, bottom: 18 }}>
                       <XAxis dataKey="label" fontSize={9} tickLine={false} axisLine={false} interval="preserveStartEnd" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis fontSize={9} width={34} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis fontSize={9} width={34} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" domain={([min, max]: [number, number]) => [Math.min(min, 0) - 0.35, Math.max(max, 0) + 0.35]} />
                       <ReferenceLine y={0} stroke="hsl(var(--border))" />
                       <Tooltip
                         cursor={{ fill: "hsl(var(--muted))" }}
@@ -216,7 +219,7 @@ export default function PortalHome() {
                               : isGood(delta)
                                 ? "hsl(142 71% 40%)"
                                 : "hsl(var(--destructive))";
-                          const labelY = delta >= 0 ? y - 4 : y + 14;
+                           const labelY = delta >= 0 ? Math.min(y, y + height) - 5 : Math.max(y, y + height) + 13;
                           return (
                             <text x={x + width / 2} y={labelY} fill={color} fontSize={10} fontWeight={600} textAnchor="middle">
                               {delta === 0 ? "0.0" : changeText(delta)}
@@ -233,26 +236,32 @@ export default function PortalHome() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-center text-xs">
-                  <div className={`rounded-md border p-2 ${gaining ? "border-emerald-500/40" : "border-destructive/40"}`}>
+                <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                  <div className={`min-w-0 rounded-md border p-3 ${gaining ? "border-emerald-500/40" : "border-destructive/40"}`}>
                     <p className="text-muted-foreground">Increased this month</p>
-                    <p className={`text-base font-semibold ${gaining ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
-                      {monthStats.upCount} visit{monthStats.upCount === 1 ? "" : "s"} · +{monthStats.upKg.toFixed(1)} kg
+                    <p className={`mt-1 text-lg font-semibold leading-tight ${gaining ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
+                      {monthStats.upCount} visit{monthStats.upCount === 1 ? "" : "s"}
                     </p>
+                    <p className={`font-semibold ${gaining ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>+{monthStats.upKg.toFixed(1)} kg</p>
                   </div>
-                  <div className={`rounded-md border p-2 ${gaining ? "border-destructive/40" : "border-emerald-500/40"}`}>
+                  <div className={`min-w-0 rounded-md border p-3 ${gaining ? "border-destructive/40" : "border-emerald-500/40"}`}>
                     <p className="text-muted-foreground">Reduced this month</p>
-                    <p className={`text-base font-semibold ${gaining ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"}`}>
-                      {monthStats.downCount} visit{monthStats.downCount === 1 ? "" : "s"} · −{monthStats.downKg.toFixed(1)} kg
+                    <p className={`mt-1 text-lg font-semibold leading-tight ${gaining ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"}`}>
+                      {monthStats.downCount} visit{monthStats.downCount === 1 ? "" : "s"}
                     </p>
+                    <p className={`font-semibold ${gaining ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"}`}>−{monthStats.downKg.toFixed(1)} kg</p>
                   </div>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
+                  <span className="text-muted-foreground">Maintained this month</span>
+                  <span className="shrink-0 font-semibold">{monthStats.sameCount} reading{monthStats.sameCount === 1 ? "" : "s"}</span>
                 </div>
                 <p className="mt-2 text-center text-xs text-muted-foreground">
                   {monthStats.upCount + monthStats.downCount + monthStats.sameCount === 0
                     ? "No readings this month yet"
                     : <>Net change this month: <span className="font-semibold text-foreground">{changeText(monthStats.upKg - monthStats.downKg)}</span></>}
                 </p>
-                <div className="mt-2 flex justify-between text-xs">
+                <div className="mt-2 flex flex-wrap justify-between gap-x-4 gap-y-1 text-xs">
                   <span className="text-muted-foreground">
                     Latest change:{" "}
                     {latestChange == null ? (
@@ -292,6 +301,32 @@ export default function PortalHome() {
                 </div>
               </div>
             )}
+
+            <div className="space-y-3 border-t pt-4">
+              <p className="text-sm font-semibold">Attendance this month</p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="min-w-0 rounded-md border p-3">
+                  <p className="text-muted-foreground">Present</p>
+                  <p className="text-xl font-semibold">{presentDays} <span className="text-sm font-normal">days</span></p>
+                </div>
+                <div className="min-w-0 rounded-md border p-3">
+                  <p className="text-muted-foreground">Absent</p>
+                  <p className="text-xl font-semibold">{absentDays} <span className="text-sm font-normal">days</span></p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <span className="font-medium">Consistency reward</span>
+                  <span className="shrink-0 font-semibold">{presentDays}/26 days</span>
+                </div>
+                <Progress value={Math.min(100, (presentDays / 26) * 100)} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  {presentDays >= 26
+                    ? "You qualify for the consistency reward"
+                    : `${26 - presentDays} more day${26 - presentDays === 1 ? "" : "s"} to earn the consistency reward.`}
+                </p>
+              </div>
+            </div>
 
             <Button
               variant="outline"
@@ -339,19 +374,6 @@ export default function PortalHome() {
             <p className="font-medium">{formatDate(familyDay.event_date)}</p>
             {familyDay.description && (
               <p className="text-muted-foreground">{familyDay.description}</p>
-            )}
-            <p className="text-muted-foreground">
-              You have attended <span className="font-semibold text-foreground">{monthDays ?? 0}</span> days
-              this month.
-            </p>
-            {(monthDays ?? 0) >= 26 ? (
-              <Badge className="bg-emerald-600 hover:bg-emerald-600">
-                You qualify for the consistency reward
-              </Badge>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                {26 - (monthDays ?? 0)} more days to earn the consistency reward.
-              </p>
             )}
             {topMilestone && (
               <p className="text-muted-foreground">
