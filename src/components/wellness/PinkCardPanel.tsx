@@ -125,7 +125,13 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
                   <p className="font-medium">{reasonLabel(row.reason, row.referred?.full_name)}</p>
                   <p className="text-xs text-muted-foreground">
                     {formatDate(row.created_at)} · balance {row.balance_after}
-                    {row.note ? ` · ${row.note}` : ""}
+                    {row.reason === "referral_reversal"
+                      ? row.note === "trial_referral"
+                        ? " · trial credit"
+                        : " · membership credit"
+                      : row.note
+                        ? ` · ${row.note}`
+                        : ""}
                   </p>
                 </div>
                 <span
