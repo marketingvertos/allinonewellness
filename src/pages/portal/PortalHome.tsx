@@ -22,7 +22,7 @@ import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
 import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
 import { PromotionCards } from "@/components/portal/PromotionCards";
-import { Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export default function PortalHome() {
   const { data: identity } = useMemberIdentity();
@@ -193,9 +193,9 @@ export default function PortalHome() {
 
             {history.length > 1 && (
               <div>
-                <div className="h-36 w-full rounded-md border bg-muted/30 p-1">
+                <div className="h-44 w-full rounded-md border bg-muted/30 p-1">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={deltaSeries.slice(-14)} margin={{ left: -24, right: 6, top: 8, bottom: 0 }}>
+                    <BarChart data={deltaSeries.slice(-14)} margin={{ left: -24, right: 6, top: 16, bottom: 10 }}>
                       <XAxis dataKey="label" fontSize={9} tickLine={false} axisLine={false} interval="preserveStartEnd" stroke="hsl(var(--muted-foreground))" />
                       <YAxis fontSize={9} width={34} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
                       <ReferenceLine y={0} stroke="hsl(var(--border))" />
@@ -206,6 +206,23 @@ export default function PortalHome() {
                         labelFormatter={(_l, p) => (p?.[0] ? formatDate(p[0].payload.date) : "")}
                       />
                       <Bar dataKey="delta" radius={[3, 3, 3, 3]}>
+                        <LabelList dataKey="delta" content={(props: { x?: number; y?: number; width?: number; height?: number; value?: number | string }) => {
+                          const { x, y, width, height, value } = props;
+                          const delta = Number(value);
+                          if (x == null || y == null || width == null || height == null || !Number.isFinite(delta)) return null;
+                          const color =
+                            delta === 0
+                              ? "hsl(var(--muted-foreground))"
+                              : isGood(delta)
+                                ? "hsl(142 71% 40%)"
+                                : "hsl(var(--destructive))";
+                          const labelY = delta >= 0 ? y - 4 : y + height + 12;
+                          return (
+                            <text x={x + width / 2} y={labelY} fill={color} fontSize={10} fontWeight={600} textAnchor="middle">
+                              {delta === 0 ? "0.0" : changeText(delta)}
+                            </text>
+                          );
+                        }} />
                         {deltaSeries.slice(-14).map((d) => (
                           <Cell
                             key={d.id}
