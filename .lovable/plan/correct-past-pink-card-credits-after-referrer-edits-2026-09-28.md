@@ -1,17 +1,21 @@
-# Correct past Pink Card credits after referrer edits
+# Correct past Pink Card credits after referrer edits  
+  
+Reanalysis .. as we make the changes ... 
 
 ## What was found
 
 Referrer names edited before the automatic reversal existed left the credit with the wrong person. Six credits no longer match the member's current "Referred by":
 
-| Credit holder (wrong) | For member | Credit | Current referrer |
-|---|---|---|---|
-| Mhattam Verma | Rajendra prasad verma | +1 trial | SHRI CHATAP |
-| Mahendra kumawat | Mhattam Verma | +3 membership | Rajendra Kumawat |
-| Hemant Kumawat | PUSHPA KUMAWAT | +3 membership | Teena Kumawat |
-| Kulveer Singh Khalsa | Darshana Kaur Tuteja | +3 membership | Jaswant Kaur khalsa |
-| SHRI CHATAP | Ashish yadav | +3 membership | Nikhil Sewkani |
-| SHRI CHATAP | Pawan Tripathi | +3 membership | none (removed) |
+
+| Credit holder (wrong) | For member            | Credit                        | Current referrer    |
+| --------------------- | --------------------- | ----------------------------- | ------------------- |
+| Mhattam Verma         | Rajendra prasad verma | +1 trial (no credit for this) | SHRI CHATAP         |
+| Mahendra kumawat      | Mhattam Verma         | +3 membership                 | Rajendra Kumawat    |
+| Hemant Kumawat        | PUSHPA KUMAWAT        | +3 membership                 | Teena Kumawat       |
+| Kulveer Singh Khalsa  | Darshana Kaur Tuteja  | +3 membership                 | Jaswant Kaur khalsa |
+| SHRI CHATAP           | Ashish yadav          | +3 membership                 | Nikhil Sewkani      |
+| SHRI CHATAP           | Pawan Tripathi        | +3 membership                 | none (removed)      |
+
 
 ## Fix
 
