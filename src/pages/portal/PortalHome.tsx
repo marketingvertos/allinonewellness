@@ -21,6 +21,7 @@ import { formatDate, todayIst } from "@/lib/formatters";
 import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
 import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
+import { PromotionCards } from "@/components/portal/PromotionCards";
 
 export default function PortalHome() {
   const { data: identity } = useMemberIdentity();
@@ -122,6 +123,8 @@ export default function PortalHome() {
           )}
         </CardContent>
       </Card>
+
+      {profile && <PromotionCards memberId={profile.id} memberMode={profile.member_mode} />}
 
       {profile && (
         <PayOnlineDialog
