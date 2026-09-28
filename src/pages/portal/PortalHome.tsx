@@ -94,6 +94,15 @@ export default function PortalHome() {
       { upCount: 0, upKg: 0, downCount: 0, downKg: 0, sameCount: 0 },
     );
 
+  const monthReadings = sortedHistory.filter((w) => w.recorded_date.startsWith(monthPrefix));
+  const monthNetChange =
+    monthReadings.length >= 2
+      ? Number((Number(monthReadings[monthReadings.length - 1].weight) - Number(monthReadings[0].weight)).toFixed(1))
+      : null;
+  const qualTarget = gaining ? 3 : 5;
+  const qualProgress = monthNetChange == null ? 0 : Math.max(0, gaining ? monthNetChange : -monthNetChange);
+  const qualQualified = qualProgress >= qualTarget;
+
   const saveWeight = async () => {
     const value = Number(newWeight);
     if (!identity?.memberId || !user || !value) return;
