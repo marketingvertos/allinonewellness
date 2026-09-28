@@ -127,6 +127,13 @@
       "when": 1790358358355,
       "tag": "0017_issue_servings_with_dates",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790596838700,
+      "tag": "0018_trial_day2_courtesy_visit",
+      "breakpoints": true
     }
   ]
 }

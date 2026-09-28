@@ -1033,6 +1033,7 @@ export type Database = {
           checkin_method: Database["public"]["Enums"]["checkin_method"]
           created_at: string
           id: string
+          is_trial_advance: boolean
           member_id: string
           membership_id: string | null
           remaining_balance_snapshot: number | null
@@ -1046,6 +1047,7 @@ export type Database = {
           checkin_method?: Database["public"]["Enums"]["checkin_method"]
           created_at?: string
           id?: string
+          is_trial_advance?: boolean
           member_id: string
           membership_id?: string | null
           remaining_balance_snapshot?: number | null
@@ -1059,6 +1061,7 @@ export type Database = {
           checkin_method?: Database["public"]["Enums"]["checkin_method"]
           created_at?: string
           id?: string
+          is_trial_advance?: boolean
           member_id?: string
           membership_id?: string | null
           remaining_balance_snapshot?: number | null
@@ -2318,6 +2321,7 @@ export type Database = {
         }
         Returns: string
       }
+      trial_advance_eligible: { Args: { p_member_id: string }; Returns: string }
       wellness_plan_usage: {
         Args: never
         Returns: {
@@ -2349,6 +2353,7 @@ export type Database = {
         | "renewal_allocation"
         | "refund_adjustment"
         | "pack_and_issue"
+        | "trial_advance_deduction"
       trial_status:
         | "active"
         | "completed"
@@ -2521,6 +2526,7 @@ export const Constants = {
         "renewal_allocation",
         "refund_adjustment",
         "pack_and_issue",
+        "trial_advance_deduction",
       ],
       trial_status: [
         "active",
