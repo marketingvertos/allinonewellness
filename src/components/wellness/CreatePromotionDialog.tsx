@@ -62,7 +62,7 @@ export function CreatePromotionDialog({ open, onOpenChange, promotion }: Props) 
 
   const set = (k: keyof ReturnType<typeof blank>, v: string) => setF((p) => ({ ...p, [k]: v }));
   const isAnn = f.offer_type === "announcement";
-  const changeLine = (index: number, value: string) => setDescriptionLines((lines) => lines.map((line, i) => i === index ? value : line));
+  const changeLine = (index: number, value: string) => setDescriptionLines((lines) => lines.map((line, i) => i === index ? value.replace(/\r?\n/g, " ") : line));
   const moveLine = (index: number, direction: -1 | 1) => setDescriptionLines((lines) => {
     const next = [...lines];
     [next[index], next[index + direction]] = [next[index + direction], next[index]];
@@ -152,6 +152,12 @@ export function CreatePromotionDialog({ open, onOpenChange, promotion }: Props) 
           {descriptionLines.map((line, index) => (
             <div key={index} className="flex items-start gap-1">
               <Textarea aria-label={`Description line ${index + 1}`} value={line} rows={2} className="min-w-0 flex-1"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    setDescriptionLines((lines) => [...lines.slice(0, index + 1), "", ...lines.slice(index + 1)]);
+                  }
+                }}
                 onChange={(e) => changeLine(index, e.target.value)} />
               <div className="flex shrink-0 flex-col">
                 <Button type="button" size="icon" variant="ghost" aria-label={`Move line ${index + 1} up`} title="Move up" disabled={index === 0}
