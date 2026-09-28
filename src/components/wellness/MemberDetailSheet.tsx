@@ -60,7 +60,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatCurrency, formatDate, formatDateTime, todayIst } from "@/lib/formatters";
+import { formatCurrency, formatDate, formatDateTime, todayIst , planGetsBonus } from "@/lib/formatters";
 
 import { Package, Pencil, Trash2 } from "lucide-react";
 import {
@@ -501,7 +501,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                     <SelectContent>
                       {plans?.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings
+                          {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings{planGetsBonus(p) ? " + 2 bonus" : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>

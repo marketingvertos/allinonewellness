@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { formatCurrency, formatDate, todayIst } from "@/lib/formatters";
+import { formatCurrency, formatDate, todayIst , planGetsBonus } from "@/lib/formatters";
 
 import { Minus, Plus } from "lucide-react";
 
@@ -138,7 +138,7 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
             <SelectContent>
               {membershipPlans.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings
+                  {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings{planGetsBonus(p) ? " + 2 bonus" : ""}
                 </SelectItem>
               ))}
             </SelectContent>
