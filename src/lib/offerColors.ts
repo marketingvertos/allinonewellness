@@ -59,14 +59,23 @@ const preferred: Record<Promotion["offer_type"], OfferColor[]> = {
   announcement: ["blue", "plum"],
 };
 
-const palette: OfferColor[] = ["teal", "coral", "blue", "gold", "green", "plum"];
+export const offerPalette: OfferColor[] = ["teal", "coral", "blue", "gold", "green", "plum"];
+
+export function isOfferColor(value: string | null | undefined): value is OfferColor {
+  return offerPalette.some((color) => color === value);
+}
 
 /** Assign colors by stable ID order so card order changes do not shuffle their colors. */
 export function getOfferColors(offers: Promotion[]): Map<string, OfferColor> {
   const colors = new Map<string, OfferColor>();
   const usage = new Map<OfferColor, number>();
   for (const offer of [...offers].sort((a, b) => a.id.localeCompare(b.id))) {
-    const choices = [...preferred[offer.offer_type], ...palette.filter((color) => !preferred[offer.offer_type].includes(color))];
+    const choices = [...preferred[offer.offer_type], ...offerPalette.filter((color) => !preferred[offer.offer_type].includes(color))];
+    if (isOfferColor(offer.card_color)) {
+      colors.set(offer.id, offer.card_color);
+      usage.set(offer.card_color, (usage.get(offer.card_color) ?? 0) + 1);
+      continue;
+    }
     const color = choices.find((choice) => !usage.has(choice)) ??
       choices.reduce((best, choice) => (usage.get(choice) ?? 0) < (usage.get(best) ?? 0) ? choice : best, choices[0]);
     colors.set(offer.id, color);
