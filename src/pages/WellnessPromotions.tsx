@@ -85,19 +85,19 @@ export default function WellnessPromotions() {
           const live = p.is_active && p.end_date >= today;
           const upcoming = live && p.start_date > today;
           return (
-            <Card key={p.id} className={cn("border-l-4", color.card)}>
+            <Card key={p.id} className={cn("border-l-8", color.card)}>
               <CardContent className="space-y-2 pt-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2">
                     <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-2xl leading-none", color.icon)}>{p.icon}</span>
                     <div>
-                      <h3 className="font-semibold">{p.title}</h3>
+                      <h3 className={cn("font-semibold", color.title)}>{p.title}</h3>
                       <p className="text-xs text-muted-foreground">
                         {OFFER_TYPE_LABEL[p.offer_type]} · {formatDate(p.start_date)} – {formatDate(p.end_date)}
                       </p>
                     </div>
                   </div>
-                  <Badge variant={live ? "default" : "secondary"}>
+                  <Badge className={live ? color.badge : undefined} variant={live ? "default" : "secondary"}>
                     {!p.is_active ? "Inactive" : p.end_date < today ? "Ended" : upcoming ? "Upcoming" : "Live"}
                   </Badge>
                 </div>
