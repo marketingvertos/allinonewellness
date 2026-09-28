@@ -94,6 +94,15 @@ export default function PortalHome() {
       { upCount: 0, upKg: 0, downCount: 0, downKg: 0, sameCount: 0 },
     );
 
+  const monthReadings = sortedHistory.filter((w) => w.recorded_date.startsWith(monthPrefix));
+  const monthNetChange =
+    monthReadings.length >= 2
+      ? Number((Number(monthReadings[monthReadings.length - 1].weight) - Number(monthReadings[0].weight)).toFixed(1))
+      : null;
+  const qualTarget = gaining ? 3 : 5;
+  const qualProgress = monthNetChange == null ? 0 : Math.max(0, gaining ? monthNetChange : -monthNetChange);
+  const qualQualified = qualProgress >= qualTarget;
+
   const saveWeight = async () => {
     const value = Number(newWeight);
     if (!identity?.memberId || !user || !value) return;
@@ -325,6 +334,20 @@ export default function PortalHome() {
                   {presentDays >= 26
                     ? "You qualify for the consistency reward"
                     : `${26 - presentDays} more day${26 - presentDays === 1 ? "" : "s"} to earn the consistency reward.`}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <span className="font-medium">{gaining ? "Weight gain" : "Weight loss"} qualification</span>
+                  <span className="shrink-0 font-semibold">{qualProgress.toFixed(1)}/{qualTarget} kg</span>
+                </div>
+                <Progress value={Math.min(100, (qualProgress / qualTarget) * 100)} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  {monthNetChange == null
+                    ? "Not enough readings this month yet."
+                    : qualQualified
+                      ? `You qualify for the Family Day ${gaining ? "weight gain" : "weight loss"} reward`
+                      : `${(qualTarget - qualProgress).toFixed(1)} more kg to earn the Family Day ${gaining ? "weight gain" : "weight loss"} reward.`}
                 </p>
               </div>
             </div>
