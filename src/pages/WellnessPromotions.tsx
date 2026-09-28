@@ -11,6 +11,8 @@ import { METRIC_LABEL, OFFER_TYPE_LABEL, Promotion, usePromotions, usePromotionS
 import { CreatePromotionDialog } from "@/components/wellness/CreatePromotionDialog";
 import { PromotionProgressSheet } from "@/components/wellness/PromotionProgressSheet";
 import { formatDate, todayIst } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
+import { getOfferColors, offerColorClasses } from "@/lib/offerColors";
 
 export default function WellnessPromotions() {
   const [tab, setTab] = useState<"active" | "expired" | "all">("active");
@@ -23,6 +25,7 @@ export default function WellnessPromotions() {
   const [createOpen, setCreateOpen] = useState(false);
   const [viewing, setViewing] = useState<Promotion | null>(null);
   const today = todayIst();
+  const colors = getOfferColors(promos ?? []);
 
   const makeLive = async (p: Promotion) => {
     try {
@@ -78,14 +81,15 @@ export default function WellnessPromotions() {
         {(promos ?? []).map((p) => {
           const s = stats?.[p.id];
           const tracked = p.offer_type !== "announcement";
+          const color = offerColorClasses[colors.get(p.id) ?? "teal"];
           const live = p.is_active && p.end_date >= today;
           const upcoming = live && p.start_date > today;
           return (
-            <Card key={p.id} className={`border-l-4 ${tracked ? "border-l-amber-500" : "border-l-accent"}`}>
+            <Card key={p.id} className={cn("border-l-4", color.card)}>
               <CardContent className="space-y-2 pt-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2">
-                    <span className="text-2xl leading-none">{p.icon}</span>
+                    <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-2xl leading-none", color.icon)}>{p.icon}</span>
                     <div>
                       <h3 className="font-semibold">{p.title}</h3>
                       <p className="text-xs text-muted-foreground">
