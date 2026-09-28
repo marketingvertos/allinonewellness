@@ -208,7 +208,52 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
             placeholder="e.g. 72.5"
           />
         </div>
+        <div className="sm:col-span-2 space-y-2 border-t pt-4">
+          <Label>Referred by / helped by (optional)</Label>
+          <ToggleGroup
+            type="single"
+            value={referrerMode}
+            onValueChange={(v) => v && setReferrerMode(v as "member" | "other")}
+            className="justify-start flex-wrap"
+          >
+            <ToggleGroupItem value="member" variant="outline" className="px-4">
+              Club member
+            </ToggleGroupItem>
+            <ToggleGroupItem value="other" variant="outline" className="px-4">
+              Someone else
+            </ToggleGroupItem>
+          </ToggleGroup>
+          {referrerMode === "member" ? (
+            <ReferrerPicker value={referrerId} onChange={(id) => setReferrerId(id)} />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="g-ref-name">Person's name</Label>
+                <Input
+                  id="g-ref-name"
+                  maxLength={80}
+                  value={otherName}
+                  onChange={(e) => setOtherName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="g-ref-mobile">Mobile number</Label>
+                <Input
+                  id="g-ref-mobile"
+                  inputMode="numeric"
+                  maxLength={15}
+                  value={otherMobile}
+                  onChange={(e) => setOtherMobile(e.target.value)}
+                />
+              </div>
+              <p className="sm:col-span-2 text-xs text-muted-foreground">
+                Saved on the guest's notes. No referral credit is given, as they are not a club member.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
+
     </ResponsiveDialog>
   );
 }
