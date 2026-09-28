@@ -1851,6 +1851,7 @@ export type Database = {
       wellness_promotions: {
         Row: {
           banner_message: string | null
+          card_color: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -1869,6 +1870,7 @@ export type Database = {
         }
         Insert: {
           banner_message?: string | null
+          card_color?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -1887,6 +1889,7 @@ export type Database = {
         }
         Update: {
           banner_message?: string | null
+          card_color?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
