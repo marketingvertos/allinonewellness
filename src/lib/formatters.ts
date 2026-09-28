@@ -81,3 +81,7 @@ export function formatDateTime(date: string | Date): string {
   }).format(d);
   return `${day} at ${time}`;
 }
+
+/** 30-serving membership plans earn +2 bonus servings (new join or on-time renewal). */
+export const planGetsBonus = (p?: { plan_type?: string | null; total_servings?: number | null } | null) =>
+  !!p && p.plan_type === "membership" && Number(p.total_servings) === 30;

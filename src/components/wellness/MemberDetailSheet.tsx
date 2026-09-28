@@ -60,7 +60,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatCurrency, formatDate, formatDateTime, todayIst } from "@/lib/formatters";
+import { formatCurrency, formatDate, formatDateTime, todayIst , planGetsBonus } from "@/lib/formatters";
 
 import { Package, Pencil, Trash2 } from "lucide-react";
 import {
@@ -501,7 +501,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                     <SelectContent>
                       {plans?.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings
+                          {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings{planGetsBonus(p) ? " + 2 bonus" : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -516,6 +516,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                     onChange={(e) => setPayDate(e.target.value)}
                   />
                 </div>
+                {planGetsBonus(selectedNewPlan) && (
+                  <p className="rounded-md border border-primary/40 bg-primary/10 p-2 text-sm">
+                    Joining bonus: <span className="font-semibold">+2 servings</span> ({Number(selectedNewPlan?.total_servings) + 2} total), added automatically.
+                  </p>
+                )}
                 {planId && (
                   <PaymentInput
                     totalAmount={Number(selectedNewPlan?.price ?? 0)}

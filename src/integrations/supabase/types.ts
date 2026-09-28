@@ -2243,6 +2243,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      apply_joining_bonus: {
+        Args: { p_membership_id: string }
+        Returns: undefined
+      }
       approve_checkin_request: {
         Args: { p_request_id: string; p_weight?: number }
         Returns: Json
@@ -2382,6 +2386,7 @@ export type Database = {
         Args: { _member_id: string; _user_id: string }
         Returns: boolean
       }
+      plan_gets_bonus: { Args: { p_plan_id: string }; Returns: boolean }
       queue_birthday_notifications: { Args: never; Returns: undefined }
       queue_member_notification: {
         Args: { p_dedupe?: string; p_member_id: string; p_trigger: string }
