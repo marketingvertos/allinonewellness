@@ -516,6 +516,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                     onChange={(e) => setPayDate(e.target.value)}
                   />
                 </div>
+                {planGetsBonus(selectedNewPlan) && (
+                  <p className="rounded-md border border-primary/40 bg-primary/10 p-2 text-sm">
+                    Joining bonus: <span className="font-semibold">+2 servings</span> ({Number(selectedNewPlan?.total_servings) + 2} total), added automatically.
+                  </p>
+                )}
                 {planId && (
                   <PaymentInput
                     totalAmount={Number(selectedNewPlan?.price ?? 0)}
