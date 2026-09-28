@@ -9,6 +9,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
 import { useToast } from "@/hooks/use-toast";
 import { Copy } from "lucide-react";
+import { ReferrerPicker } from "./ReferrerPicker";
+
 
 interface Props {
   open: boolean;
@@ -34,7 +36,13 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
   const [duration, setDuration] = useState("3");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
+  const [referrerMode, setReferrerMode] = useState<"member" | "other">("member");
+  const [referrerId, setReferrerId] = useState<string | null>(null);
+  const [otherName, setOtherName] = useState("");
+  const [otherMobile, setOtherMobile] = useState("");
   const [created, setCreated] = useState<{ mobile: string; loginError: string | null } | null>(null);
+
+
 
   useEffect(() => {
     if (open) {
@@ -47,6 +55,10 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
       setDuration("3");
       setHeight("");
       setWeight("");
+      setReferrerMode("member");
+      setReferrerId(null);
+      setOtherName("");
+      setOtherMobile("");
       setCreated(null);
     }
   }, [open, defaultName, today]);
@@ -67,7 +79,11 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
       duration_days: servings,
       height: height ? Number(height) : null,
       weight: weight ? Number(weight) : null,
+      referred_by_member_id: referrerMode === "member" ? referrerId : null,
+      referrer_name: referrerMode === "other" ? otherName : null,
+      referrer_mobile: referrerMode === "other" ? otherMobile : null,
     });
+
     setCreated({ mobile: digits, loginError: result.loginError });
   };
 
@@ -192,7 +208,52 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
             placeholder="e.g. 72.5"
           />
         </div>
+        <div className="sm:col-span-2 space-y-2 border-t pt-4">
+          <Label>Referred by / helped by (optional)</Label>
+          <ToggleGroup
+            type="single"
+            value={referrerMode}
+            onValueChange={(v) => v && setReferrerMode(v as "member" | "other")}
+            className="justify-start flex-wrap"
+          >
+            <ToggleGroupItem value="member" variant="outline" className="px-4">
+              Club member
+            </ToggleGroupItem>
+            <ToggleGroupItem value="other" variant="outline" className="px-4">
+              Someone else
+            </ToggleGroupItem>
+          </ToggleGroup>
+          {referrerMode === "member" ? (
+            <ReferrerPicker value={referrerId} onChange={(id) => setReferrerId(id)} />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="g-ref-name">Person's name</Label>
+                <Input
+                  id="g-ref-name"
+                  maxLength={80}
+                  value={otherName}
+                  onChange={(e) => setOtherName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="g-ref-mobile">Mobile number</Label>
+                <Input
+                  id="g-ref-mobile"
+                  inputMode="numeric"
+                  maxLength={15}
+                  value={otherMobile}
+                  onChange={(e) => setOtherMobile(e.target.value)}
+                />
+              </div>
+              <p className="sm:col-span-2 text-xs text-muted-foreground">
+                Saved on the guest's notes. No referral credit is given, as they are not a club member.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
+
     </ResponsiveDialog>
   );
 }
