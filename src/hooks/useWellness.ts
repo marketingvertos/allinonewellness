@@ -2169,9 +2169,10 @@ export function useStartGuestTrial() {
       start_date: string;
       created_by: string;
       duration_days?: number;
+      height?: number | null;
+      weight?: number | null;
     }) => {
       const duration = args.duration_days ?? 3;
-
 
       const code = `GT-${Math.floor(100000 + Math.random() * 900000)}`;
       const { data: member, error } = await supabase
@@ -2184,30 +2185,57 @@ export function useStartGuestTrial() {
           status: "trial",
           is_guest: true,
           activation_code: code,
+          height: args.height ?? null,
+          initial_weight: args.weight ?? null,
+          current_weight: args.weight ?? null,
           created_by: args.created_by,
         } as never)
         .select("id")
         .single();
       if (error) throw error;
 
+      const memberId = (member as { id: string }).id;
+
       const { error: e2 } = await supabase.from("wellness_trials").insert({
-        member_id: (member as { id: string }).id,
+        member_id: memberId,
         start_date: args.start_date,
         duration_days: duration,
         status: "active",
+        weight_at_start: args.weight ?? null,
         created_by: args.created_by,
       } as never);
 
       if (e2) throw e2;
+
+      if (args.weight != null) {
+        await supabase.from("weight_tracking").insert({
+          member_id: memberId,
+          recorded_date: args.start_date,
+          weight: args.weight,
+          notes: "Guest trial start",
+          recorded_by: args.created_by,
+        } as never);
+      }
+
+      let loginError: string | null = null;
+      try {
+        await ensureMemberLogin(memberId);
+      } catch (err) {
+        loginError = (err as Error).message || "Could not create the guest login.";
+      }
+
+      return { memberId, loginError };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wellness-trials-active"] });
       qc.invalidateQueries({ queryKey: ["wellness-trial-candidates"] });
+      qc.invalidateQueries({ queryKey: ["wellness-members"] });
       t.success("Guest trial started");
     },
     onError: t.onError,
   });
 }
+
 
 /* --------------------------- Sales & servings analytics -------------------------- */
 
