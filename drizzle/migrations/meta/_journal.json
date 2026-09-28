@@ -134,6 +134,13 @@
       "when": 1790596838700,
       "tag": "0018_trial_day2_courtesy_visit",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790598037988,
+      "tag": "0019_create_promotions",
+      "breakpoints": true
     }
   ]
 }

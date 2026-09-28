@@ -1788,6 +1788,123 @@ export type Database = {
         }
         Relationships: []
       }
+      wellness_promotion_progress: {
+        Row: {
+          created_at: string
+          current_count: number
+          id: string
+          member_id: string
+          notes: string | null
+          promotion_id: string
+          qualified: boolean
+          qualified_at: string | null
+          reward_claimed: boolean
+          reward_claimed_at: string | null
+          reward_claimed_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_count?: number
+          id?: string
+          member_id: string
+          notes?: string | null
+          promotion_id: string
+          qualified?: boolean
+          qualified_at?: string | null
+          reward_claimed?: boolean
+          reward_claimed_at?: string | null
+          reward_claimed_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_count?: number
+          id?: string
+          member_id?: string
+          notes?: string | null
+          promotion_id?: string
+          qualified?: boolean
+          qualified_at?: string | null
+          reward_claimed?: boolean
+          reward_claimed_at?: string | null
+          reward_claimed_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_promotion_progress_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_promotion_progress_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_promotions: {
+        Row: {
+          banner_message: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string
+          icon: string
+          id: string
+          is_active: boolean
+          offer_type: string
+          reward_description: string
+          start_date: string
+          target_count: number | null
+          target_metric: string
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          banner_message?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          offer_type?: string
+          reward_description?: string
+          start_date: string
+          target_count?: number | null
+          target_metric?: string
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          banner_message?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          offer_type?: string
+          reward_description?: string
+          start_date?: string
+          target_count?: number | null
+          target_metric?: string
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: []
+      }
       wellness_trials: {
         Row: {
           created_at: string
@@ -2140,6 +2257,14 @@ export type Database = {
         Returns: undefined
       }
       calc_monthly_rewards: { Args: { p_month: string }; Returns: undefined }
+      calc_promotion_progress: {
+        Args: { p_member_id: string; p_promotion_id: string }
+        Returns: number
+      }
+      calc_promotion_progress_all: {
+        Args: { p_promotion_id: string }
+        Returns: number
+      }
       checkin_member: {
         Args: {
           p_member_id: string
@@ -2242,6 +2367,10 @@ export type Database = {
       }
       mark_notification_sent: {
         Args: { p_error?: string; p_log_id: string; p_status?: string }
+        Returns: undefined
+      }
+      mark_promotion_reward: {
+        Args: { p_claimed: boolean; p_note?: string; p_progress_id: string }
         Returns: undefined
       }
       member_self_checkin: {
