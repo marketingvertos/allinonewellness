@@ -155,6 +155,13 @@
       "when": 1790603290927,
       "tag": "0021_offer_card_palette_and_staff_editing",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790607188180,
+      "tag": "0022_pink_card_referrer_reversal",
+      "breakpoints": true
     }
   ]
 }
