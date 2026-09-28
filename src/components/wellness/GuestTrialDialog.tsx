@@ -9,6 +9,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
 import { useToast } from "@/hooks/use-toast";
 import { Copy } from "lucide-react";
+import { ReferrerPicker } from "./ReferrerPicker";
+
 
 interface Props {
   open: boolean;
