@@ -36,7 +36,13 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
   const [duration, setDuration] = useState("3");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
+  const [referrerMode, setReferrerMode] = useState<"member" | "other">("member");
+  const [referrerId, setReferrerId] = useState<string | null>(null);
+  const [otherName, setOtherName] = useState("");
+  const [otherMobile, setOtherMobile] = useState("");
   const [created, setCreated] = useState<{ mobile: string; loginError: string | null } | null>(null);
+
+
 
   useEffect(() => {
     if (open) {
