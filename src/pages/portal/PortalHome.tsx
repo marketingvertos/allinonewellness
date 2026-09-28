@@ -22,7 +22,7 @@ import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
 import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
 import { PromotionCards } from "@/components/portal/PromotionCards";
-import { Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export default function PortalHome() {
   const { data: identity } = useMemberIdentity();
