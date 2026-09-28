@@ -64,6 +64,14 @@
     --stage-won: 160 50% 32%;
     --stage-lost: 0 60% 45%;
 
+    /* Offer accents: distinct cards with subtle surfaces and legible progress */
+    --offer-teal: 178 75% 29%;
+    --offer-coral: 8 73% 48%;
+    --offer-blue: 209 72% 42%;
+    --offer-gold: 38 80% 41%;
+    --offer-green: 149 63% 33%;
+    --offer-plum: 327 49% 43%;
+
     /* Sidebar — deep teal surface, ivory text */
     --sidebar-background: 186 63% 14%;
     --sidebar-foreground: 45 30% 92%;
@@ -119,6 +127,13 @@
     --stage-negotiation: 34 52% 55%;
     --stage-won: 160 45% 50%;
     --stage-lost: 0 55% 55%;
+
+    --offer-teal: 176 63% 60%;
+    --offer-coral: 8 78% 68%;
+    --offer-blue: 207 81% 68%;
+    --offer-gold: 41 85% 69%;
+    --offer-green: 149 59% 65%;
+    --offer-plum: 327 63% 71%;
 
     --sidebar-background: 186 50% 10%;
     --sidebar-foreground: 45 20% 88%;
