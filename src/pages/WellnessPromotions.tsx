@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gift, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useIsWellnessManager } from "@/hooks/useWellness";
 import { METRIC_LABEL, OFFER_TYPE_LABEL, Promotion, useCanEditOffers, usePromotions, usePromotionStats, useSavePromotion } from "@/hooks/usePromotions";
 import { CreatePromotionDialog } from "@/components/wellness/CreatePromotionDialog";
 import { PromotionProgressSheet } from "@/components/wellness/PromotionProgressSheet";
@@ -18,7 +17,6 @@ export default function WellnessPromotions() {
   const [tab, setTab] = useState<"active" | "expired" | "all">("active");
   const { data: promos, isLoading } = usePromotions(tab);
   const { data: stats } = usePromotionStats();
-  const isManager = useIsWellnessManager();
   const canEdit = useCanEditOffers();
   const save = useSavePromotion();
   const { toast } = useToast();
