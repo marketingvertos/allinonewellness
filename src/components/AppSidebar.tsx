@@ -20,6 +20,7 @@ import {
   IndianRupee,
   Calendar,
   FileBarChart,
+  Gift,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -45,6 +46,7 @@ const navGroups = [
       { title: "Members", icon: Users, to: "/members", end: false },
       { title: "Trials", icon: Sparkles, to: "/trials", end: false },
       { title: "Achievements", icon: Trophy, to: "/achievements", end: false },
+      { title: "Offers", icon: Gift, to: "/promotions", end: false },
     ],
   },
   {

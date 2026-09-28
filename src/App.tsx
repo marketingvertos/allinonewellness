@@ -16,6 +16,7 @@ import WellnessAttendance from "./pages/WellnessAttendance";
 import ServingReports from "./pages/ServingReports";
 import WellnessPlans from "./pages/WellnessPlans";
 import WellnessAchievements from "./pages/WellnessAchievements";
+import WellnessPromotions from "./pages/WellnessPromotions";
 import WellnessBatches from "./pages/WellnessBatches";
 import WellnessTrials from "./pages/WellnessTrials";
 import WellnessNotifications from "./pages/WellnessNotifications";
@@ -83,6 +84,7 @@ const App = () => (
                 <Route path="/plans" element={<WellnessPlans />} />
                 <Route path="/qr" element={<Navigate to="/checkin?tab=qr" replace />} />
                 <Route path="/achievements" element={<WellnessAchievements />} />
+                <Route path="/promotions" element={<WellnessPromotions />} />
                 <Route path="/batches" element={<WellnessBatches />} />
                 <Route path="/trials" element={<WellnessTrials />} />
                 <Route path="/notifications" element={<WellnessNotifications />} />
