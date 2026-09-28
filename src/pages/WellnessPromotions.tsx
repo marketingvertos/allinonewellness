@@ -24,6 +24,22 @@ export default function WellnessPromotions() {
   const [viewing, setViewing] = useState<Promotion | null>(null);
   const today = todayIst();
 
+  const makeLive = async (p: Promotion) => {
+    try {
+      await save.mutateAsync({
+        id: p.id,
+        values: {
+          is_active: true,
+          start_date: p.start_date > today ? today : p.start_date,
+          end_date: p.end_date < today ? today : p.end_date,
+        },
+      });
+      toast({ title: "Offer is live", description: "Members can see it on their app now." });
+    } catch (e) {
+      toast({ title: "Could not update", description: (e as Error).message, variant: "destructive" });
+    }
+  };
+
   const toggle = async (p: Promotion) => {
     try {
       await save.mutateAsync({ id: p.id, values: { is_active: !p.is_active } });
@@ -95,7 +111,11 @@ export default function WellnessPromotions() {
                   {isManager && (
                     <>
                       <Button size="sm" variant="outline" onClick={() => { setEditing(p); setCreateOpen(true); }}>Edit</Button>
-                      <Button size="sm" variant="ghost" onClick={() => toggle(p)}>{p.is_active ? "Deactivate" : "Activate"}</Button>
+                      {live && !upcoming ? (
+                        <Button size="sm" variant="ghost" onClick={() => toggle(p)}>Deactivate</Button>
+                      ) : (
+                        <Button size="sm" variant="secondary" onClick={() => makeLive(p)} disabled={save.isPending}>Make live now</Button>
+                      )}
                     </>
                   )}
                 </div>
