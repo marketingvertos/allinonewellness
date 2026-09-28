@@ -88,6 +88,12 @@ export default {
           gold: "hsl(var(--offer-gold))",
           green: "hsl(var(--offer-green))",
           plum: "hsl(var(--offer-plum))",
+          "teal-fg": "hsl(var(--offer-teal-fg))",
+          "coral-fg": "hsl(var(--offer-coral-fg))",
+          "blue-fg": "hsl(var(--offer-blue-fg))",
+          "gold-fg": "hsl(var(--offer-gold-fg))",
+          "green-fg": "hsl(var(--offer-green-fg))",
+          "plum-fg": "hsl(var(--offer-plum-fg))",
         },
 
       },
