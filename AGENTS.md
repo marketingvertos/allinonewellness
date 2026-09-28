@@ -1,0 +1,1 @@
+- Keep offer color tokens in the global theme and assign visible offer colors through `src/lib/offerColors.ts`; this keeps staff and member cards consistent without storing presentation data in promotions.

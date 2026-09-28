@@ -81,6 +81,14 @@ export default {
           foreground: "hsl(var(--brand-gold-foreground))",
         },
         "brand-brown": "hsl(var(--brand-brown))",
+        offer: {
+          teal: "hsl(var(--offer-teal))",
+          coral: "hsl(var(--offer-coral))",
+          blue: "hsl(var(--offer-blue))",
+          gold: "hsl(var(--offer-gold))",
+          green: "hsl(var(--offer-green))",
+          plum: "hsl(var(--offer-plum))",
+        },
 
       },
       borderRadius: {

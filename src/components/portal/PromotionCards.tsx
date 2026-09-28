@@ -4,10 +4,12 @@ import { CheckCircle, Clock, Gift } from "lucide-react";
 import { useMemberOffers } from "@/hooks/usePromotions";
 import { formatDate } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
+import { getOfferColors, offerColorClasses } from "@/lib/offerColors";
 
 export function PromotionCards({ memberId, memberMode }: { memberId: string; memberMode?: string }) {
   const { data } = useMemberOffers(memberId, memberMode);
   if (!data?.length) return null;
+  const colors = getOfferColors(data.map(({ promo }) => promo));
 
   return (
     <div className="space-y-3">
@@ -16,12 +18,13 @@ export function PromotionCards({ memberId, memberMode }: { memberId: string; mem
         const count = progress?.current_count ?? 0;
         const target = promo.target_count ?? 1;
         const qualified = tracked && !!progress?.qualified;
+        const color = offerColorClasses[colors.get(promo.id) ?? "teal"];
         return (
           <Card
             key={promo.id}
             className={cn(
               "overflow-hidden border-l-4",
-              qualified ? "border-l-primary bg-primary/5" : promo.offer_type === "announcement" ? "border-l-accent" : "border-l-amber-500",
+              color.card,
             )}
           >
             {promo.banner_message && (
@@ -29,7 +32,7 @@ export function PromotionCards({ memberId, memberMode }: { memberId: string; mem
             )}
             <CardContent className="space-y-3 pt-4">
               <div className="flex items-start gap-2">
-                <span className="text-2xl leading-none">{promo.icon}</span>
+                <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-2xl leading-none", color.icon)}>{promo.icon}</span>
                 <div>
                   <h3 className="font-semibold">{promo.title}</h3>
                   {promo.description && <p className="text-sm text-muted-foreground">{promo.description}</p>}
@@ -41,7 +44,7 @@ export function PromotionCards({ memberId, memberMode }: { memberId: string; mem
                     <span className="text-muted-foreground">Your progress</span>
                     <span className="font-semibold">{Math.min(count, target)} of {target}</span>
                   </div>
-                  <Progress value={Math.min(100, (count / target) * 100)} className="h-2.5" />
+                  <Progress value={Math.min(100, (count / target) * 100)} className={cn("h-2.5", color.progress)} />
                   {qualified ? (
                     <div className="rounded-md bg-primary/10 p-3 text-center">
                       <p className="flex items-center justify-center gap-1 text-sm font-semibold text-primary">
