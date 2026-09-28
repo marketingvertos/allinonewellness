@@ -22,7 +22,7 @@ import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
 import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
 import { PromotionCards } from "@/components/portal/PromotionCards";
-import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 export default function PortalHome() {
   const { data: identity } = useMemberIdentity();
@@ -198,9 +198,8 @@ export default function PortalHome() {
               <div>
                 <div className="h-52 w-full rounded-md border bg-muted/30 p-1">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={deltaSeries.slice(-14)} margin={{ left: -24, right: 12, top: 24, bottom: 18 }}>
+                    <BarChart data={deltaSeries.slice(-14)} margin={{ left: 8, right: 8, top: 24, bottom: 18 }}>
                       <XAxis dataKey="label" fontSize={9} tickLine={false} axisLine={false} interval="preserveStartEnd" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis fontSize={9} width={34} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" domain={([min, max]: [number, number]) => [Math.min(min, 0) - 0.35, Math.max(max, 0) + 0.35]} />
                       <ReferenceLine y={0} stroke="hsl(var(--border))" />
                       <Tooltip
                         cursor={{ fill: "hsl(var(--muted))" }}
@@ -209,8 +208,8 @@ export default function PortalHome() {
                         labelFormatter={(_l, p) => (p?.[0] ? formatDate(p[0].payload.date) : "")}
                       />
                       <Bar dataKey="delta" radius={[3, 3, 3, 3]}>
-                        <LabelList dataKey="delta" content={(props: { x?: number; y?: number; width?: number; height?: number; value?: number | string }) => {
-                          const { x, y, width, height, value } = props;
+                        <LabelList dataKey="delta" content={(props: { x?: number; y?: number; width?: number; height?: number; value?: number | string; index?: number }) => {
+                          const { x, y, width, height, value, index } = props;
                           const delta = Number(value);
                           if (x == null || y == null || width == null || height == null || !Number.isFinite(delta)) return null;
                           const color =
@@ -219,9 +218,11 @@ export default function PortalHome() {
                               : isGood(delta)
                                 ? "hsl(142 71% 40%)"
                                 : "hsl(var(--destructive))";
-                           const labelY = delta >= 0 ? Math.min(y, y + height) - 5 : Math.max(y, y + height) + 13;
+                           const labelY = delta >= 0
+                             ? Math.min(y, y + height) - 5 - ((index ?? 0) % 2) * 10
+                             : Math.max(y, y + height) + 13 + ((index ?? 0) % 2) * 10;
                           return (
-                            <text x={x + width / 2} y={labelY} fill={color} fontSize={10} fontWeight={600} textAnchor="middle">
+                             <text x={x + width / 2} y={labelY} fill={color} fontSize={9} fontWeight={600} textAnchor="middle">
                               {delta === 0 ? "0.0" : changeText(delta)}
                             </text>
                           );
