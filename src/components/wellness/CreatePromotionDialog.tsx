@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { METRIC_LABEL, OFFER_TYPE_LABEL, OfferType, Promotion, TargetMetric, useSavePromotion } from "@/hooks/usePromotions";
 import { todayIst } from "@/lib/formatters";
+import { getOfferColors, offerColorClasses, offerPalette, type OfferColor } from "@/lib/offerColors";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -18,7 +21,7 @@ interface Props {
 const blank = () => ({
   offer_type: "referral_challenge" as OfferType,
   title: "",
-  description: "",
+  card_color: "teal" as OfferColor,
   reward_description: "",
   banner_message: "",
   icon: "🎯",
@@ -31,17 +34,19 @@ const blank = () => ({
 
 export function CreatePromotionDialog({ open, onOpenChange, promotion }: Props) {
   const [f, setF] = useState(blank());
+  const [descriptionLines, setDescriptionLines] = useState<string[]>([""]);
   const save = useSavePromotion();
   const { toast } = useToast();
 
   useEffect(() => {
     if (!open) return;
+    setDescriptionLines(promotion?.description ? promotion.description.split(/\r?\n/) : [""]);
     setF(
       promotion
         ? {
             offer_type: promotion.offer_type,
             title: promotion.title,
-            description: promotion.description ?? "",
+            card_color: promotion.card_color ?? getOfferColors([promotion]).get(promotion.id) ?? "teal",
             reward_description: promotion.reward_description,
             banner_message: promotion.banner_message ?? "",
             icon: promotion.icon,
@@ -57,6 +62,12 @@ export function CreatePromotionDialog({ open, onOpenChange, promotion }: Props) 
 
   const set = (k: keyof ReturnType<typeof blank>, v: string) => setF((p) => ({ ...p, [k]: v }));
   const isAnn = f.offer_type === "announcement";
+  const changeLine = (index: number, value: string) => setDescriptionLines((lines) => lines.map((line, i) => i === index ? value : line));
+  const moveLine = (index: number, direction: -1 | 1) => setDescriptionLines((lines) => {
+    const next = [...lines];
+    [next[index], next[index + direction]] = [next[index + direction], next[index]];
+    return next;
+  });
 
   const submit = async () => {
     if (!f.title.trim()) return toast({ title: "Title is required", variant: "destructive" });
@@ -66,7 +77,8 @@ export function CreatePromotionDialog({ open, onOpenChange, promotion }: Props) 
         values: {
           offer_type: f.offer_type,
           title: f.title.trim(),
-          description: f.description.trim() || null,
+          description: descriptionLines.map((line) => line.trim()).filter(Boolean).join("\n") || null,
+          card_color: f.card_color,
           reward_description: f.reward_description.trim(),
           banner_message: f.banner_message.trim() || null,
           icon: f.icon.trim() || "🎯",
@@ -118,9 +130,44 @@ export function CreatePromotionDialog({ open, onOpenChange, promotion }: Props) 
             <Input value={f.title} onChange={(e) => set("title", e.target.value)} placeholder="Get your membership FREE!" />
           </div>
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
+          <Label>Card color</Label>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6" role="group" aria-label="Card color">
+            {offerPalette.map((option) => (
+              <Button key={option} type="button" variant="outline" size="sm"
+                aria-label={`${option} card color`} aria-pressed={f.card_color === option}
+                onClick={() => set("card_color", option)}
+                className={cn("h-12 flex-col gap-1 capitalize", f.card_color === option && "ring-2 ring-ring")}>
+                <span className={cn("h-4 w-4 rounded-full", offerColorClasses[option].icon)} aria-hidden="true" />
+                {option}
+              </Button>
+            ))}
+          </div>
+          <div className={cn("rounded-md border border-l-8 px-3 py-2", offerColorClasses[f.card_color].card)}>
+            <span className={cn("font-semibold", offerColorClasses[f.card_color].title)}>{f.icon || "🎯"} {f.title || "Offer preview"}</span>
+          </div>
+        </div>
+        <div className="space-y-2">
           <Label>Description</Label>
-          <Textarea value={f.description} onChange={(e) => set("description", e.target.value)} rows={2} />
+          {descriptionLines.map((line, index) => (
+            <div key={index} className="flex items-start gap-1">
+              <Textarea aria-label={`Description line ${index + 1}`} value={line} rows={2} className="min-w-0 flex-1"
+                onChange={(e) => changeLine(index, e.target.value)} />
+              <div className="flex shrink-0 flex-col">
+                <Button type="button" size="icon" variant="ghost" aria-label={`Move line ${index + 1} up`} title="Move up" disabled={index === 0}
+                  onClick={() => moveLine(index, -1)}><ArrowUp className="h-4 w-4" /></Button>
+                <Button type="button" size="icon" variant="ghost" aria-label={`Move line ${index + 1} down`} title="Move down" disabled={index === descriptionLines.length - 1}
+                  onClick={() => moveLine(index, 1)}><ArrowDown className="h-4 w-4" /></Button>
+                <Button type="button" size="icon" variant="ghost" aria-label={`Remove line ${index + 1}`} title="Remove line"
+                  onClick={() => setDescriptionLines((lines) => lines.length === 1 ? [""] : lines.filter((_, i) => i !== index))}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+          <Button type="button" variant="outline" size="sm" onClick={() => setDescriptionLines((lines) => [...lines, ""])}>
+            <Plus className="mr-1 h-4 w-4" /> Add line
+          </Button>
         </div>
         <div className="space-y-1.5">
           <Label>Reward</Label>
