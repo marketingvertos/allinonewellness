@@ -1,1 +1,1 @@
-- Keep offer color tokens in the global theme and assign visible offer colors through `src/lib/offerColors.ts`; this keeps staff and member cards consistent without storing presentation data in promotions.
+- Keep offer color tokens and visible class assignments in `src/lib/offerColors.ts`, storing only the selected palette name on promotions; this keeps staff and member cards consistent while allowing intentional choices.

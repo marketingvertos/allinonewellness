@@ -6,8 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gift, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useIsWellnessManager } from "@/hooks/useWellness";
-import { METRIC_LABEL, OFFER_TYPE_LABEL, Promotion, usePromotions, usePromotionStats, useSavePromotion } from "@/hooks/usePromotions";
+import { METRIC_LABEL, OFFER_TYPE_LABEL, Promotion, useCanEditOffers, usePromotions, usePromotionStats, useSavePromotion } from "@/hooks/usePromotions";
 import { CreatePromotionDialog } from "@/components/wellness/CreatePromotionDialog";
 import { PromotionProgressSheet } from "@/components/wellness/PromotionProgressSheet";
 import { formatDate, todayIst } from "@/lib/formatters";
@@ -18,7 +17,7 @@ export default function WellnessPromotions() {
   const [tab, setTab] = useState<"active" | "expired" | "all">("active");
   const { data: promos, isLoading } = usePromotions(tab);
   const { data: stats } = usePromotionStats();
-  const isManager = useIsWellnessManager();
+  const canEdit = useCanEditOffers();
   const save = useSavePromotion();
   const { toast } = useToast();
   const [editing, setEditing] = useState<Promotion | null>(null);
@@ -55,7 +54,7 @@ export default function WellnessPromotions() {
   return (
     <div>
       <PageBanner title="Offers & Qualifications" description="Create and manage member promotions.">
-        {isManager && (
+        {canEdit && (
           <Button onClick={() => { setEditing(null); setCreateOpen(true); }}>
             <Plus className="mr-1 h-4 w-4" /> New offer
           </Button>
@@ -102,6 +101,7 @@ export default function WellnessPromotions() {
                   </Badge>
                 </div>
                 {p.banner_message && <p className="text-sm font-medium">{p.banner_message}</p>}
+                 {p.description && <p className="whitespace-pre-line text-sm text-muted-foreground">{p.description}</p>}
                 {tracked && <p className="text-sm">Target: {p.target_count} {METRIC_LABEL[p.target_metric].toLowerCase()}</p>}
                 {p.reward_description && <p className="text-sm">Reward: {p.reward_description}</p>}
                 {p.visibility !== "all" && <p className="text-xs text-muted-foreground">Only {p.visibility} members</p>}
@@ -112,7 +112,7 @@ export default function WellnessPromotions() {
                 )}
                 <div className="flex flex-wrap gap-2 pt-1">
                   {tracked && <Button size="sm" onClick={() => setViewing(p)}>View progress</Button>}
-                  {isManager && (
+                  {canEdit && (
                     <>
                       <Button size="sm" variant="outline" onClick={() => { setEditing(p); setCreateOpen(true); }}>Edit</Button>
                       {live && !upcoming ? (

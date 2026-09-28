@@ -35,7 +35,7 @@ export function PromotionCards({ memberId, memberMode }: { memberId: string; mem
                 <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-2xl leading-none", color.icon)}>{promo.icon}</span>
                 <div>
                   <h3 className={cn("font-semibold", color.title)}>{promo.title}</h3>
-                  {promo.description && <p className="text-sm text-muted-foreground">{promo.description}</p>}
+                  {promo.description && <p className="whitespace-pre-line text-sm text-muted-foreground">{promo.description}</p>}
                 </div>
               </div>
               {tracked && (

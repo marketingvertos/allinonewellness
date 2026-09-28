@@ -1,0 +1,5 @@
+ALTER TABLE public.wellness_promotions ADD COLUMN card_color text;
+ALTER TABLE public.wellness_promotions ADD CONSTRAINT wellness_promotions_card_color_valid CHECK (card_color IS NULL OR card_color IN ('teal', 'coral', 'blue', 'gold', 'green', 'plum'));
+UPDATE public.wellness_promotions SET card_color = CASE id::text WHEN '1c343adc-0b7b-4d44-9e58-28c7276fd8a9' THEN 'teal' WHEN '51ed9093-cab3-468c-87d1-0470721199a0' THEN 'blue' WHEN '8bd505ae-2aef-4eb6-8d76-bb4c302a7127' THEN 'coral' ELSE NULL END WHERE card_color IS NULL;
+ALTER POLICY "Managers insert promotions" ON public.wellness_promotions WITH CHECK (public.is_wellness_staff(auth.uid()));
+ALTER POLICY "Managers update promotions" ON public.wellness_promotions USING (public.is_wellness_staff(auth.uid())) WITH CHECK (public.is_wellness_staff(auth.uid()));

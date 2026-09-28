@@ -148,6 +148,13 @@
       "when": 1790602047601,
       "tag": "0020_ums30_bonus_servings",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790603290927,
+      "tag": "0021_offer_card_palette_and_staff_editing",
+      "breakpoints": true
     }
   ]
 }

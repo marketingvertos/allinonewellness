@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { todayIst } from "@/lib/formatters";
+import type { OfferColor } from "@/lib/offerColors";
 
 export type OfferType = "referral_challenge" | "qualification" | "announcement";
 export type TargetMetric = "new_referrals" | "new_memberships" | "attendance_days" | "none";
@@ -12,6 +13,7 @@ export interface Promotion {
   reward_description: string;
   banner_message: string | null;
   icon: string;
+  card_color: OfferColor | null;
   offer_type: OfferType;
   target_metric: TargetMetric;
   target_count: number | null;
@@ -53,6 +55,20 @@ export const METRIC_LABEL: Record<TargetMetric, string> = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
+
+export function useCanEditOffers() {
+  const { data } = useQuery({
+    queryKey: ["offer-editor-role"],
+    queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return false;
+      const { data: roles, error } = await supabase.from("user_roles").select("role").eq("user_id", user.user.id);
+      if (error) throw error;
+      return (roles ?? []).some((row) => ["admin", "manager", "rep"].includes(row.role));
+    },
+  });
+  return data ?? false;
+}
 
 export function usePromotions(filter: "active" | "expired" | "all" = "all") {
   return useQuery({
