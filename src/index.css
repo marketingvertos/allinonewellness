@@ -175,3 +175,9 @@
     letter-spacing: -0.01em;
   }
 }
+
+@media print {
+  [data-sidebar], header, nav { display: none !important; }
+  main { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+  @page { size: A4 landscape; margin: 10mm; }
+}
