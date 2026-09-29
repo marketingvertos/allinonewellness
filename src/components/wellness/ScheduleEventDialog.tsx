@@ -38,6 +38,11 @@ export function ScheduleEventDialog({ eventType, month, existing, open, onOpenCh
   const isSunday = date ? new Date(`${date}T00:00:00`).getDay() === 0 : false;
   const needsSunday = eventType === "family_day" && !isSunday;
   const isChallenge = eventType === "miw_challenge";
+  const otherMonth = !!date && date.slice(0, 7) !== month;
+  const chosenMonthLabel = otherMonth
+    ? new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", { month: "long", year: "numeric" })
+    : "";
+
 
   const submit = async () => {
     await save.mutateAsync({
@@ -87,6 +92,13 @@ export function ScheduleEventDialog({ eventType, month, existing, open, onOpenCh
           {needsSunday && (
             <p className="text-xs text-destructive">Please pick a Sunday for Family Day.</p>
           )}
+          {!needsSunday && otherMonth && (
+            <p className="text-xs text-muted-foreground">
+              This date is in {chosenMonthLabel}, so it will be saved there. Any event already set
+              for that month will be updated.
+            </p>
+          )}
+
         </div>
         {isChallenge && (
           <div className="space-y-2">
