@@ -71,6 +71,7 @@ const navGroups = [
   {
     label: "Reports",
     items: [
+      { title: "Club Reports", icon: FileBarChart, to: "/club-reports", end: false },
       { title: "Revenue", icon: IndianRupee, to: "/reports/revenue", end: false },
       { title: "Events & Programs", icon: Calendar, to: "/reports/events", end: false },
       { title: "Check-in Reports", icon: FileBarChart, to: "/reports/checkin", end: false },
