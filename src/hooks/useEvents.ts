@@ -118,8 +118,25 @@ export function useSaveEvent() {
       month: string;
       description?: string | null;
     }) => {
-      const { error } = await supabase.from("wellness_events").upsert(event as never);
+      let payload = event;
+
+      // Family Day / Lifestyle Day allow only one entry per month. If the chosen
+      // date falls in a month that already has one, update that entry instead of
+      // creating a duplicate.
+      if (!payload.id && ["family_day", "lifestyle_day"].includes(payload.event_type)) {
+        const { data: clash, error: lookupError } = await supabase
+          .from("wellness_events")
+          .select("id")
+          .eq("event_type", payload.event_type)
+          .eq("month", payload.month)
+          .maybeSingle();
+        if (lookupError) throw lookupError;
+        if (clash?.id) payload = { ...payload, id: clash.id };
+      }
+
+      const { error } = await supabase.from("wellness_events").upsert(payload as never);
       if (error) throw error;
+      return payload;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wellness-events"] });
@@ -129,6 +146,7 @@ export function useSaveEvent() {
     onError: t.onError,
   });
 }
+
 
 export function useDeleteEvent() {
   const qc = useQueryClient();
