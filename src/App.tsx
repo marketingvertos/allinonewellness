@@ -22,6 +22,7 @@ import WellnessTrials from "./pages/WellnessTrials";
 import WellnessNotifications from "./pages/WellnessNotifications";
 import WellnessReports from "./pages/WellnessReports";
 import RevenueReport from "./pages/RevenueReport";
+import ClubReports from "./pages/ClubReports";
 import CheckInReportPage from "./pages/CheckInReportPage";
 import WhatsAppInbox from "./pages/WhatsAppInbox";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
@@ -91,6 +92,7 @@ const App = () => (
                 <Route path="/reports" element={<LegacyReportsRedirect />} />
                 <Route path="/reports/events" element={<WellnessReports />} />
                 <Route path="/reports/revenue" element={<RevenueReport />} />
+                <Route path="/club-reports" element={<ClubReports />} />
                 <Route path="/reports/checkin" element={<CheckInReportPage />} />
                 <Route path="/whatsapp" element={<WhatsAppInbox />} />
                 <Route path="/whatsapp/logs" element={<WhatsAppLogs />} />
