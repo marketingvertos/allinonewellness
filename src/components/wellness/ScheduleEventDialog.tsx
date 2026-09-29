@@ -38,6 +38,11 @@ export function ScheduleEventDialog({ eventType, month, existing, open, onOpenCh
   const isSunday = date ? new Date(`${date}T00:00:00`).getDay() === 0 : false;
   const needsSunday = eventType === "family_day" && !isSunday;
   const isChallenge = eventType === "miw_challenge";
+  const otherMonth = !!date && date.slice(0, 7) !== month;
+  const chosenMonthLabel = otherMonth
+    ? new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", { month: "long", year: "numeric" })
+    : "";
+
 
   const submit = async () => {
     await save.mutateAsync({
