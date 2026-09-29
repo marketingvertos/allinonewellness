@@ -293,6 +293,39 @@ export type Database = {
           },
         ]
       }
+      daily_operations_log: {
+        Row: {
+          created_at: string
+          id: string
+          log_date: string
+          milk_amount: number
+          note: string | null
+          product_retail_amount: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          log_date: string
+          milk_amount?: number
+          note?: string | null
+          product_retail_amount?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          log_date?: string
+          milk_amount?: number
+          note?: string | null
+          product_retail_amount?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           close_date: string | null
@@ -530,6 +563,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      monthly_operations_summary: {
+        Row: {
+          ae_qualify_count: number
+          afresh_party_count: number
+          capital_amount: number
+          created_at: string
+          id: string
+          lead_generation_count: number | null
+          lsd_ticket_count: number
+          month: string
+          total_retail_by_coaches: number
+          updated_at: string
+          updated_by: string | null
+          volume_points: number
+        }
+        Insert: {
+          ae_qualify_count?: number
+          afresh_party_count?: number
+          capital_amount?: number
+          created_at?: string
+          id?: string
+          lead_generation_count?: number | null
+          lsd_ticket_count?: number
+          month: string
+          total_retail_by_coaches?: number
+          updated_at?: string
+          updated_by?: string | null
+          volume_points?: number
+        }
+        Update: {
+          ae_qualify_count?: number
+          afresh_party_count?: number
+          capital_amount?: number
+          created_at?: string
+          id?: string
+          lead_generation_count?: number | null
+          lsd_ticket_count?: number
+          month?: string
+          total_retail_by_coaches?: number
+          updated_at?: string
+          updated_by?: string | null
+          volume_points?: number
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -2328,6 +2406,29 @@ export type Database = {
         Args: { p_order_id: string; p_payment_id: string }
         Returns: Json
       }
+      get_club_daily_report: {
+        Args: { p_month: string }
+        Returns: {
+          cash: number
+          day: string
+          milk: number
+          new_guest: number
+          online: number
+          product_retail: number
+          swipe: number
+          total_amount: number
+          total_shake: number
+          tp_new: number
+          tp_repeat: number
+          ums15_new: number
+          ums15_renew: number
+          ums30_coach: number
+          ums30_cust_new: number
+          ums30_cust_renew: number
+          upi: number
+        }[]
+      }
+      get_club_monthly_report: { Args: { p_month: string }; Returns: Json }
       get_network_summary: {
         Args: { member_ids: string[] }
         Returns: {
