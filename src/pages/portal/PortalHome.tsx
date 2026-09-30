@@ -35,6 +35,7 @@ export default function PortalHome() {
   const latestEvaluation = evaluations?.length ? evaluations[evaluations.length - 1] : null;
   const addWeight = useAddWeight();
   const { data: supervisorStatus } = useSupervisorStatus(identity?.memberId ?? undefined);
+  const { data: myNetwork } = useReferralNetwork(identity?.memberId ?? undefined);
 
 
   const month = currentMonthIst();
