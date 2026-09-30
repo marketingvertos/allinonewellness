@@ -794,8 +794,9 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           </TabsContent>
 
           <TabsContent value="network" className="space-y-4 pt-4">
-            <NetworkPanel memberId={member.id} />
+            <NetworkPanel memberId={member.id} onOpenMember={setNetworkMemberId} />
           </TabsContent>
+
 
           <TabsContent value="notes" className="space-y-4 pt-4">
             <div className="space-y-2">
