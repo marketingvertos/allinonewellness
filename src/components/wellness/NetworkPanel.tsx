@@ -44,6 +44,8 @@ export function MasterTitleCard({
   compact,
   isSupervisor = true,
   status,
+  members,
+  onOpenMember,
 }: {
   frontline: number;
   cluster: number;
@@ -51,6 +53,8 @@ export function MasterTitleCard({
   compact?: boolean;
   isSupervisor?: boolean;
   status?: SupervisorStatus | null;
+  members?: NetworkMember[];
+  onOpenMember?: (id: string) => void;
 }) {
   const qualified = status ? status.is_qualified : isSupervisor;
   const level = isSupervisor && qualified ? levelFromTotal(total) : 0;
@@ -61,6 +65,23 @@ export function MasterTitleCard({
     : 100;
   const newFrontline = status?.new_frontline_count ?? 0;
   const required = status?.new_frontline_required ?? 2;
+  const [openList, setOpenList] = useState<null | "frontline" | "cluster" | "total">(null);
+
+  const counted = useMemo(
+    () => (members ?? []).filter((m) => m.qualifies_this_month !== false),
+    [members],
+  );
+  const listMembers = useMemo(() => {
+    if (openList === "frontline") return counted.filter((m) => m.depth === 1);
+    if (openList === "cluster") return counted.filter((m) => m.depth > 1);
+    return counted;
+  }, [counted, openList]);
+  const listTitle =
+    openList === "frontline"
+      ? "Active frontline"
+      : openList === "cluster"
+        ? "Active cluster"
+        : "Active network";
 
   return (
     <div className="space-y-4 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
@@ -84,17 +105,65 @@ export function MasterTitleCard({
       )}
 
       <div className={compact ? "grid grid-cols-3 gap-2" : "grid grid-cols-3 gap-3"}>
-        {[
-          { label: "Frontline", value: frontline },
-          { label: "Cluster", value: cluster },
-          { label: "Total", value: total },
-        ].map((t) => (
-          <div key={t.label} className="rounded-md border bg-background p-3 text-center">
-            <p className="text-lg font-semibold">{t.value}</p>
-            <p className="text-xs text-muted-foreground">{t.label}</p>
-          </div>
-        ))}
+        {([
+          { label: "Frontline", value: frontline, key: "frontline" as const },
+          { label: "Cluster", value: cluster, key: "cluster" as const },
+          { label: "Total", value: total, key: "total" as const },
+        ]).map((t) =>
+          members ? (
+            <button
+              key={t.label}
+              type="button"
+              onClick={() => setOpenList(t.key)}
+              className="rounded-md border bg-background p-3 text-center transition-colors hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+            >
+              <p className="text-lg font-semibold">{t.value}</p>
+              <p className="text-xs text-muted-foreground underline-offset-2 hover:underline">{t.label}</p>
+            </button>
+          ) : (
+            <div key={t.label} className="rounded-md border bg-background p-3 text-center">
+              <p className="text-lg font-semibold">{t.value}</p>
+              <p className="text-xs text-muted-foreground">{t.label}</p>
+            </div>
+          ),
+        )}
       </div>
+
+      <Dialog open={openList !== null} onOpenChange={(o) => !o && setOpenList(null)}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {listTitle} ({listMembers.length})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Counted for the Master title this month — members on a UMS 30 plan, new or renewed.
+            </p>
+            {listMembers.map((m) => (
+              <div key={m.member_id} className="space-y-1">
+                <MemberRow
+                  m={m}
+                  onOpen={
+                    onOpenMember
+                      ? (id) => {
+                          setOpenList(null);
+                          onOpenMember(id);
+                        }
+                      : undefined
+                  }
+                />
+                {openList !== "frontline" && (
+                  <p className="pl-3 text-xs text-muted-foreground">Level {m.depth}</p>
+                )}
+              </div>
+            ))}
+            {!listMembers.length && (
+              <p className="text-sm text-muted-foreground">No qualifying members this month.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
       <p className="text-xs text-muted-foreground">
         Counts only members who joined or renewed a UMS 30 membership this calendar month. Trials,
         10-day / 15-visit plans, renewals due and expired members are not counted.
