@@ -428,7 +428,7 @@ export default function PortalHome() {
             <CardTitle className="text-base">My network</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {(profile.network_total ?? 0) > 0 ? (
+            {(profile.network_total ?? 0) > 0 || (myNetwork?.length ?? 0) > 0 ? (
               <MasterTitleCard
                 frontline={profile.frontline_count ?? 0}
                 cluster={profile.cluster_count ?? 0}
