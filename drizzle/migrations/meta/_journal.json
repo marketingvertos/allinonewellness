@@ -190,6 +190,13 @@
       "when": 1790770519217,
       "tag": "0026_supervisor_master_titles",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790771509815,
+      "tag": "0027_supervisor_monthly_title_rules",
+      "breakpoints": true
     }
   ]
 }

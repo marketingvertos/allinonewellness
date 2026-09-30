@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements, useAddWeight } from "@/hooks/useWellness";
+import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements, useAddWeight, useSupervisorStatus } from "@/hooks/useWellness";
 import { useUpcomingEvent, useMyMonthlyAttendance, useWlpAttendance, currentMonthIst, monthLabel } from "@/hooks/useEvents";
 import { useAchievementDefinitions, useUnlockedAchievements } from "@/hooks/useAchievements";
 import { bmiCategory } from "@/components/wellness/bodyEvalConstants";
@@ -34,6 +34,8 @@ export default function PortalHome() {
   const { data: evaluations } = useBodyMeasurements(identity?.memberId ?? undefined);
   const latestEvaluation = evaluations?.length ? evaluations[evaluations.length - 1] : null;
   const addWeight = useAddWeight();
+  const { data: supervisorStatus } = useSupervisorStatus(identity?.memberId ?? undefined);
+
 
   const month = currentMonthIst();
   const { data: familyDay } = useUpcomingEvent("family_day");
@@ -431,8 +433,10 @@ export default function PortalHome() {
                 cluster={profile.cluster_count ?? 0}
                 total={profile.network_total ?? 0}
                 isSupervisor={((profile as { tags?: string[] | null }).tags ?? []).includes("supervisor")}
+                status={supervisorStatus}
                 compact
               />
+
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
