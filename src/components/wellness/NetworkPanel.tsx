@@ -225,12 +225,19 @@ export function NetworkPanel({
   return (
     <div className="space-y-4">
       {showTitleCard && (
-        <MasterTitleCard frontline={frontline.length} cluster={total - frontline.length} total={total} isSupervisor={!!isSupervisor} />
+        <MasterTitleCard
+          frontline={frontline.length}
+          cluster={total - frontline.length}
+          total={total}
+          isSupervisor={!!isSupervisor}
+          status={supervisorStatus}
+        />
       )}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading network…</p>
-      ) : !total ? (
+      ) : !rows.length ? (
+
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
             <Users className="h-8 w-8 text-muted-foreground" />
