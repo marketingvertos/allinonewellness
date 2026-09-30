@@ -1752,6 +1752,7 @@ export interface NetworkMember {
   status: string;
   depth: number;
   referred_by: string | null;
+  qualifies_this_month?: boolean;
 }
 
 export function useReferralNetwork(memberId: string | undefined) {
@@ -1767,6 +1768,33 @@ export function useReferralNetwork(memberId: string | undefined) {
     enabled: !!memberId,
   });
 }
+
+export interface SupervisorStatus {
+  month: string;
+  is_supervisor: boolean;
+  self_renewed: boolean;
+  new_frontline_count: number;
+  new_frontline_required: number;
+  qualifying_frontline: number;
+  qualifying_network_total: number;
+  master_level: number;
+  is_qualified: boolean;
+}
+
+export function useSupervisorStatus(memberId: string | undefined) {
+  return useQuery({
+    queryKey: ["supervisor-status", memberId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_supervisor_status", {
+        p_member_id: memberId!,
+      } as never);
+      if (error) throw error;
+      return data as unknown as SupervisorStatus;
+    },
+    enabled: !!memberId,
+  });
+}
+
 
 export interface NetworkSummary {
   root_id: string;
