@@ -124,11 +124,32 @@ export function useMemberReferrals(memberId: string | undefined) {
   });
 }
 
-/** Statuses that count as an "active" member for coach titles. */
-export const ACTIVE_MEMBER_STATUSES = ["active_member", "renewal_due"];
+/** Only plain "active_member" status can ever count (UMS 30 this month is checked server-side). */
+export const ACTIVE_MEMBER_STATUSES = ["active_member"];
 
 export function isActiveMemberStatus(status: string | null | undefined) {
   return !!status && ACTIVE_MEMBER_STATUSES.includes(status);
+}
+
+export interface CoachTitleStatus {
+  month: string;
+  own_qualified: boolean;
+  counts_for_referrer: boolean;
+  active_frontline_ids: string[];
+  new_frontline: number;
+}
+
+/** Server-side Ambassador status: UMS 30 activated/renewed this IST month (same rule as Master titles). */
+export function useCoachTitleStatus(memberId: string | undefined) {
+  return useQuery({
+    queryKey: ["coach-title-status", memberId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_coach_title_status", { p_member_id: memberId! });
+      if (error) throw error;
+      return data as unknown as CoachTitleStatus;
+    },
+    enabled: !!memberId,
+  });
 }
 
 export function istMonthKey(date = new Date()) {

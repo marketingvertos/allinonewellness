@@ -211,6 +211,13 @@
       "when": 1790773178434,
       "tag": "0029_master_titles_ums30_only",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790776868900,
+      "tag": "0030_ambassador_titles_ums30_monthly",
+      "breakpoints": true
     }
   ]
 }
