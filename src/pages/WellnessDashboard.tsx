@@ -120,6 +120,7 @@ export default function WellnessDashboard() {
         return {
           id: r.id,
           full_name: r.full_name,
+          isSupervisor: (r.tags ?? []).includes("supervisor"),
           frontline: n?.frontline_count ?? r.count,
           cluster: n?.cluster_count ?? 0,
           total: n?.total_count ?? r.count,
@@ -128,6 +129,7 @@ export default function WellnessDashboard() {
       })
       .sort((a, b) => b.total - a.total);
   }, [topReferrers, networkSummary]);
+
   const { data: pinkBalances } = usePinkCardBalances((topReferrers ?? []).map((r) => r.id));
 
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
