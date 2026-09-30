@@ -57,7 +57,7 @@ export function FrontlineCountFlag({ memberId }: { memberId: string }) {
   const { data } = useCoachTitleStatus(memberId);
   if (!data) return null;
   return data.counts_for_referrer ? (
-    <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">Counts as active frontline ✓</Badge>
+    <Badge>Counts as active frontline ✓</Badge>
   ) : (
     <p className="text-xs text-muted-foreground">Does not count as frontline this month</p>
   );
