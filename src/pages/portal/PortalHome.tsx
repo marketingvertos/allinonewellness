@@ -431,8 +431,10 @@ export default function PortalHome() {
                 cluster={profile.cluster_count ?? 0}
                 total={profile.network_total ?? 0}
                 isSupervisor={((profile as { tags?: string[] | null }).tags ?? []).includes("supervisor")}
+                status={supervisorStatus}
                 compact
               />
+
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
