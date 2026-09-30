@@ -204,6 +204,13 @@
       "when": 1790772495111,
       "tag": "0028_supervisor_exclude_renewal_expired",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790773178434,
+      "tag": "0029_master_titles_ums30_only",
+      "breakpoints": true
     }
   ]
 }
