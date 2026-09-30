@@ -76,6 +76,7 @@ import {
 import { statusLabel, statusVariant } from "./status";
 import { MEMBER_TAGS, ModeBadge, TagBadges } from "./memberMeta";
 import { MasterTitleBadge } from "@/components/wellness/MasterTitleBadge";
+import { AmbassadorHeaderBadge, FrontlineCountFlag } from "@/components/wellness/AmbassadorStatus";
 import { NetworkPanel } from "@/components/wellness/NetworkPanel";
 
 
@@ -199,6 +200,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
             <MasterTitleBadge level={member.master_level} />
             <ModeBadge mode={member.member_mode} />
             <TagBadges tags={member.tags} />
+            <AmbassadorHeaderBadge memberId={member.id} />
           </SheetTitle>
           <SheetDescription>
             {member.mobile_number} · Joined {formatDate(member.joining_date)}
@@ -424,6 +426,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           </TabsContent>
 
           <TabsContent value="plan" className="space-y-4 pt-4">
+            {member.referred_by_member_id && <FrontlineCountFlag memberId={member.id} />}
             {activeMembership ? (
               <div className="space-y-3 rounded-lg border p-4">
                 <div className="flex items-center justify-between">
