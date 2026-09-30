@@ -197,6 +197,13 @@
       "when": 1790771509815,
       "tag": "0027_supervisor_monthly_title_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1790772495111,
+      "tag": "0028_supervisor_exclude_renewal_expired",
+      "breakpoints": true
     }
   ]
 }
