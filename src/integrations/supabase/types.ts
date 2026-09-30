@@ -2361,6 +2361,10 @@ export type Database = {
         Args: { p_code: string; p_mobile: string }
         Returns: Json
       }
+      coach_new_frontline: {
+        Args: { p_member_id: string; p_month: string }
+        Returns: number
+      }
       convert_trial_to_membership: {
         Args: { p_plan_id: string; p_price?: number; p_trial_id: string }
         Returns: string
@@ -2369,6 +2373,7 @@ export type Database = {
         Args: { p_member_id: string; p_plan_id: string; p_price?: number }
         Returns: string
       }
+      daily_coach_title_check: { Args: never; Returns: undefined }
       delete_wellness_plan: { Args: { p_plan_id: string }; Returns: Json }
       display_milestone_achievers: {
         Args: { p_category?: string }
@@ -2429,6 +2434,7 @@ export type Database = {
         }[]
       }
       get_club_monthly_report: { Args: { p_month: string }; Returns: Json }
+      get_coach_title_status: { Args: { p_member_id: string }; Returns: Json }
       get_network_summary: {
         Args: { member_ids: string[] }
         Returns: {
@@ -2532,6 +2538,10 @@ export type Database = {
           p_note?: string
         }
         Returns: number
+      }
+      refresh_coach_activity: {
+        Args: { p_coach_id: string; p_month: string }
+        Returns: undefined
       }
       refresh_wellness_statuses: { Args: never; Returns: undefined }
       reject_checkin_request: {
