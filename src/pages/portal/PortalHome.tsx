@@ -430,6 +430,7 @@ export default function PortalHome() {
                 frontline={profile.frontline_count ?? 0}
                 cluster={profile.cluster_count ?? 0}
                 total={profile.network_total ?? 0}
+                isSupervisor={((profile as { tags?: string[] | null }).tags ?? []).includes("supervisor")}
                 compact
               />
             ) : (

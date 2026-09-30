@@ -14,6 +14,8 @@ import { Progress } from "@/components/ui/progress";
 import { statusLabel, statusVariant } from "@/components/wellness/status";
 import { MasterIcons } from "@/components/wellness/MasterTitleBadge";
 import { Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 function levelFromTotal(total: number): number {
   const title = getMasterTitle(total);
@@ -25,22 +27,28 @@ export function MasterTitleCard({
   cluster,
   total,
   compact,
+  isSupervisor = true,
 }: {
   frontline: number;
   cluster: number;
   total: number;
   compact?: boolean;
+  isSupervisor?: boolean;
 }) {
-  const level = levelFromTotal(total);
+  const level = isSupervisor ? levelFromTotal(total) : 0;
   const next = getNextMasterLevel(total);
-  const prev = level;
+  const prev = levelFromTotal(total);
   const pct = next
     ? Math.max(0, Math.min(100, Math.round(((total - prev) / (next.level - prev)) * 100)))
     : 100;
 
   return (
     <div className="space-y-4 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
-      {level > 0 ? (
+      {!isSupervisor ? (
+        <p className="text-sm text-muted-foreground">
+          Master titles are for Supervisors. Once tagged as Supervisor, this network qualifies for Master titles.
+        </p>
+      ) : level > 0 ? (
         <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
           <MasterIcons level={level} className="h-5 w-5" />
           <span className="font-display text-xl font-semibold">Master {level}</span>
@@ -116,6 +124,13 @@ export function NetworkPanel({
   showTitleCard?: boolean;
 }) {
   const { data: network, isLoading } = useReferralNetwork(memberId);
+  const { data: isSupervisor } = useQuery({
+    queryKey: ["member-supervisor", memberId],
+    queryFn: async () => {
+      const { data } = await supabase.from("wellness_members").select("tags").eq("id", memberId).maybeSingle();
+      return (data?.tags ?? []).includes("supervisor");
+    },
+  });
   const [view, setView] = useState<"tree" | "list">("tree");
   const [search, setSearch] = useState("");
 
@@ -149,7 +164,7 @@ export function NetworkPanel({
   return (
     <div className="space-y-4">
       {showTitleCard && (
-        <MasterTitleCard frontline={frontline.length} cluster={total - frontline.length} total={total} />
+        <MasterTitleCard frontline={frontline.length} cluster={total - frontline.length} total={total} isSupervisor={!!isSupervisor} />
       )}
 
       {isLoading ? (
