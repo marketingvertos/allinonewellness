@@ -159,6 +159,8 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [weightDate, setWeightDate] = useState(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }));
   const [confirmDelete, setConfirmDelete] = useState<{ kind: "weight" | "measurement"; id: string } | null>(null);
   const [referrerDraft, setReferrerDraft] = useState<string | null | undefined>(undefined);
+  const [networkMemberId, setNetworkMemberId] = useState<string | null>(null);
+
   const [trialOpen, setTrialOpen] = useState(false);
   const [whatsAppOpen, setWhatsAppOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
