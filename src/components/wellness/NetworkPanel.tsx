@@ -3,7 +3,9 @@ import {
   getMasterTitle,
   getNextMasterLevel,
   NetworkMember,
+  SupervisorStatus,
   useReferralNetwork,
+  useSupervisorStatus,
   WellnessStatus,
 } from "@/hooks/useWellness";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { statusLabel, statusVariant } from "@/components/wellness/status";
 import { MasterIcons } from "@/components/wellness/MasterTitleBadge";
-import { Users } from "lucide-react";
+import { Users, Check, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,25 +24,43 @@ function levelFromTotal(total: number): number {
   return title ? Number(title.replace("Master ", "")) : 0;
 }
 
+function RuleRow({ ok, text }: { ok: boolean; text: string }) {
+  return (
+    <div className="flex items-start gap-2 text-sm">
+      {ok ? (
+        <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+      ) : (
+        <X className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+      )}
+      <span className={ok ? "" : "text-muted-foreground"}>{text}</span>
+    </div>
+  );
+}
+
 export function MasterTitleCard({
   frontline,
   cluster,
   total,
   compact,
   isSupervisor = true,
+  status,
 }: {
   frontline: number;
   cluster: number;
   total: number;
   compact?: boolean;
   isSupervisor?: boolean;
+  status?: SupervisorStatus | null;
 }) {
-  const level = isSupervisor ? levelFromTotal(total) : 0;
+  const qualified = status ? status.is_qualified : isSupervisor;
+  const level = isSupervisor && qualified ? levelFromTotal(total) : 0;
   const next = getNextMasterLevel(total);
   const prev = levelFromTotal(total);
   const pct = next
     ? Math.max(0, Math.min(100, Math.round(((total - prev) / (next.level - prev)) * 100)))
     : 100;
+  const newFrontline = status?.new_frontline_count ?? 0;
+  const required = status?.new_frontline_required ?? 2;
 
   return (
     <div className="space-y-4 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
@@ -53,6 +73,10 @@ export function MasterTitleCard({
           <MasterIcons level={level} className="h-5 w-5" />
           <span className="font-display text-xl font-semibold">Master {level}</span>
         </div>
+      ) : status && !status.is_qualified ? (
+        <p className="text-sm font-medium text-destructive">
+          Title on hold this month — complete the steps below to keep your Master title.
+        </p>
       ) : (
         <p className="text-sm text-muted-foreground">
           No Master title yet — 10 network members needed for Master 10.
@@ -71,6 +95,10 @@ export function MasterTitleCard({
           </div>
         ))}
       </div>
+      <p className="text-xs text-muted-foreground">
+        Counts only members who joined or renewed a membership this calendar month. Trials and
+        pending renewals are not counted.
+      </p>
 
       <div className="space-y-1">
         <p className="text-xs text-muted-foreground">
@@ -80,6 +108,30 @@ export function MasterTitleCard({
         </p>
         <Progress value={pct} className="h-2 [&>div]:bg-amber-500 dark:[&>div]:bg-amber-400" />
       </div>
+
+      {isSupervisor && status && (
+        <div className="space-y-3 rounded-md border bg-background p-3">
+          <p className="text-sm font-semibold">This month's title check</p>
+          <RuleRow ok={status.self_renewed} text="Own membership taken or renewed this month" />
+          <div className="space-y-1">
+            <RuleRow
+              ok={newFrontline >= required}
+              text={`${newFrontline} of ${required} new frontline members added this month`}
+            />
+            <Progress
+              value={Math.min(100, Math.round((newFrontline / required) * 100))}
+              className="h-2 [&>div]:bg-emerald-500 dark:[&>div]:bg-emerald-400"
+            />
+          </div>
+          <div className="space-y-1 border-t pt-2 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground">How to keep your Master title</p>
+            <p>1. Renew your own membership every calendar month.</p>
+            <p>2. Add at least {required} new members to your frontline every calendar month.</p>
+            <p>3. Only members who join or renew in the month count in your network.</p>
+            <p>4. Miss a step and the title is paused until the month's targets are met.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -103,6 +155,11 @@ function MemberRow({
         <span className="truncate font-medium">{m.full_name}</span>
       )}
       <span className="flex shrink-0 items-center gap-2">
+        {m.qualifies_this_month != null && (
+          <Badge variant={m.qualifies_this_month ? "default" : "outline"}>
+            {m.qualifies_this_month ? "Counted" : "Not counted"}
+          </Badge>
+        )}
         <Badge variant={statusVariant(m.status as WellnessStatus)}>
           {statusLabel(m.status as WellnessStatus)}
         </Badge>
@@ -113,6 +170,7 @@ function MemberRow({
     </div>
   );
 }
+
 
 export function NetworkPanel({
   memberId,
