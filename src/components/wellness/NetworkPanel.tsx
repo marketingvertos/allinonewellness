@@ -138,8 +138,26 @@ export function MasterTitleCard({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={listFilter === "all" ? "default" : "outline"}
+                onClick={() => setListFilter("all")}
+              >
+                All ({byGroup.length})
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={listFilter === "counted" ? "default" : "outline"}
+                onClick={() => setListFilter("counted")}
+              >
+                Counted this month ({countedInGroup.length})
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground">
-              Counted for the Master title this month — members on a UMS 30 plan, new or renewed.
+              Counted members are on a UMS 30 plan, new or renewed this month.
             </p>
             {listMembers.map((m) => (
               <div key={m.member_id} className="space-y-1">
@@ -160,9 +178,10 @@ export function MasterTitleCard({
               </div>
             ))}
             {!listMembers.length && (
-              <p className="text-sm text-muted-foreground">No qualifying members this month.</p>
+              <p className="text-sm text-muted-foreground">No members in this list.</p>
             )}
           </div>
+
         </DialogContent>
       </Dialog>
       {isSupervisor && (
