@@ -4,7 +4,7 @@ import {
   getNextMasterLevel,
   NetworkMember,
   SupervisorStatus,
-  useReferralNetwork,
+  useMemberNetwork,
   useSupervisorStatus,
   WellnessStatus,
 } from "@/hooks/useWellness";
@@ -19,6 +19,7 @@ import { Users, Check, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { NetworkDetailRow } from "@/components/wellness/NetworkDetailRow";
 
 function levelFromTotal(total: number): number {
   const title = getMasterTitle(total);
@@ -81,7 +82,11 @@ export function MasterTitleCard({
   );
   const listMembers = listFilter === "counted" ? countedInGroup : byGroup;
   const listTitle =
-    openList === "frontline" ? "Frontline" : openList === "cluster" ? "Cluster" : "Total network";
+    openList === "frontline" ? "My Frontline" : openList === "cluster" ? "My Cluster" : "My Network";
+  const nameById = useMemo(
+    () => Object.fromEntries(all.map((m) => [m.member_id, { name: m.full_name, parent: m.referred_by }])),
+    [all],
+  );
 
 
   return (
@@ -157,12 +162,16 @@ export function MasterTitleCard({
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Counted members are on a UMS 30 plan, new or renewed this month.
+              Counted members are on a UMS 30 plan, new or renewed this month. Frontline counts for Master &amp; Ambassador; cluster counts for Master only.
             </p>
-            {listMembers.map((m) => (
-              <div key={m.member_id} className="space-y-1">
-                <MemberRow
+            {(openList === "frontline" ? [1] : [...new Set(listMembers.map((m) => m.depth))].sort((x, y) => x - y)).map((d) => {
+              const atDepth = listMembers.filter((m) => m.depth === d);
+              if (!atDepth.length) return null;
+              const rowsEl = atDepth.map((m) => (
+                <NetworkDetailRow
+                  key={m.member_id}
                   m={m}
+                  nameById={nameById}
                   onOpen={
                     onOpenMember
                       ? (id) => {
@@ -172,11 +181,17 @@ export function MasterTitleCard({
                       : undefined
                   }
                 />
-                {openList !== "frontline" && (
-                  <p className="pl-3 text-xs text-muted-foreground">Level {m.depth}</p>
-                )}
-              </div>
-            ))}
+              ));
+              if (openList === "frontline") return <div key={d} className="space-y-2">{rowsEl}</div>;
+              return (
+                <details key={d} open={d === 1} className="rounded-md border">
+                  <summary className="cursor-pointer select-none px-3 py-2 text-sm font-semibold">
+                    {d === 1 ? "My Frontline" : `Level ${d - 1}${d === 2 ? " (referred by your frontline)" : ""}`} ({atDepth.length})
+                  </summary>
+                  <div className="space-y-2 p-2 pt-0">{rowsEl}</div>
+                </details>
+              );
+            })}
             {!listMembers.length && (
               <p className="text-sm text-muted-foreground">No members in this list.</p>
             )}
@@ -275,7 +290,7 @@ export function NetworkPanel({
   onOpenMember?: (id: string) => void;
   showTitleCard?: boolean;
 }) {
-  const { data: network, isLoading } = useReferralNetwork(memberId);
+  const { data: network, isLoading } = useMemberNetwork(memberId);
   const { data: supervisorStatus } = useSupervisorStatus(memberId);
   const { data: isSupervisor } = useQuery({
     queryKey: ["member-supervisor", memberId],

@@ -2435,6 +2435,25 @@ export type Database = {
       }
       get_club_monthly_report: { Args: { p_month: string }; Returns: Json }
       get_coach_title_status: { Args: { p_member_id: string }; Returns: Json }
+      get_member_network: {
+        Args: { p_member_id: string }
+        Returns: {
+          depth: number
+          duration_days: number
+          end_date: string
+          full_name: string
+          member_id: string
+          membership_status: string
+          plan_name: string
+          plan_type: string
+          qualifies_this_month: boolean
+          referred_by: string
+          remaining_servings: number
+          start_date: string
+          status: string
+          total_servings: number
+        }[]
+      }
       get_network_summary: {
         Args: { member_ids: string[] }
         Returns: {

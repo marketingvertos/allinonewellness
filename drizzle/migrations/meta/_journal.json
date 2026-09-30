@@ -218,6 +218,13 @@
       "when": 1790776868900,
       "tag": "0030_ambassador_titles_ums30_monthly",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790778693141,
+      "tag": "0031_get_member_network",
+      "breakpoints": true
     }
   ]
 }

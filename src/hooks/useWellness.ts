@@ -1754,11 +1754,32 @@ export function getNextMasterLevel(totalNetwork: number): { level: number; remai
 export interface NetworkMember {
   member_id: string;
   full_name: string;
-  mobile_number: string;
+  mobile_number?: string;
   status: string;
   depth: number;
   referred_by: string | null;
   qualifies_this_month?: boolean;
+  plan_name?: string | null;
+  plan_type?: string | null;
+  duration_days?: number | null;
+  total_servings?: number | null;
+  membership_status?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  remaining_servings?: number | null;
+}
+
+/** Own-network tree with plan details. Members can only load their own network (enforced server-side). */
+export function useMemberNetwork(memberId: string | undefined) {
+  return useQuery({
+    queryKey: ["member-network", memberId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_member_network" as never, { p_member_id: memberId! } as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as NetworkMember[];
+    },
+    enabled: !!memberId,
+  });
 }
 
 export function useReferralNetwork(memberId: string | undefined) {
