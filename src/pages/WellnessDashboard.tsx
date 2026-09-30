@@ -332,7 +332,7 @@ export default function WellnessDashboard() {
                         {i + 1}. {r.full_name}
                       </span>
                       <span className="flex items-center gap-2">
-                        <MasterTitleBadge level={r.master_level} size="sm" />
+                        {r.isSupervisor && <MasterTitleBadge level={r.master_level} size="sm" />}
                         {(pinkBalances?.[r.id] ?? 0) > 0 && (
                           <Badge className="border-transparent bg-[hsl(330_70%_55%)] text-white hover:bg-[hsl(330_70%_50%)]">
                             {formatCurrency((pinkBalances?.[r.id] ?? 0) * PINK_CARD_SERVING_VALUE)} credit
@@ -343,11 +343,12 @@ export default function WellnessDashboard() {
                     <p className="text-xs text-muted-foreground">
                       Frontline: {r.frontline} · Cluster: {r.cluster} · Total: {r.total}
                     </p>
-                    {r.master_level === 0 && next && (
+                    {r.isSupervisor && r.master_level === 0 && next && (
                       <p className="text-xs text-amber-700 dark:text-amber-300">
                         {next.remaining} more for Master {next.level}
                       </p>
                     )}
+
                   </div>
                 );
               })
