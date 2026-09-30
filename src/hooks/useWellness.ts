@@ -1714,15 +1714,21 @@ export function useTopReferrers(limit = 10, memberMode?: MemberModeFilter) {
       const entries = Object.entries(counts.data ?? {})
         .sort((a, b) => b[1] - a[1])
         .slice(0, limit);
-      if (!entries.length) return [] as { id: string; full_name: string; count: number }[];
+      if (!entries.length) return [] as { id: string; full_name: string; count: number; tags: string[] }[];
       const { data, error } = await supabase
         .from("wellness_members")
-        .select("id, full_name")
+        .select("id, full_name, tags")
         .in("id", entries.map(([id]) => id));
       if (error) throw error;
-      const names = Object.fromEntries((data ?? []).map((m) => [m.id as string, m.full_name as string]));
-      return entries.map(([id, count]) => ({ id, full_name: names[id] ?? "Member", count }));
+      const byId = Object.fromEntries((data ?? []).map((m) => [m.id as string, m]));
+      return entries.map(([id, count]) => ({
+        id,
+        full_name: (byId[id]?.full_name as string) ?? "Member",
+        tags: ((byId[id]?.tags as string[] | null) ?? []),
+        count,
+      }));
     },
+
   });
 }
 
