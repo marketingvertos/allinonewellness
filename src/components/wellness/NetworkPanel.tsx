@@ -67,22 +67,22 @@ export function MasterTitleCard({
   const newFrontline = status?.new_frontline_count ?? 0;
   const required = status?.new_frontline_required ?? 2;
   const [openList, setOpenList] = useState<null | "frontline" | "cluster" | "total">(null);
+  const [listFilter, setListFilter] = useState<"all" | "counted">("all");
 
-  const counted = useMemo(
-    () => (members ?? []).filter((m) => m.qualifies_this_month !== false),
-    [members],
+  const all = useMemo(() => members ?? [], [members]);
+  const byGroup = useMemo(() => {
+    if (openList === "frontline") return all.filter((m) => m.depth === 1);
+    if (openList === "cluster") return all.filter((m) => m.depth > 1);
+    return all;
+  }, [all, openList]);
+  const countedInGroup = useMemo(
+    () => byGroup.filter((m) => m.qualifies_this_month !== false),
+    [byGroup],
   );
-  const listMembers = useMemo(() => {
-    if (openList === "frontline") return counted.filter((m) => m.depth === 1);
-    if (openList === "cluster") return counted.filter((m) => m.depth > 1);
-    return counted;
-  }, [counted, openList]);
+  const listMembers = listFilter === "counted" ? countedInGroup : byGroup;
   const listTitle =
-    openList === "frontline"
-      ? "Active frontline"
-      : openList === "cluster"
-        ? "Active cluster"
-        : "Active network";
+    openList === "frontline" ? "Frontline" : openList === "cluster" ? "Cluster" : "Total network";
+
 
   return (
     <div className="space-y-4 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
