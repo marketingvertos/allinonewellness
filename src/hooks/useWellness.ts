@@ -1728,7 +1728,7 @@ export function useTopReferrers(limit = 10, memberMode?: MemberModeFilter) {
 
 /* --------------------------- Master title network ------------------------- */
 
-export const MASTER_LEVELS = [100, 50, 40, 30, 20, 10] as const;
+export const MASTER_LEVELS = [100, 90, 80, 70, 60, 50, 40, 30, 20, 15, 10] as const;
 
 export function getMasterTitle(totalNetwork: number): string | null {
   for (const level of MASTER_LEVELS) {
