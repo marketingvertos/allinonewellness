@@ -301,6 +301,8 @@ export function NetworkPanel({
           total={total}
           isSupervisor={!!isSupervisor}
           status={supervisorStatus}
+          members={rows}
+          onOpenMember={onOpenMember}
         />
       )}
 
