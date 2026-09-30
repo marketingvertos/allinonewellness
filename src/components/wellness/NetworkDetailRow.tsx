@@ -1,5 +1,5 @@
 import type { NetworkMember } from "@/hooks/useWellness";
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/formatters";
 
 type NameMap = Record<string, { name: string; parent: string | null }>;
 
