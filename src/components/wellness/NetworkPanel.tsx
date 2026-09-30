@@ -25,22 +25,28 @@ export function MasterTitleCard({
   cluster,
   total,
   compact,
+  isSupervisor = true,
 }: {
   frontline: number;
   cluster: number;
   total: number;
   compact?: boolean;
+  isSupervisor?: boolean;
 }) {
-  const level = levelFromTotal(total);
+  const level = isSupervisor ? levelFromTotal(total) : 0;
   const next = getNextMasterLevel(total);
-  const prev = level;
+  const prev = levelFromTotal(total);
   const pct = next
     ? Math.max(0, Math.min(100, Math.round(((total - prev) / (next.level - prev)) * 100)))
     : 100;
 
   return (
     <div className="space-y-4 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
-      {level > 0 ? (
+      {!isSupervisor ? (
+        <p className="text-sm text-muted-foreground">
+          Master titles are for Supervisors. Once tagged as Supervisor, this network qualifies for Master titles.
+        </p>
+      ) : level > 0 ? (
         <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
           <MasterIcons level={level} className="h-5 w-5" />
           <span className="font-display text-xl font-semibold">Master {level}</span>
