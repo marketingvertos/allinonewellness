@@ -96,8 +96,8 @@ export function MasterTitleCard({
         ))}
       </div>
       <p className="text-xs text-muted-foreground">
-        Counts only members who joined or renewed a membership this calendar month. Trials and
-        pending renewals are not counted.
+        Counts only members who joined or renewed a UMS 30 membership this calendar month. Trials,
+        10-day / 15-visit plans, renewals due and expired members are not counted.
       </p>
 
       <div className="space-y-1">
@@ -125,9 +125,9 @@ export function MasterTitleCard({
           </div>
           <div className="space-y-1 border-t pt-2 text-xs text-muted-foreground">
             <p className="font-medium text-foreground">How to keep your Master title</p>
-            <p>1. Renew your own membership every calendar month.</p>
-            <p>2. Add at least {required} new members to your frontline every calendar month.</p>
-            <p>3. Only members who join or renew in the month count in your network.</p>
+            <p>1. Renew your own UMS 30 membership every calendar month.</p>
+            <p>2. Add at least {required} new UMS 30 members to your frontline every calendar month.</p>
+            <p>3. Only members who join or renew a UMS 30 plan in the month count in your network.</p>
             <p>4. Miss a step and the title is paused until the month's targets are met.</p>
           </div>
         </div>
