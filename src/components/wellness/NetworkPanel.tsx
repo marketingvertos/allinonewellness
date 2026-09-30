@@ -14,6 +14,8 @@ import { Progress } from "@/components/ui/progress";
 import { statusLabel, statusVariant } from "@/components/wellness/status";
 import { MasterIcons } from "@/components/wellness/MasterTitleBadge";
 import { Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 function levelFromTotal(total: number): number {
   const title = getMasterTitle(total);
@@ -122,6 +124,13 @@ export function NetworkPanel({
   showTitleCard?: boolean;
 }) {
   const { data: network, isLoading } = useReferralNetwork(memberId);
+  const { data: isSupervisor } = useQuery({
+    queryKey: ["member-supervisor", memberId],
+    queryFn: async () => {
+      const { data } = await supabase.from("wellness_members").select("tags").eq("id", memberId).maybeSingle();
+      return (data?.tags ?? []).includes("supervisor");
+    },
+  });
   const [view, setView] = useState<"tree" | "list">("tree");
   const [search, setSearch] = useState("");
 
@@ -155,7 +164,7 @@ export function NetworkPanel({
   return (
     <div className="space-y-4">
       {showTitleCard && (
-        <MasterTitleCard frontline={frontline.length} cluster={total - frontline.length} total={total} />
+        <MasterTitleCard frontline={frontline.length} cluster={total - frontline.length} total={total} isSupervisor={!!isSupervisor} />
       )}
 
       {isLoading ? (
