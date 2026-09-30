@@ -165,19 +165,24 @@ export function MasterTitleCard({
           </div>
         </DialogContent>
       </Dialog>
-      <p className="text-xs text-muted-foreground">
-        Counts only members who joined or renewed a UMS 30 membership this calendar month. Trials,
-        10-day / 15-visit plans, renewals due and expired members are not counted.
-      </p>
+      {isSupervisor && (
+        <>
+          <p className="text-xs text-muted-foreground">
+            Counts only members who joined or renewed a UMS 30 membership this calendar month. Trials,
+            10-day / 15-visit plans, renewals due and expired members are not counted.
+          </p>
 
-      <div className="space-y-1">
-        <p className="text-xs text-muted-foreground">
-          {next
-            ? `Next level: Master ${next.level} — ${next.remaining} more needed`
-            : "Highest Master level reached."}
-        </p>
-        <Progress value={pct} className="h-2 [&>div]:bg-amber-500 dark:[&>div]:bg-amber-400" />
-      </div>
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">
+              {next
+                ? `Next level: Master ${next.level} — ${next.remaining} more needed`
+                : "Highest Master level reached."}
+            </p>
+            <Progress value={pct} className="h-2 [&>div]:bg-amber-500 dark:[&>div]:bg-amber-400" />
+          </div>
+        </>
+      )}
+
 
       {isSupervisor && status && (
         <div className="space-y-3 rounded-md border bg-background p-3">

@@ -442,13 +442,11 @@ export default function PortalHome() {
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Start building your community by referring friends and family to the centre. Reach 10
-                  members to earn the Master 10 title!
+                  Start building your community by referring friends and family to the centre.
                 </p>
-                <p className="text-xs text-muted-foreground">0 of 10 for Master 10</p>
-                <Progress value={0} className="h-2 [&>div]:bg-amber-500 dark:[&>div]:bg-amber-400" />
               </div>
             )}
+
             <Button variant="outline" size="sm" asChild className="w-full">
               <Link to="/portal/network">
                 View my network <ChevronRight className="ml-1 h-4 w-4" />
