@@ -435,6 +435,7 @@ export default function PortalHome() {
                 total={profile.network_total ?? 0}
                 isSupervisor={((profile as { tags?: string[] | null }).tags ?? []).includes("supervisor")}
                 status={supervisorStatus}
+                members={myNetwork}
                 compact
               />
 
