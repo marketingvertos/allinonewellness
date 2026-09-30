@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements, useAddWeight, useSupervisorStatus } from "@/hooks/useWellness";
+import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements, useAddWeight, useSupervisorStatus, useReferralNetwork } from "@/hooks/useWellness";
 import { useUpcomingEvent, useMyMonthlyAttendance, useWlpAttendance, currentMonthIst, monthLabel } from "@/hooks/useEvents";
 import { useAchievementDefinitions, useUnlockedAchievements } from "@/hooks/useAchievements";
 import { bmiCategory } from "@/components/wellness/bodyEvalConstants";
