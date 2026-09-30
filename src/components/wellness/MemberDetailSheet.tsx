@@ -897,6 +897,14 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   );
 }
 
+function NestedMemberSheet({ memberId, onClose }: { memberId: string | null; onClose: () => void }) {
+  const { data: member } = useWellnessMember(memberId ?? undefined);
+  if (!memberId || !member) return null;
+  return <MemberDetailSheet member={member} open onOpenChange={(o) => !o && onClose()} />;
+}
+
+
+
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
