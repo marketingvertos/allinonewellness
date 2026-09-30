@@ -2446,10 +2446,12 @@ export type Database = {
           full_name: string
           member_id: string
           mobile_number: string
+          qualifies_this_month: boolean
           referred_by: string
           status: string
         }[]
       }
+      get_supervisor_status: { Args: { p_member_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2473,6 +2475,7 @@ export type Database = {
         }
         Returns: number
       }
+      ist_month: { Args: never; Returns: string }
       mark_notification_sent: {
         Args: { p_error?: string; p_log_id: string; p_status?: string }
         Returns: undefined
@@ -2480,6 +2483,10 @@ export type Database = {
       mark_promotion_reward: {
         Args: { p_claimed: boolean; p_note?: string; p_progress_id: string }
         Returns: undefined
+      }
+      member_active_in_month: {
+        Args: { p_member_id: string; p_month: string }
+        Returns: boolean
       }
       member_self_checkin: {
         Args: { p_code: string; p_weight?: number }
@@ -2550,6 +2557,10 @@ export type Database = {
       }
       rotate_checkin_code: { Args: never; Returns: string }
       seed_default_pipeline: { Args: { p_user_id: string }; Returns: string }
+      supervisor_new_frontline: {
+        Args: { p_member_id: string; p_month: string }
+        Returns: number
+      }
       switch_membership_plan: {
         Args: {
           p_carry_servings?: boolean
