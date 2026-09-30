@@ -891,7 +891,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
         )}
       </SheetContent>
 
-      <MemberSheetById memberId={networkMemberId} onClose={() => setNetworkMemberId(null)} />
+      <NestedMemberSheet memberId={networkMemberId} onClose={() => setNetworkMemberId(null)} />
     </Sheet>
 
   );
