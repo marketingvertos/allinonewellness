@@ -243,9 +243,9 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
               </div>
             ))}
             <p className="text-xs text-muted-foreground">
-              Add {community.current && community.current.sort_order > 4 ? "2 new memberships" : "1 new membership"} to
-              your frontline each month to keep this title. Titles also need your own membership active and enough
-              active frontline members.
+              Add {community.current && community.current.sort_order > 4 ? "2 new UMS 30 memberships" : "1 new UMS 30 membership"} to
+              your frontline each month to keep this title. Only frontline members who joined or renewed a UMS 30 plan
+              this month count, and you must renew your own UMS 30 this month too.
             </p>
           </div>
 
@@ -253,7 +253,7 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
             <div className="space-y-1">
               <p className="text-sm font-medium">People helped</p>
               {referrals.map((r) => {
-                const active = isActiveMemberStatus(r.status);
+                const active = countsThisMonth(r.id);
                 return (
                   <div
                     key={r.id}
@@ -262,7 +262,7 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
                     <span className={active ? "" : "text-muted-foreground"}>{r.full_name}</span>
                     <div className="flex items-center gap-2">
                       <Badge variant={active ? "default" : "outline"} className="text-xs">
-                        {r.status.replace(/_/g, " ")}
+                        {active ? "Counts ✓" : r.status.replace(/_/g, " ")}
                       </Badge>
                       <span className="text-xs text-muted-foreground">{formatDate(r.joining_date)}</span>
                     </div>
