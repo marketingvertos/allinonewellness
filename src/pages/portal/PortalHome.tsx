@@ -34,6 +34,8 @@ export default function PortalHome() {
   const { data: evaluations } = useBodyMeasurements(identity?.memberId ?? undefined);
   const latestEvaluation = evaluations?.length ? evaluations[evaluations.length - 1] : null;
   const addWeight = useAddWeight();
+  const { data: supervisorStatus } = useSupervisorStatus(identity?.memberId ?? undefined);
+
 
   const month = currentMonthIst();
   const { data: familyDay } = useUpcomingEvent("family_day");
