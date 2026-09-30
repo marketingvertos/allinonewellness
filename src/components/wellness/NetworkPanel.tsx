@@ -182,6 +182,7 @@ export function NetworkPanel({
   showTitleCard?: boolean;
 }) {
   const { data: network, isLoading } = useReferralNetwork(memberId);
+  const { data: supervisorStatus } = useSupervisorStatus(memberId);
   const { data: isSupervisor } = useQuery({
     queryKey: ["member-supervisor", memberId],
     queryFn: async () => {
@@ -193,8 +194,10 @@ export function NetworkPanel({
   const [search, setSearch] = useState("");
 
   const rows = useMemo(() => network ?? [], [network]);
-  const frontline = rows.filter((r) => r.depth === 1);
-  const total = rows.length;
+  const counted = rows.filter((r) => r.qualifies_this_month !== false);
+  const frontline = counted.filter((r) => r.depth === 1);
+  const total = counted.length;
+
 
   const nameById = useMemo(
     () => Object.fromEntries(rows.map((r) => [r.member_id, r.full_name])),
