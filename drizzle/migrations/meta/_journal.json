@@ -176,6 +176,13 @@
       "when": 1790689013021,
       "tag": "0024_club_owner_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790769669354,
+      "tag": "0025_expand_master_network_title_levels",
+      "breakpoints": true
     }
   ]
 }
