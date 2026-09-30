@@ -77,6 +77,8 @@ import { statusLabel, statusVariant } from "./status";
 import { MEMBER_TAGS, ModeBadge, TagBadges } from "./memberMeta";
 import { MasterTitleBadge } from "@/components/wellness/MasterTitleBadge";
 import { NetworkPanel } from "@/components/wellness/NetworkPanel";
+
+
 import { cn } from "@/lib/utils";
 import { DobInput } from "@/components/ui/dob-input";
 import { ageFromDob } from "@/lib/formatters";
@@ -159,6 +161,8 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [weightDate, setWeightDate] = useState(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }));
   const [confirmDelete, setConfirmDelete] = useState<{ kind: "weight" | "measurement"; id: string } | null>(null);
   const [referrerDraft, setReferrerDraft] = useState<string | null | undefined>(undefined);
+  const [networkMemberId, setNetworkMemberId] = useState<string | null>(null);
+
   const [trialOpen, setTrialOpen] = useState(false);
   const [whatsAppOpen, setWhatsAppOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
@@ -794,8 +798,9 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           </TabsContent>
 
           <TabsContent value="network" className="space-y-4 pt-4">
-            <NetworkPanel memberId={member.id} />
+            <NetworkPanel memberId={member.id} onOpenMember={setNetworkMemberId} />
           </TabsContent>
+
 
           <TabsContent value="notes" className="space-y-4 pt-4">
             <div className="space-y-2">
@@ -886,9 +891,19 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
         )}
       </SheetContent>
 
+      <NestedMemberSheet memberId={networkMemberId} onClose={() => setNetworkMemberId(null)} />
     </Sheet>
+
   );
 }
+
+function NestedMemberSheet({ memberId, onClose }: { memberId: string | null; onClose: () => void }) {
+  const { data: member } = useWellnessMember(memberId ?? undefined);
+  if (!memberId || !member) return null;
+  return <MemberDetailSheet member={member} open onOpenChange={(o) => !o && onClose()} />;
+}
+
+
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
