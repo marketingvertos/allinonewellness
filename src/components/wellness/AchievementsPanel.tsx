@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import {
   AchievementCategory,
   buildLadder,
-  isActiveMemberStatus,
+  useCoachTitleStatus,
   istMonthKey,
   useAchievementDefinitions,
   useCoachMonthlyActivity,
@@ -41,6 +41,7 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
   const { data: unlocked } = useUnlockedAchievements(member.id);
   const { data: referrals } = useMemberReferrals(member.id);
   const { data: activity } = useCoachMonthlyActivity(member.id);
+  const { data: titleStatus } = useCoachTitleStatus(member.id);
 
   const unlockedIds = useMemo(
     () => new Set((unlocked ?? []).map((u) => u.achievement_id)),
@@ -51,10 +52,12 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
     [unlocked],
   );
 
-  const activeReferralCount = (referrals ?? []).filter((r) => isActiveMemberStatus(r.status)).length;
+  const activeIds = useMemo(() => new Set(titleStatus?.active_frontline_ids ?? []), [titleStatus]);
+  const countsThisMonth = (id: string) => activeIds.has(id);
+  const activeReferralCount = activeIds.size;
   const totalReferralCount = (referrals ?? []).filter((r) => r.status !== "inactive").length;
   const referralCount = activeReferralCount;
-  const ownMembershipActive = member.status == null || isActiveMemberStatus(member.status);
+  const ownMembershipActive = titleStatus ? titleStatus.own_qualified : true;
 
   const thisMonth = istMonthKey();
   const currentActivity = (activity ?? []).find((a) => a.month === thisMonth);
