@@ -549,11 +549,12 @@ export function useIssueServings() {
   const qc = useQueryClient();
   const t = useToastedMutation();
   return useMutation({
-    mutationFn: async (args: { membershipId: string; quantity: number; reason?: string }) => {
+    mutationFn: async (args: { membershipId: string; quantity: number; reason?: string; dates?: string[] }) => {
       const { error } = await supabase.rpc("issue_servings", {
         p_membership_id: args.membershipId,
         p_quantity: args.quantity,
         p_reason: args.reason ?? "Packed for member",
+        p_dates: args.dates?.length ? args.dates : null,
       } as never);
       if (error) throw error;
     },
@@ -1510,6 +1511,9 @@ export interface NotificationTemplate {
   channel: string;
   message_template: string;
   active: boolean;
+  template_name: string | null;
+  template_language: string | null;
+  variables: string[] | null;
 }
 
 export interface NotificationLogEntry {
@@ -1710,21 +1714,27 @@ export function useTopReferrers(limit = 10, memberMode?: MemberModeFilter) {
       const entries = Object.entries(counts.data ?? {})
         .sort((a, b) => b[1] - a[1])
         .slice(0, limit);
-      if (!entries.length) return [] as { id: string; full_name: string; count: number }[];
+      if (!entries.length) return [] as { id: string; full_name: string; count: number; tags: string[] }[];
       const { data, error } = await supabase
         .from("wellness_members")
-        .select("id, full_name")
+        .select("id, full_name, tags")
         .in("id", entries.map(([id]) => id));
       if (error) throw error;
-      const names = Object.fromEntries((data ?? []).map((m) => [m.id as string, m.full_name as string]));
-      return entries.map(([id, count]) => ({ id, full_name: names[id] ?? "Member", count }));
+      const byId = Object.fromEntries((data ?? []).map((m) => [m.id as string, m]));
+      return entries.map(([id, count]) => ({
+        id,
+        full_name: (byId[id]?.full_name as string) ?? "Member",
+        tags: ((byId[id]?.tags as string[] | null) ?? []),
+        count,
+      }));
     },
+
   });
 }
 
 /* --------------------------- Master title network ------------------------- */
 
-export const MASTER_LEVELS = [100, 50, 40, 30, 20, 10] as const;
+export const MASTER_LEVELS = [100, 90, 80, 70, 60, 50, 40, 30, 20, 15, 10] as const;
 
 export function getMasterTitle(totalNetwork: number): string | null {
   for (const level of MASTER_LEVELS) {
@@ -1744,10 +1754,32 @@ export function getNextMasterLevel(totalNetwork: number): { level: number; remai
 export interface NetworkMember {
   member_id: string;
   full_name: string;
-  mobile_number: string;
+  mobile_number?: string;
   status: string;
   depth: number;
   referred_by: string | null;
+  qualifies_this_month?: boolean;
+  plan_name?: string | null;
+  plan_type?: string | null;
+  duration_days?: number | null;
+  total_servings?: number | null;
+  membership_status?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  remaining_servings?: number | null;
+}
+
+/** Own-network tree with plan details. Members can only load their own network (enforced server-side). */
+export function useMemberNetwork(memberId: string | undefined) {
+  return useQuery({
+    queryKey: ["member-network", memberId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_member_network" as never, { p_member_id: memberId! } as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as NetworkMember[];
+    },
+    enabled: !!memberId,
+  });
 }
 
 export function useReferralNetwork(memberId: string | undefined) {
@@ -1763,6 +1795,33 @@ export function useReferralNetwork(memberId: string | undefined) {
     enabled: !!memberId,
   });
 }
+
+export interface SupervisorStatus {
+  month: string;
+  is_supervisor: boolean;
+  self_renewed: boolean;
+  new_frontline_count: number;
+  new_frontline_required: number;
+  qualifying_frontline: number;
+  qualifying_network_total: number;
+  master_level: number;
+  is_qualified: boolean;
+}
+
+export function useSupervisorStatus(memberId: string | undefined) {
+  return useQuery({
+    queryKey: ["supervisor-status", memberId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_supervisor_status", {
+        p_member_id: memberId!,
+      } as never);
+      if (error) throw error;
+      return data as unknown as SupervisorStatus;
+    },
+    enabled: !!memberId,
+  });
+}
+
 
 export interface NetworkSummary {
   root_id: string;
@@ -2165,9 +2224,13 @@ export function useStartGuestTrial() {
       start_date: string;
       created_by: string;
       duration_days?: number;
+      height?: number | null;
+      weight?: number | null;
+      referred_by_member_id?: string | null;
+      referrer_name?: string | null;
+      referrer_mobile?: string | null;
     }) => {
       const duration = args.duration_days ?? 3;
-
 
       const code = `GT-${Math.floor(100000 + Math.random() * 900000)}`;
       const { data: member, error } = await supabase
@@ -2180,30 +2243,70 @@ export function useStartGuestTrial() {
           status: "trial",
           is_guest: true,
           activation_code: code,
+          height: args.height ?? null,
+          initial_weight: args.weight ?? null,
+          current_weight: args.weight ?? null,
+          referred_by_member_id: args.referred_by_member_id ?? null,
           created_by: args.created_by,
         } as never)
         .select("id")
         .single();
       if (error) throw error;
 
+      const memberId = (member as { id: string }).id;
+
       const { error: e2 } = await supabase.from("wellness_trials").insert({
-        member_id: (member as { id: string }).id,
+        member_id: memberId,
         start_date: args.start_date,
         duration_days: duration,
         status: "active",
+        weight_at_start: args.weight ?? null,
         created_by: args.created_by,
       } as never);
 
       if (e2) throw e2;
+
+      if (args.weight != null) {
+        await supabase.from("weight_tracking").insert({
+          member_id: memberId,
+          recorded_date: args.start_date,
+          weight: args.weight,
+          notes: "Guest trial start",
+          recorded_by: args.created_by,
+        } as never);
+      }
+
+      // Referrer who is not on the member list is kept as a note on the guest.
+      const outsideName = args.referrer_name?.trim();
+      if (!args.referred_by_member_id && outsideName) {
+        const phone = args.referrer_mobile?.trim();
+        await supabase.from("member_notes").insert({
+          member_id: memberId,
+          note: `Referred by / helped by: ${outsideName}${phone ? ` · ${phone}` : ""} (not a club member)`,
+          created_by: args.created_by,
+        } as never);
+      }
+
+
+      let loginError: string | null = null;
+      try {
+        await ensureMemberLogin(memberId);
+      } catch (err) {
+        loginError = (err as Error).message || "Could not create the guest login.";
+      }
+
+      return { memberId, loginError };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wellness-trials-active"] });
       qc.invalidateQueries({ queryKey: ["wellness-trial-candidates"] });
+      qc.invalidateQueries({ queryKey: ["wellness-members"] });
       t.success("Guest trial started");
     },
     onError: t.onError,
   });
 }
+
 
 /* --------------------------- Sales & servings analytics -------------------------- */
 
@@ -2273,6 +2376,128 @@ export function useSalesAnalytics(range: PeriodRange, memberMode?: MemberModeFil
         memberships: sales.data?.length ?? 0,
         revenue: (sales.data ?? []).reduce((sum, r) => sum + Number((r as { price_paid: number }).price_paid ?? 0), 0),
         servings: (servings.data ?? []).filter((r) => (r as { serving_deducted: boolean }).serving_deducted).length,
+      };
+    },
+  });
+}
+
+/* --------------------------- Sales drill-down --------------------------- */
+
+export interface SalesDrillDownRow {
+  id: string;
+  memberId: string;
+  memberName: string;
+  mobile: string;
+  planName: string;
+  pricePaid: number;
+  paymentMode: string;
+  totalServings: number;
+  isRenewal: boolean;
+  createdAt: string;
+  payments: { amount: number; mode: string; paidAt: string; note: string | null }[];
+}
+
+export interface SalesDrillDownResult {
+  rows: SalesDrillDownRow[];
+  totalRevenue: number;
+  totalMemberships: number;
+  totalServings: number;
+  byCash: number;
+  byUpi: number;
+  byOnline: number;
+  byCard: number;
+}
+
+/** Memberships sold in an IST date range, with split-payment detail. */
+export function useSalesDrillDown(from: string, to: string, memberMode?: MemberModeFilter, enabled = true) {
+  return useQuery({
+    queryKey: ["sales-drilldown", from, to, memberMode ?? "all"],
+    enabled,
+    queryFn: async (): Promise<SalesDrillDownResult> => {
+      const ids = await memberIdsForMode(memberMode);
+      let msQ = supabase
+        .from("wellness_memberships")
+        .select(
+          "id, member_id, plan_id, price_paid, payment_mode, total_servings, renewed_from, created_at, " +
+            "wellness_members(full_name, mobile_number, member_mode), wellness_plans(name, price)",
+        )
+        .gte("created_at", `${from}T00:00:00+05:30`)
+        .lte("created_at", `${to}T23:59:59+05:30`)
+        .order("created_at", { ascending: false });
+      if (ids) msQ = msQ.in("member_id", ids);
+      const { data: memberships, error: msErr } = await msQ;
+      if (msErr) throw msErr;
+
+      const msRows = (memberships ?? []) as unknown as {
+        id: string;
+        member_id: string;
+        plan_id: string;
+        price_paid: number;
+        payment_mode: string;
+        total_servings: number;
+        renewed_from: string | null;
+        created_at: string;
+        wellness_members: { full_name: string; mobile_number: string; member_mode: string } | null;
+        wellness_plans: { name: string; price: number } | null;
+      }[];
+
+      const msIds = msRows.map((m) => m.id);
+      let payments: { membership_id: string; amount: number; mode: string; paid_at: string; note: string | null }[] = [];
+      if (msIds.length > 0) {
+        const { data: payRows, error: pErr } = await supabase
+          .from("wellness_payments")
+          .select("membership_id, amount, mode, paid_at, note")
+          .in("membership_id", msIds)
+          .order("paid_at", { ascending: true });
+        if (pErr) throw pErr;
+        payments = (payRows ?? []) as typeof payments;
+      }
+
+      const paymentsByMs: Record<string, typeof payments> = {};
+      for (const p of payments) (paymentsByMs[p.membership_id] ??= []).push(p);
+
+      let byCash = 0,
+        byUpi = 0,
+        byOnline = 0,
+        byCard = 0;
+      const tally = (mode: string, amt: number) => {
+        if (mode === "cash") byCash += amt;
+        else if (mode === "upi") byUpi += amt;
+        else if (mode === "online") byOnline += amt;
+        else if (mode === "card") byCard += amt;
+      };
+
+      const rows: SalesDrillDownRow[] = msRows.map((m) => {
+        const legs = paymentsByMs[m.id] ?? [];
+        if (legs.length > 0) {
+          for (const p of legs) tally(p.mode, Number(p.amount));
+        } else {
+          tally(m.payment_mode, Number(m.price_paid));
+        }
+        return {
+          id: m.id,
+          memberId: m.member_id,
+          memberName: m.wellness_members?.full_name ?? "Member",
+          mobile: m.wellness_members?.mobile_number ?? "",
+          planName: m.wellness_plans?.name ?? "Plan",
+          pricePaid: Number(m.price_paid),
+          paymentMode: m.payment_mode,
+          totalServings: m.total_servings,
+          isRenewal: m.renewed_from != null,
+          createdAt: m.created_at,
+          payments: legs.map((p) => ({ amount: Number(p.amount), mode: p.mode, paidAt: p.paid_at, note: p.note })),
+        };
+      });
+
+      return {
+        rows,
+        totalRevenue: rows.reduce((s, r) => s + r.pricePaid, 0),
+        totalMemberships: rows.length,
+        totalServings: rows.reduce((s, r) => s + r.totalServings, 0),
+        byCash,
+        byUpi,
+        byOnline,
+        byCard,
       };
     },
   });
@@ -2394,5 +2619,261 @@ export function useRedeemPinkCard() {
     },
     onSuccess: () => qc.invalidateQueries(),
     onError: t.onError,
+  });
+}
+
+// ---------- Attendance Register ----------
+
+export type AttendanceMark = "visit" | "serving";
+
+export interface AttendanceRow {
+  memberId: string;
+  name: string;
+  mobile: string;
+  memberMode: string;
+  status: string;
+  planName: string | null;
+  remainingServings: number | null;
+  dayMap: Record<string, AttendanceMark | null>;
+  presentDays: number;
+  visitDays: number;
+  servingDays: number;
+  absentDays: number;
+  percentage: number;
+}
+
+export interface AttendanceRegisterResult {
+  rows: AttendanceRow[];
+  dates: string[];
+  countedDates: string[];
+  today: string;
+  totalMembers: number;
+  todayPresent: number;
+  todayAbsent: number;
+  avgAttendance: number;
+  bestAttendee: { name: string; percentage: number } | null;
+}
+
+function isoDateRange(from: string, to: string): string[] {
+  const out: string[] = [];
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const [ty, tm, td] = to.split("-").map(Number);
+  const d = new Date(Date.UTC(fy, fm - 1, fd));
+  const end = Date.UTC(ty, tm - 1, td);
+  while (d.getTime() <= end && out.length < 400) {
+    out.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return out;
+}
+
+export function useAttendanceRegister(from: string, to: string, memberMode?: MemberModeFilter) {
+  return useQuery({
+    queryKey: ["attendance-register", from, to, memberMode],
+    enabled: !!from && !!to && from <= to,
+    queryFn: async (): Promise<AttendanceRegisterResult> => {
+      let mq = supabase
+        .from("wellness_members")
+        .select("id, full_name, mobile_number, member_mode, status")
+        .in("status", ["active_member", "renewal_due", "trial", "expired"]);
+      if (memberMode && memberMode !== "all") mq = mq.eq("member_mode", memberMode);
+      const { data: members, error: mErr } = await mq.limit(5000);
+      if (mErr) throw mErr;
+      const ids = (members ?? []).map((m) => m.id);
+
+      const mship: Record<string, { planName: string | null; remaining: number | null }> = {};
+      if (ids.length) {
+        const { data: ms } = await supabase
+          .from("wellness_memberships")
+          .select("member_id, status, remaining_servings, wellness_plans(name)")
+          .in("member_id", ids)
+          .in("status", ["active", "expiring_soon", "queued"]);
+        const rank: Record<string, number> = { active: 0, expiring_soon: 1, queued: 2 };
+        const sorted = [...(ms ?? [])].sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9));
+        for (const m of sorted) {
+          if (!mship[m.member_id]) {
+            mship[m.member_id] = {
+              planName: (m.wellness_plans as { name?: string } | null)?.name ?? null,
+              remaining: m.remaining_servings,
+            };
+          }
+        }
+      }
+
+      const attMap: Record<string, Map<string, AttendanceMark>> = {};
+      const pageSize = 1000;
+      for (let page = 0; page < 50; page++) {
+        const { data, error } = await supabase
+          .from("wellness_attendance")
+          .select("member_id, visit_date, checkin_method")
+          .gte("visit_date", from)
+          .lte("visit_date", to)
+          .order("visit_date")
+          .range(page * pageSize, page * pageSize + pageSize - 1);
+        if (error) throw error;
+        for (const a of data ?? []) {
+          (attMap[a.member_id] ??= new Map()).set(
+            a.visit_date,
+            (a.checkin_method as string) === "serving_issue" ? "serving" : "visit",
+          );
+        }
+        if (!data || data.length < pageSize) break;
+      }
+
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      const dates = isoDateRange(from, to);
+      const countedDates = dates.filter((d) => d <= today);
+      let todayPresent = 0;
+
+      const rows: AttendanceRow[] = (members ?? []).map((m) => {
+        const visited = attMap[m.id] ?? new Map<string, AttendanceMark>();
+        const dayMap: Record<string, AttendanceMark | null> = {};
+        for (const d of dates) dayMap[d] = visited.get(d) ?? null;
+        const counted = countedDates.filter((d) => visited.has(d));
+        const presentDays = counted.length;
+        const servingDays = counted.filter((d) => visited.get(d) === "serving").length;
+        const absentDays = countedDates.length - presentDays;
+        if (visited.has(today)) todayPresent++;
+        return {
+          memberId: m.id,
+          name: m.full_name,
+          mobile: m.mobile_number ?? "",
+          memberMode: m.member_mode,
+          status: m.status,
+          planName: mship[m.id]?.planName ?? null,
+          remainingServings: mship[m.id]?.remaining ?? null,
+          dayMap,
+          presentDays,
+          visitDays: presentDays - servingDays,
+          servingDays,
+          absentDays,
+          percentage: countedDates.length ? Math.round((presentDays / countedDates.length) * 100) : 0,
+        };
+      });
+      rows.sort((a, b) => a.name.localeCompare(b.name));
+      const totalMembers = rows.length;
+      const avgAttendance = totalMembers ? Math.round(rows.reduce((s, r) => s + r.percentage, 0) / totalMembers) : 0;
+      const best = rows.length ? rows.reduce((a, b) => (b.percentage > a.percentage ? b : a)) : null;
+      return {
+        rows, dates, countedDates, today, totalMembers, todayPresent,
+        todayAbsent: totalMembers - todayPresent, avgAttendance,
+        bestAttendee: best && best.presentDays > 0 ? { name: best.name, percentage: best.percentage } : null,
+      };
+    },
+  });
+}
+
+// ---------- Servings issued (packed) ----------
+
+export interface ServingIssuedRow {
+  id: string;
+  memberId: string;
+  memberName: string;
+  mobile: string;
+  planName: string;
+  quantity: number;
+  reason: string | null;
+  issuedAt: string;
+  markedDates: string[];
+}
+
+export interface ServingIssuedResult {
+  rows: ServingIssuedRow[];
+  totalServings: number;
+  totalMembers: number;
+}
+
+async function fetchServingsIssued(from: string, to: string, mode?: MemberModeFilter): Promise<ServingIssuedResult> {
+  const ids = await memberIdsForMode(mode);
+  let q = supabase
+    .from("serving_transactions")
+    .select("id, member_id, membership_id, change, note, created_at, wellness_members(full_name, mobile_number), wellness_memberships(wellness_plans(name))")
+    .eq("txn_type", "pack_and_issue" as never)
+    .gte("created_at", `${from}T00:00:00+05:30`)
+    .lte("created_at", `${to}T23:59:59.999+05:30`)
+    .order("created_at", { ascending: false })
+    .limit(5000);
+  if (ids) q = q.in("member_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+  const { data, error } = await q;
+  if (error) throw error;
+  type Txn = {
+    id: string; member_id: string; membership_id: string; change: number; note: string | null; created_at: string;
+    wellness_members: { full_name?: string; mobile_number?: string } | null;
+    wellness_memberships: { wellness_plans?: { name?: string } | null } | null;
+  };
+  const txns = (data ?? []) as unknown as Txn[];
+
+  // Packed dates are stored as attendance rows; match them by who issued them, when.
+  const byMember: Record<string, { date: string; created: string }[]> = {};
+  const memberIds = [...new Set(txns.map((t) => t.member_id))];
+  if (memberIds.length) {
+    const { data: att } = await supabase
+      .from("wellness_attendance")
+      .select("member_id, visit_date, created_at")
+      .eq("checkin_method", "serving_issue" as never)
+      .in("member_id", memberIds)
+      .gte("created_at", `${from}T00:00:00+05:30`)
+      .lte("created_at", `${to}T23:59:59.999+05:30`)
+      .order("visit_date");
+    for (const a of att ?? []) (byMember[a.member_id] ??= []).push({ date: a.visit_date, created: a.created_at });
+  }
+
+  const rows: ServingIssuedRow[] = txns.map((t) => {
+    const ts = new Date(t.created_at).getTime();
+    const marked = (byMember[t.member_id] ?? [])
+      .filter((a) => Math.abs(new Date(a.created).getTime() - ts) < 5000)
+      .map((a) => a.date);
+    return {
+      id: t.id,
+      memberId: t.member_id,
+      memberName: t.wellness_members?.full_name ?? "Member",
+      mobile: t.wellness_members?.mobile_number ?? "",
+      planName: t.wellness_memberships?.wellness_plans?.name ?? "Plan",
+      quantity: Math.abs(t.change),
+      reason: t.note,
+      issuedAt: t.created_at,
+      markedDates: marked,
+    };
+  });
+  return {
+    rows,
+    totalServings: rows.reduce((s, r) => s + r.quantity, 0),
+    totalMembers: new Set(rows.map((r) => r.memberId)).size,
+  };
+}
+
+export function useTodayServingsIssued(mode?: MemberModeFilter) {
+  return useQuery({
+    queryKey: ["serving-issued-today", mode ?? "all"],
+    queryFn: () => {
+      const today = istDateStr(new Date());
+      return fetchServingsIssued(today, today, mode);
+    },
+    refetchInterval: 30_000,
+  });
+}
+
+export function useServingsIssuedReport(from: string, to: string, mode?: MemberModeFilter) {
+  return useQuery({
+    queryKey: ["serving-report", from, to, mode ?? "all"],
+    enabled: !!from && !!to && from <= to,
+    queryFn: () => fetchServingsIssued(from, to, mode),
+  });
+}
+
+/** Dates (within the list) where the member already has attendance. */
+export function useMemberAttendanceOnDates(memberId: string | undefined, dates: string[]) {
+  return useQuery({
+    queryKey: ["member-attendance-dates", memberId, dates.join(",")],
+    enabled: !!memberId && dates.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_attendance")
+        .select("visit_date")
+        .eq("member_id", memberId!)
+        .in("visit_date", dates);
+      if (error) throw error;
+      return new Set((data ?? []).map((d) => d.visit_date as string));
+    },
   });
 }

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -36,7 +37,8 @@ export interface WhatsAppConversation {
   last_direction: string | null;
   last_message_preview: string | null;
   last_message_at: string | null;
-  wellness_members?: { id: string; full_name: string } | null;
+  archived_at: string | null;
+  wellness_members?: { id: string; full_name: string; status: string } | null;
 }
 
 export interface WhatsAppMessage {
@@ -169,22 +171,65 @@ export function useTestWhatsAppConnection() {
   });
 }
 
-export function useWhatsAppConversations(search = "") {
+export interface WhatsAppAccountStatus {
+  success: boolean;
+  api_url?: string;
+  blocked?: boolean;
+  error?: string | null;
+  number?: {
+    display_phone_number?: string;
+    verified_name?: string;
+    quality_rating?: string;
+    messaging_limit_tier?: string;
+    name_status?: string;
+    code_verification_status?: string;
+    platform_type?: string;
+  } | null;
+  account?: {
+    name?: string;
+    account_review_status?: string;
+    business_verification_status?: string;
+  } | null;
+}
+
+/** Asks Meta about the connected number and business account. */
+export function useWhatsAppAccountStatus() {
+  return useMutation({
+    mutationFn: async (): Promise<WhatsAppAccountStatus> => {
+      const { data, error } = await supabase.functions.invoke("whatsapp-test-connection", {
+        body: { action: "status" },
+      });
+      if (error) {
+        const parsed = await readFunctionError(error);
+        if (parsed) return parsed as unknown as WhatsAppAccountStatus;
+        return { success: false, error: errText(error) };
+      }
+      return data as WhatsAppAccountStatus;
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+}
+
+export type ConversationFilter = "all" | "unread" | "archived";
+
+export function useWhatsAppConversations(search = "", filter: ConversationFilter = "all") {
   return useQuery({
-    queryKey: ["whatsapp-conversations", search],
+    queryKey: ["whatsapp-conversations", search, filter],
     queryFn: async (): Promise<WhatsAppConversation[]> => {
       let q = supabase
         .from("whatsapp_conversations")
-        .select("*, wellness_members(id, full_name)")
+        .select("*, wellness_members(id, full_name, status)")
         .order("last_message_at", { ascending: false, nullsFirst: false })
         .limit(200);
       const term = search.trim();
       if (term) q = q.or(`phone.ilike.%${term}%,display_name.ilike.%${term}%`);
+      if (filter === "archived") q = q.not("archived_at", "is", null);
+      else q = q.is("archived_at", null);
+      if (filter === "unread") q = q.gt("unread_count", 0);
       const { data, error } = await q;
       if (error) throw error;
       return (data || []) as unknown as WhatsAppConversation[];
     },
-    refetchInterval: 30000,
   });
 }
 
@@ -202,8 +247,33 @@ export function useWhatsAppThread(conversationId: string | null) {
       return (data || []) as unknown as WhatsAppMessage[];
     },
     enabled: !!conversationId,
-    refetchInterval: 20000,
   });
+}
+
+/** Live updates for messages and conversations — replaces polling. */
+export function useWhatsAppRealtime() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const channel = supabase
+      .channel("whatsapp-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "whatsapp_messages" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["whatsapp-thread"] });
+          qc.invalidateQueries({ queryKey: ["whatsapp-messages"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "whatsapp_conversations" },
+        () => qc.invalidateQueries({ queryKey: ["whatsapp-conversations"] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
 }
 
 export function useMarkConversationRead() {
@@ -220,6 +290,131 @@ export function useMarkConversationRead() {
   });
 }
 
+export function useArchiveConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
+      const { error } = await supabase
+        .from("whatsapp_conversations")
+        .update({ archived_at: archived ? new Date().toISOString() : null })
+        .eq("id", id);
+      if (error) throw error;
+      return archived;
+    },
+    onSuccess: (archived) => {
+      qc.invalidateQueries({ queryKey: ["whatsapp-conversations"] });
+      toast.success(archived ? "Conversation archived" : "Conversation restored");
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+}
+
+export interface WhatsAppTemplate {
+  name: string;
+  language: string;
+  category: string | null;
+  body: string;
+  variable_count: number;
+  has_media_header: boolean;
+}
+
+/** Approved templates read live from the connected WhatsApp Business account. */
+export function useWhatsAppTemplates(enabled: boolean) {
+  return useQuery({
+    queryKey: ["whatsapp-templates"],
+    queryFn: async (): Promise<WhatsAppTemplate[]> => {
+      const { data, error } = await supabase.functions.invoke("whatsapp-templates", {
+        body: {},
+      });
+      if (error) throw error;
+      const result = data as { success: boolean; error?: string; templates?: WhatsAppTemplate[] };
+      if (!result.success) throw new Error(result.error || "Could not read templates");
+      return result.templates || [];
+    },
+    enabled,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export interface WhatsAppTemplateFull extends WhatsAppTemplate {
+  id: string | null;
+  status: string;
+  rejected_reason: string | null;
+  header: string;
+  footer: string;
+  buttons: unknown[];
+}
+
+interface TemplatesResponse {
+  success: boolean;
+  error?: string;
+  templates?: WhatsAppTemplateFull[];
+}
+
+async function callTemplates(body: Record<string, unknown>): Promise<TemplatesResponse> {
+  const { data, error } = await supabase.functions.invoke("whatsapp-templates", { body });
+  if (error) {
+    const parsed = await readFunctionError(error);
+    if (parsed) throw new Error(parsed.error || "Could not reach WhatsApp");
+    throw error;
+  }
+  return data as TemplatesResponse;
+}
+
+/** Every template on the WhatsApp Business account, whatever its Meta status. */
+export function useAllWhatsAppTemplates() {
+  return useQuery({
+    queryKey: ["whatsapp-templates-all"],
+    queryFn: async (): Promise<WhatsAppTemplateFull[]> => {
+      const result = await callTemplates({ action: "list", approved_only: false });
+      if (!result.success) throw new Error(result.error || "Could not read templates");
+      return result.templates || [];
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
+export interface CreateTemplateInput {
+  name: string;
+  language: string;
+  category: string;
+  components: unknown[];
+}
+
+export function useCreateWhatsAppTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateTemplateInput) => {
+      const result = await callTemplates({ action: "create", ...input });
+      if (!result.success) throw new Error(result.error || "Meta rejected the template");
+      return result;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["whatsapp-templates-all"] });
+      qc.invalidateQueries({ queryKey: ["whatsapp-templates"] });
+      toast.success("Sent to Meta for approval");
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+}
+
+export function useDeleteWhatsAppTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ name, template_id }: { name: string; template_id?: string | null }) => {
+      const result = await callTemplates({ action: "delete", name, template_id });
+      if (!result.success) throw new Error(result.error || "Meta refused the deletion");
+      return result;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["whatsapp-templates-all"] });
+      qc.invalidateQueries({ queryKey: ["whatsapp-templates"] });
+      toast.success("Template deleted");
+    },
+    onError: (e) => toast.error(errText(e)),
+  });
+}
+
 export interface SendWhatsAppInput {
   member_id?: string | null;
   phone?: string | null;
@@ -228,25 +423,140 @@ export interface SendWhatsAppInput {
   template_language?: string | null;
   template_variables?: string[];
   source_module?: string;
+  /** Used only to show the message immediately in the open thread. */
+  conversation_id?: string | null;
+}
+
+function tempMessage(input: SendWhatsAppInput, tempId: string): WhatsAppMessage {
+  return {
+    id: tempId,
+    conversation_id: input.conversation_id ?? null,
+    member_id: input.member_id ?? null,
+    phone: input.phone ?? null,
+    direction: "outbound",
+    message_type: input.template_name ? "template" : "text",
+    source_module: input.source_module || "manual",
+    template_name: input.template_name ?? null,
+    message_content: input.message_content ??
+      (input.template_name ? `[${input.template_name}]` : ""),
+    status: "sending",
+    error_message: null,
+    provider_message_id: null,
+    created_at: new Date().toISOString(),
+    delivered_at: null,
+    read_at: null,
+  };
 }
 
 export function useSendWhatsApp() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: SendWhatsAppInput) => {
-      const { data, error } = await supabase.functions.invoke("whatsapp-send", { body: input });
+      const { conversation_id: _ignored, ...payload } = input;
+      const { data, error } = await supabase.functions.invoke("whatsapp-send", {
+        body: payload,
+      });
       if (error) throw error;
       const result = data as { success: boolean; error?: string };
       if (!result.success) throw new Error(result.error || "WhatsApp send failed");
       return result;
     },
+    onMutate: async (input) => {
+      const key = ["whatsapp-thread", input.conversation_id];
+      if (!input.conversation_id) return { key: null, tempId: null };
+      await qc.cancelQueries({ queryKey: key });
+      const tempId = `temp-${crypto.randomUUID()}`;
+      qc.setQueryData<WhatsAppMessage[]>(key, (old) => [
+        ...(old || []),
+        tempMessage(input, tempId),
+      ]);
+      return { key, tempId };
+    },
+    onError: (e, _input, ctx) => {
+      if (ctx?.key && ctx.tempId) {
+        qc.setQueryData<WhatsAppMessage[]>(ctx.key, (old) =>
+          (old || []).map((m) =>
+            m.id === ctx.tempId
+              ? { ...m, status: "failed", error_message: errText(e) }
+              : m
+          ));
+      }
+      toast.error(errText(e));
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["whatsapp-conversations"] });
       qc.invalidateQueries({ queryKey: ["whatsapp-thread"] });
       qc.invalidateQueries({ queryKey: ["whatsapp-messages"] });
-      toast.success("WhatsApp message sent");
     },
-    onError: (e) => toast.error(errText(e)),
+  });
+}
+
+export interface WhatsAppMemberContext {
+  id: string;
+  full_name: string;
+  mobile_number: string;
+  status: string;
+  goal: string | null;
+  joining_date: string;
+  batch_name: string | null;
+  plan_name: string | null;
+  remaining_servings: number | null;
+  end_date: string | null;
+}
+
+/** Wellness details shown beside the conversation. */
+export function useWhatsAppMemberContext(memberId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["whatsapp-member-context", memberId],
+    queryFn: async (): Promise<WhatsAppMemberContext | null> => {
+      const { data, error } = await supabase
+        .from("wellness_members")
+        .select(
+          "id, full_name, mobile_number, status, goal, joining_date, wellness_batches(name)",
+        )
+        .eq("id", memberId!)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+
+      const { data: membership } = await supabase
+        .from("wellness_memberships")
+        .select("remaining_servings, end_date, wellness_plans(name)")
+        .eq("member_id", memberId!)
+        .in("status", ["active", "expiring_soon"])
+        .order("end_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const row = data as unknown as {
+        id: string;
+        full_name: string;
+        mobile_number: string;
+        status: string;
+        goal: string | null;
+        joining_date: string;
+        wellness_batches?: { name: string } | null;
+      };
+      const m = membership as unknown as {
+        remaining_servings: number;
+        end_date: string;
+        wellness_plans?: { name: string } | null;
+      } | null;
+
+      return {
+        id: row.id,
+        full_name: row.full_name,
+        mobile_number: row.mobile_number,
+        status: row.status,
+        goal: row.goal,
+        joining_date: row.joining_date,
+        batch_name: row.wellness_batches?.name ?? null,
+        plan_name: m?.wellness_plans?.name ?? null,
+        remaining_servings: m?.remaining_servings ?? null,
+        end_date: m?.end_date ?? null,
+      };
+    },
+    enabled: !!memberId,
   });
 }
 

@@ -53,7 +53,7 @@ export function useDashboardMetrics(mode: MemberModeFilter) {
           .order("id").range(from, to)),
         readAllMetricRows<DashboardPlan>((from, to) => supabase
           .from("wellness_plans")
-          .select("id, name, plan_type, duration_days, price")
+          .select("id, name, plan_type, duration_days, total_servings, price")
           .order("id").range(from, to)),
         readAllMetricRows<DashboardMembership>((from, to) => supabase
           .from("wellness_memberships")

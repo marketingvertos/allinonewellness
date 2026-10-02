@@ -4,8 +4,9 @@
 // conversations, message logs and API activity are recorded in one place.
 // The provider layer (WachatSender / Meta) lives in `whatsapp.ts`.
 
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import {
+  ACCOUNT_BLOCKED_MESSAGE,
   buildSendRequest,
   last10,
   parseSendResponse,
@@ -247,11 +248,13 @@ export async function sendWhatsApp(
 
   let messageId: string | null = null;
   if (!meta.skipMessageRow) {
-    const errorDetail = [
-      redactSecrets(outcome.error),
-      outcome.errorCode ? `code ${outcome.errorCode}` : null,
-      outcome.errorDetails,
-    ].filter(Boolean).join(" · ") || null;
+    const errorDetail = outcome.accountBlocked
+      ? ACCOUNT_BLOCKED_MESSAGE
+      : [
+        redactSecrets(outcome.error),
+        outcome.errorCode ? `code ${outcome.errorCode}` : null,
+        outcome.errorDetails,
+      ].filter(Boolean).join(" · ") || null;
 
     const { data: inserted } = await supabase
       .from("whatsapp_messages")

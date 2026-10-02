@@ -60,7 +60,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatCurrency, formatDate, formatDateTime, todayIst } from "@/lib/formatters";
+import { formatCurrency, formatDate, formatDateTime, todayIst , planGetsBonus } from "@/lib/formatters";
 
 import { Package, Pencil, Trash2 } from "lucide-react";
 import {
@@ -76,7 +76,10 @@ import {
 import { statusLabel, statusVariant } from "./status";
 import { MEMBER_TAGS, ModeBadge, TagBadges } from "./memberMeta";
 import { MasterTitleBadge } from "@/components/wellness/MasterTitleBadge";
+import { AmbassadorHeaderBadge, FrontlineCountFlag } from "@/components/wellness/AmbassadorStatus";
 import { NetworkPanel } from "@/components/wellness/NetworkPanel";
+
+
 import { cn } from "@/lib/utils";
 import { DobInput } from "@/components/ui/dob-input";
 import { ageFromDob } from "@/lib/formatters";
@@ -159,6 +162,8 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [weightDate, setWeightDate] = useState(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }));
   const [confirmDelete, setConfirmDelete] = useState<{ kind: "weight" | "measurement"; id: string } | null>(null);
   const [referrerDraft, setReferrerDraft] = useState<string | null | undefined>(undefined);
+  const [networkMemberId, setNetworkMemberId] = useState<string | null>(null);
+
   const [trialOpen, setTrialOpen] = useState(false);
   const [whatsAppOpen, setWhatsAppOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
@@ -195,6 +200,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
             <MasterTitleBadge level={member.master_level} />
             <ModeBadge mode={member.member_mode} />
             <TagBadges tags={member.tags} />
+            <AmbassadorHeaderBadge memberId={member.id} />
           </SheetTitle>
           <SheetDescription>
             {member.mobile_number} · Joined {formatDate(member.joining_date)}
@@ -420,6 +426,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           </TabsContent>
 
           <TabsContent value="plan" className="space-y-4 pt-4">
+            {member.referred_by_member_id && <FrontlineCountFlag memberId={member.id} />}
             {activeMembership ? (
               <div className="space-y-3 rounded-lg border p-4">
                 <div className="flex items-center justify-between">
@@ -501,7 +508,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                     <SelectContent>
                       {plans?.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings
+                          {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings{planGetsBonus(p) ? " + 2 bonus" : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -516,6 +523,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                     onChange={(e) => setPayDate(e.target.value)}
                   />
                 </div>
+                {planGetsBonus(selectedNewPlan) && (
+                  <p className="rounded-md border border-primary/40 bg-primary/10 p-2 text-sm">
+                    Joining bonus: <span className="font-semibold">+2 servings</span> ({Number(selectedNewPlan?.total_servings) + 2} total), added automatically.
+                  </p>
+                )}
                 {planId && (
                   <PaymentInput
                     totalAmount={Number(selectedNewPlan?.price ?? 0)}
@@ -789,8 +801,9 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           </TabsContent>
 
           <TabsContent value="network" className="space-y-4 pt-4">
-            <NetworkPanel memberId={member.id} />
+            <NetworkPanel memberId={member.id} onOpenMember={setNetworkMemberId} />
           </TabsContent>
+
 
           <TabsContent value="notes" className="space-y-4 pt-4">
             <div className="space-y-2">
@@ -881,9 +894,19 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
         )}
       </SheetContent>
 
+      <NestedMemberSheet memberId={networkMemberId} onClose={() => setNetworkMemberId(null)} />
     </Sheet>
+
   );
 }
+
+function NestedMemberSheet({ memberId, onClose }: { memberId: string | null; onClose: () => void }) {
+  const { data: member } = useWellnessMember(memberId ?? undefined);
+  if (!memberId || !member) return null;
+  return <MemberDetailSheet member={member} open onOpenChange={(o) => !o && onClose()} />;
+}
+
+
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (

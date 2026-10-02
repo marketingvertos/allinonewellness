@@ -7,6 +7,7 @@ export const MEMBER_TAGS = [
   { value: "coach", label: "Coach" },
   { value: "pc", label: "Preferred Customer" },
   { value: "mrp", label: "MRP Customer" },
+  { value: "supervisor", label: "Supervisor" },
 ] as const;
 
 export function tagLabel(value: string): string {

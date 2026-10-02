@@ -179,7 +179,9 @@ export default function PortalCheckIn() {
               <p className="text-muted-foreground">
                 {error ??
                   (waiting
-                    ? "Your request has been sent to the front desk. This screen updates automatically once it is approved."
+                    ? result?.mode === "trial_advance"
+                      ? `${result.message} Your request has been sent to the front desk.`
+                      : "Your request has been sent to the front desk. This screen updates automatically once it is approved."
                     : duplicate
                       ? "Your visit for today is already recorded — no extra serving has been deducted."
                       : approved

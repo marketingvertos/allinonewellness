@@ -9,6 +9,7 @@ import {
   useNotificationTemplates,
   useSaveNotificationTemplate,
 } from "@/hooks/useWellness";
+import { useWhatsAppTemplates } from "@/hooks/useWhatsApp";
 import { PageBanner } from "@/components/PageBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,16 +30,64 @@ const empty = {
   channel: "whatsapp",
   message_template: "",
   active: true,
+  template_name: "",
+  template_language: "",
+  variables: [] as string[],
 };
 
 const TRIGGERS = [
+  "member_created",
+  "login_credentials",
+  "trial_started",
+  "trial_ending",
   "membership_activated",
   "membership_renewed",
+  "plan_switched",
+  "checkin_approved",
+  "checkin_rejected",
+  "servings_issued",
+  "serving_balance",
   "serving_balance_5",
   "serving_balance_3",
   "serving_balance_1",
-  "trial_ending",
+  "serving_balance_0",
+  "renewal_due",
+  "renewal_reminder",
+  "membership_expired",
+  "payment_received",
+  "milestone_achieved",
   "birthday",
+  "anniversary",
+];
+
+/** Member details the automatic message can insert into a template variable. */
+const MEMBER_FIELDS = [
+  { value: "name", label: "First name" },
+  { value: "full_name", label: "Full name" },
+  { value: "remaining", label: "Servings left" },
+  { value: "code", label: "Membership code" },
+  { value: "end_date", label: "Plan end date" },
+  { value: "weight", label: "Latest weight" },
+  { value: "start_weight", label: "Weight at joining" },
+  { value: "weight_change", label: "Total weight change" },
+  { value: "used_today", label: "Servings used today" },
+  { value: "date", label: "Today's date" },
+  { value: "mobile", label: "Mobile number" },
+  { value: "activation_code", label: "Activation code" },
+  { value: "joining_date", label: "Joining date" },
+  { value: "plan_name", label: "Plan name" },
+  { value: "total_servings", label: "Total servings in plan" },
+  { value: "used_servings", label: "Servings used so far" },
+  { value: "price", label: "Amount paid" },
+  { value: "payment_mode", label: "Payment mode" },
+  { value: "renewal_days_left", label: "Days left to renew" },
+  { value: "trial_end_date", label: "Trial end date" },
+  { value: "trial_days_left", label: "Trial days left" },
+  { value: "milestone", label: "Milestone achieved" },
+  { value: "issued_servings", label: "Servings issued" },
+  { value: "issue_reason", label: "Reason for issue" },
+  { value: "daily_change", label: "Weight change since last visit" },
+  { value: "last_weight", label: "Previous weight" },
 ];
 
 function renderMessage(template: string, name: string) {
@@ -72,8 +121,36 @@ export default function WellnessNotifications() {
       channel: t.channel,
       message_template: t.message_template,
       active: t.active,
+      template_name: t.template_name ?? "",
+      template_language: t.template_language ?? "",
+      variables: t.variables ?? [],
     });
     setOpen(true);
+  };
+
+  const approved = useWhatsAppTemplates(open && form.channel === "whatsapp");
+  const chosen = approved.data?.find((t) => t.name === form.template_name) || null;
+
+  const pickApprovedTemplate = (name: string) => {
+    if (name === "__none__") {
+      setForm((f) => ({ ...f, template_name: "", template_language: "", variables: [] }));
+      return;
+    }
+    const tpl = approved.data?.find((t) => t.name === name);
+    setForm((f) => ({
+      ...f,
+      template_name: name,
+      template_language: tpl?.language ?? "en",
+      variables: Array.from({ length: tpl?.variable_count ?? 0 }, (_, i) => f.variables[i] ?? "name"),
+    }));
+  };
+
+  const setVariable = (index: number, value: string) => {
+    setForm((f) => {
+      const next = [...f.variables];
+      next[index] = value;
+      return { ...f, variables: next };
+    });
   };
 
   const submit = async () => {
@@ -84,6 +161,9 @@ export default function WellnessNotifications() {
       channel: form.channel,
       message_template: form.message_template.trim(),
       active: form.active,
+      template_name: form.template_name || null,
+      template_language: form.template_name ? form.template_language || "en" : null,
+      variables: form.template_name ? form.variables : [],
       ...(editing ? {} : { created_by: user.id }),
     });
     setOpen(false);
@@ -208,6 +288,11 @@ export default function WellnessNotifications() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-muted-foreground">
                     <p>{t.message_template}</p>
+                    <p className="text-xs">
+                      {t.template_name
+                        ? `Approved template: ${t.template_name} (${t.template_language || "en"})`
+                        : "Free text only — works inside the 24-hour reply window."}
+                    </p>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(t)}>
                         <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
@@ -283,6 +368,70 @@ export default function WellnessNotifications() {
                 onChange={(e) => setForm({ ...form, message_template: e.target.value })}
               />
             </div>
+
+            {form.channel === "whatsapp" && (
+              <div className="space-y-3 rounded-md border p-3">
+                <div>
+                  <p className="text-sm font-medium">Approved WhatsApp template</p>
+                  <p className="text-xs text-muted-foreground">
+                    Needed to reach members outside WhatsApp's 24-hour reply window. The free text
+                    above is used inside that window.
+                  </p>
+                </div>
+                {approved.isLoading && (
+                  <p className="text-xs text-muted-foreground">Reading templates…</p>
+                )}
+                {approved.error && (
+                  <p className="text-xs text-destructive">{(approved.error as Error).message}</p>
+                )}
+                <Select
+                  value={form.template_name || "__none__"}
+                  onValueChange={pickApprovedTemplate}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Free text only" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Free text only</SelectItem>
+                    {(approved.data || []).map((t) => (
+                      <SelectItem key={`${t.name}-${t.language}`} value={t.name}>
+                        {t.name} ({t.language})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {chosen && (
+                  <>
+                    <p className="whitespace-pre-wrap rounded-md bg-muted p-2 text-xs">
+                      {chosen.body}
+                    </p>
+                    {Array.from({ length: chosen.variable_count }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="w-12 text-xs text-muted-foreground">
+                          {`{{${i + 1}}}`}
+                        </span>
+                        <Select
+                          value={form.variables[i] || "name"}
+                          onValueChange={(v) => setVariable(i, v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MEMBER_FIELDS.map((f) => (
+                              <SelectItem key={f.value} value={f.value}>
+                                {f.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
             <div className="flex items-center justify-between rounded-md border px-3 py-2">
               <div>
                 <p className="text-sm font-medium">Active</p>

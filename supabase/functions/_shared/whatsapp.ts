@@ -2,7 +2,7 @@
 // Credentials are stored in the admin-only `integration_credentials` table so
 // they can be managed from Settings, with env secrets as a fallback.
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,7 +37,7 @@ export interface WhatsAppConfig {
   automationEnabled: boolean;
 }
 
-export const META_DEFAULT_API_URL = "https://graph.facebook.com/v21.0";
+export const META_DEFAULT_API_URL = "https://graph.facebook.com/v25.0";
 export const WACHAT_DEFAULT_API_URL = "https://panel.wachatsender.com/api/v1";
 
 export async function loadWhatsAppConfig(
@@ -93,7 +93,10 @@ export async function loadWhatsAppConfig(
   return {
     provider,
     apiUrl,
-    apiKey: pick("whatsapp_api_key", "WHATSAPP_API_KEY"),
+    apiKey: provider === "meta"
+      ? (Deno.env.get("META_ACCESS_TOKEN") ||
+        pick("whatsapp_api_key", "WHATSAPP_API_KEY"))
+      : pick("whatsapp_api_key", "WHATSAPP_API_KEY"),
     phoneNumberId,
     vendorUid,
     verifyToken: pick("whatsapp_verify_token", "WHATSAPP_VERIFY_TOKEN"),
@@ -317,6 +320,23 @@ export interface SendOutcome {
   error: string | null;
   errorCode: string | number | null;
   errorDetails: string | null;
+  /** Meta has blocked API access for the whole account — retrying cannot help. */
+  accountBlocked?: boolean;
+}
+
+/** Plain-language text stored on blocked messages. */
+export const ACCOUNT_BLOCKED_MESSAGE =
+  "WhatsApp account access is blocked at Meta — sending is paused until it is resolved in WhatsApp Manager";
+
+/** Detects Meta's account-level block (OAuthException code 200 "API access blocked."). */
+export function isAccountBlocked(
+  errorCode: string | number | null | undefined,
+  errorMessage: string | null | undefined,
+): boolean {
+  const msg = String(errorMessage || "").toLowerCase();
+  if (msg.includes("api access blocked")) return true;
+  if (msg.includes("account has been restricted")) return true;
+  return String(errorCode ?? "") === "200" && msg.includes("blocked");
 }
 
 /** Normalises provider responses (WachatSender or Meta) into one shape. */
@@ -352,12 +372,15 @@ export function parseSendResponse(
   }
 
   if (!httpOk) {
+    const message = result?.error?.message || `WhatsApp API returned ${httpStatus}`;
+    const code = result?.error?.code ?? null;
     return {
       ok: false,
       providerMessageId: null,
-      error: result?.error?.message || `WhatsApp API returned ${httpStatus}`,
-      errorCode: result?.error?.code ?? null,
+      error: message,
+      errorCode: code,
       errorDetails: result?.error?.error_data?.details ?? null,
+      accountBlocked: isAccountBlocked(code, message),
     };
   }
   return {

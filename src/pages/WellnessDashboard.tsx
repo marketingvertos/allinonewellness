@@ -14,7 +14,10 @@ import {
   usePinkCardBalances,
   PINK_CARD_SERVING_VALUE,
   useWellnessStats,
+  useTodayServingsIssued,
 } from "@/hooks/useWellness";
+import { ServingsIssuedSheet } from "@/components/wellness/ServingsIssuedSheet";
+import { Package } from "lucide-react";
 import { useCoachesAtRisk } from "@/hooks/useAchievements";
 import { PageBanner } from "@/components/PageBanner";
 import { MissingLoginsBanner } from "@/components/wellness/MissingLoginsBanner";
@@ -31,6 +34,8 @@ import { PendingCheckInsCard } from "@/components/wellness/PendingCheckInsCard";
 import { DisplayScreensCard } from "@/components/wellness/DisplayScreensCard";
 import { PublicRegistrationCard } from "@/components/wellness/PublicRegistrationCard";
 import { ExpiredMembersSheet } from "@/components/wellness/ExpiredMembersSheet";
+import { SalesDrillDownSheet } from "@/components/wellness/SalesDrillDownSheet";
+import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { useState } from "react";
 
 const PERIODS = [
@@ -40,22 +45,52 @@ const PERIODS = [
   { key: "last_month", label: "Last month" },
 ] as const;
 
-function SalesTile({ label, period, mode }: { label: string; period: (typeof PERIODS)[number]["key"]; mode: MemberModeFilter }) {
+function ServingsIssuedCard({ mode }: { mode: MemberModeFilter }) {
+  const { data } = useTodayServingsIssued(mode);
+  const [open, setOpen] = useState(false);
+  const members = data?.totalMembers ?? 0;
+  return (
+    <>
+      <Card>
+        <CardContent className="p-3">
+          <button onClick={() => setOpen(true)} className="flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-accent/40">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2"><Package className="h-5 w-5 text-primary" /></div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Servings issued today</p>
+                <p className="text-2xl font-bold">{data?.totalServings ?? 0}</p>
+              </div>
+            </div>
+            <Badge variant="secondary">{members} {members === 1 ? "member" : "members"}</Badge>
+          </button>
+        </CardContent>
+      </Card>
+      <ServingsIssuedSheet open={open} onOpenChange={setOpen} memberMode={mode} />
+    </>
+  );
+}
+
+function SalesTile({ label, period, mode, onClick }: { label: string; period: (typeof PERIODS)[number]["key"]; mode: MemberModeFilter; onClick: () => void }) {
   const { data } = useSalesAnalytics(periodRange(period), mode);
   return (
-    <div className="rounded-lg border p-3">
+    <button
+      onClick={onClick}
+      className="w-full cursor-pointer rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-accent/40"
+    >
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-xl font-bold">{formatCurrency(data?.revenue ?? 0)}</p>
       <p className="text-xs text-muted-foreground">
         {data?.memberships ?? 0} sold · {data?.servings ?? 0} servings
       </p>
-    </div>
+    </button>
   );
 }
 
 export default function WellnessDashboard() {
   const [params, setParams] = useSearchParams();
   const [expiredOpen, setExpiredOpen] = useState(false);
+  const [salesDrillDown, setSalesDrillDown] = useState<{ period: (typeof PERIODS)[number]["key"]; label: string } | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const mode = (params.get("mode") as MemberModeFilter) || "all";
   const setMode = (next: string) => {
     if (!next) return;
@@ -86,6 +121,7 @@ export default function WellnessDashboard() {
         return {
           id: r.id,
           full_name: r.full_name,
+          isSupervisor: (r.tags ?? []).includes("supervisor"),
           frontline: n?.frontline_count ?? r.count,
           cluster: n?.cluster_count ?? 0,
           total: n?.total_count ?? r.count,
@@ -94,6 +130,7 @@ export default function WellnessDashboard() {
       })
       .sort((a, b) => b.total - a.total);
   }, [topReferrers, networkSummary]);
+
   const { data: pinkBalances } = usePinkCardBalances((topReferrers ?? []).map((r) => r.id));
 
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -106,7 +143,7 @@ export default function WellnessDashboard() {
   const modeQuery = mode === "all" ? "" : `&mode=${mode}`;
   const cards = [
     { title: "Total members", value: data?.totalMembers ?? 0, icon: Users, to: `/members?status=all${modeQuery}` },
-    { title: "Check-ins today", value: data?.checkinsToday ?? 0, icon: CalendarCheck, to: "/checkin?tab=today" },
+    { title: "Check-ins today", value: data?.checkinsToday ?? 0, icon: CalendarCheck, to: "/attendance" },
     { title: "Active memberships", value: data?.activeMemberships ?? 0, icon: BadgeCheck, to: `/members?status=active_member${modeQuery}` },
     { title: "Active trials", value: trials?.length ?? 0, icon: Sparkles, to: "/trials" },
     { title: "Trials ending today", value: trialsEndingToday, icon: AlertTriangle, to: "/trials" },
@@ -181,10 +218,26 @@ export default function WellnessDashboard() {
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PERIODS.map((p) => (
-            <SalesTile key={p.key} label={p.label} period={p.key} mode={mode} />
+            <SalesTile key={p.key} label={p.label} period={p.key} mode={mode} onClick={() => setSalesDrillDown({ period: p.key, label: p.label })} />
           ))}
         </CardContent>
       </Card>
+
+      <ServingsIssuedCard mode={mode} />
+
+
+      {salesDrillDown && (
+        <SalesDrillDownSheet
+          open={!!salesDrillDown}
+          onOpenChange={(open) => !open && setSalesDrillDown(null)}
+          period={salesDrillDown.period}
+          periodLabel={salesDrillDown.label}
+          memberMode={mode}
+          onSelectMember={(id) => setSelectedMemberId(id)}
+        />
+      )}
+
+      <MemberSheetById memberId={selectedMemberId} onClose={() => setSelectedMemberId(null)} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -282,7 +335,7 @@ export default function WellnessDashboard() {
                         {i + 1}. {r.full_name}
                       </span>
                       <span className="flex items-center gap-2">
-                        <MasterTitleBadge level={r.master_level} size="sm" />
+                        {r.isSupervisor && <MasterTitleBadge level={r.master_level} size="sm" />}
                         {(pinkBalances?.[r.id] ?? 0) > 0 && (
                           <Badge className="border-transparent bg-[hsl(330_70%_55%)] text-white hover:bg-[hsl(330_70%_50%)]">
                             {formatCurrency((pinkBalances?.[r.id] ?? 0) * PINK_CARD_SERVING_VALUE)} credit
@@ -293,11 +346,12 @@ export default function WellnessDashboard() {
                     <p className="text-xs text-muted-foreground">
                       Frontline: {r.frontline} · Cluster: {r.cluster} · Total: {r.total}
                     </p>
-                    {r.master_level === 0 && next && (
+                    {r.isSupervisor && r.master_level === 0 && next && (
                       <p className="text-xs text-amber-700 dark:text-amber-300">
                         {next.remaining} more for Master {next.level}
                       </p>
                     )}
+
                   </div>
                 );
               })

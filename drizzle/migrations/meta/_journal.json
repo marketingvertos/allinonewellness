@@ -78,6 +78,153 @@
       "when": 1790002638035,
       "tag": "0010_refresh_statuses_revive_members",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790074641535,
+      "tag": "0011_whatsapp_two_way_inbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790080924965,
+      "tag": "0012_wellness_journey_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790083445179,
+      "tag": "0013_reword_templates_for_meta_approval",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790083848447,
+      "tag": "0014_update_checkin_approved_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1790277994995,
+      "tag": "0015_realtime_member_achievements",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790358289160,
+      "tag": "0016_add_serving_issue_checkin_method",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790358358355,
+      "tag": "0017_issue_servings_with_dates",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790596838700,
+      "tag": "0018_trial_day2_courtesy_visit",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790598037988,
+      "tag": "0019_create_promotions",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790602047601,
+      "tag": "0020_ums30_bonus_servings",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790603290927,
+      "tag": "0021_offer_card_palette_and_staff_editing",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790607188180,
+      "tag": "0022_pink_card_referrer_reversal",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790609910408,
+      "tag": "0023_pink_card_paid_trial_only",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790689013021,
+      "tag": "0024_club_owner_reports",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790769669354,
+      "tag": "0025_expand_master_network_title_levels",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790770519217,
+      "tag": "0026_supervisor_master_titles",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790771509815,
+      "tag": "0027_supervisor_monthly_title_rules",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1790772495111,
+      "tag": "0028_supervisor_exclude_renewal_expired",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790773178434,
+      "tag": "0029_master_titles_ums30_only",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790776868900,
+      "tag": "0030_ambassador_titles_ums30_monthly",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790778693141,
+      "tag": "0031_get_member_network",
+      "breakpoints": true
     }
   ]
 }

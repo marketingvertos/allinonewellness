@@ -13,7 +13,14 @@ import {
   Sparkles,
   Bell,
   MessageSquare,
-  BarChart3,
+  FileText,
+  CalendarCheck,
+  Package,
+  ScrollText,
+  IndianRupee,
+  Calendar,
+  FileBarChart,
+  Gift,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,6 +29,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -30,17 +38,45 @@ import {
 import { NavLink } from "react-router-dom";
 import { BrandLogo } from "@/components/BrandLogo";
 
-const mainNav = [
-  { title: "Dashboard", icon: LayoutDashboard, to: "/dashboard", end: true },
-  { title: "Members", icon: Users, to: "/members", end: false },
-  { title: "Check-in", icon: ScanLine, to: "/checkin", end: false },
-  { title: "Plans", icon: ClipboardList, to: "/plans", end: false },
-  { title: "Trials", icon: Sparkles, to: "/trials", end: false },
-  { title: "Batches", icon: Layers, to: "/batches", end: false },
-  { title: "Notifications", icon: Bell, to: "/notifications", end: false },
-  { title: "WhatsApp", icon: MessageSquare, to: "/whatsapp", end: true },
-  { title: "Achievements", icon: Trophy, to: "/achievements", end: false },
-  { title: "Reports", icon: BarChart3, to: "/reports", end: false },
+const navGroups = [
+  { label: "", items: [{ title: "Dashboard", icon: LayoutDashboard, to: "/dashboard", end: true }] },
+  {
+    label: "Members",
+    items: [
+      { title: "Members", icon: Users, to: "/members", end: false },
+      { title: "Trials", icon: Sparkles, to: "/trials", end: false },
+      { title: "Achievements", icon: Trophy, to: "/achievements", end: false },
+      { title: "Offers", icon: Gift, to: "/promotions", end: false },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { title: "Check-in", icon: ScanLine, to: "/checkin", end: false },
+      { title: "Attendance", icon: CalendarCheck, to: "/attendance", end: false },
+      { title: "Servings", icon: Package, to: "/servings", end: false },
+      { title: "Plans", icon: ClipboardList, to: "/plans", end: false },
+      { title: "Batches", icon: Layers, to: "/batches", end: false },
+    ],
+  },
+  {
+    label: "Communication",
+    items: [
+      { title: "WhatsApp", icon: MessageSquare, to: "/whatsapp", end: true },
+      { title: "WhatsApp templates", icon: FileText, to: "/whatsapp/templates", end: false },
+      { title: "Message Logs", icon: ScrollText, to: "/whatsapp/logs", end: false },
+      { title: "Notifications", icon: Bell, to: "/notifications", end: false },
+    ],
+  },
+  {
+    label: "Reports",
+    items: [
+      { title: "Club Reports", icon: FileBarChart, to: "/club-reports", end: false },
+      { title: "Revenue", icon: IndianRupee, to: "/reports/revenue", end: false },
+      { title: "Events & Programs", icon: Calendar, to: "/reports/events", end: false },
+      { title: "Check-in Reports", icon: FileBarChart, to: "/reports/checkin", end: false },
+    ],
+  },
 ];
 
 export function AppSidebar() {
@@ -72,28 +108,31 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.to}
-                      end={item.end}
-                      className={({ isActive }) =>
-                        isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : ""
-                      }
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {navGroups.map((group) => (
+          <SidebarGroup key={group.label || "main"} className="py-1">
+            {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.to}
+                        end={item.end}
+                        className={({ isActive }) =>
+                          isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : ""
+                        }
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
       <SidebarFooter className="p-4 space-y-2">

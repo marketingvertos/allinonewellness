@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { formatCurrency, formatDate, todayIst } from "@/lib/formatters";
+import { formatCurrency, formatDate, todayIst , planGetsBonus } from "@/lib/formatters";
 
 import { Minus, Plus } from "lucide-react";
 
@@ -55,7 +55,7 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
   const planPrice = plan ? Number(plan.price) : 0;
   const maxCredits = Math.min(pinkBalance, Math.floor(planPrice / PINK_CARD_SERVING_VALUE));
   const discount = Math.min(pinkCredits * PINK_CARD_SERVING_VALUE, planPrice);
-  const isEarlyRenewal = plan?.plan_type === "membership" && todayIst() <= membership.end_date;
+  const isEarlyRenewal = planGetsBonus(plan) && todayIst() <= membership.end_date;
 
   useEffect(() => {
     if (!open) return;
@@ -138,7 +138,7 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
             <SelectContent>
               {membershipPlans.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings
+                  {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings{planGetsBonus(p) ? " + 2 bonus" : ""}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -224,7 +224,7 @@ export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
           {mode === "extend" && (
             <p>
               <span className="font-medium">{membership.remaining_servings} left</span> + {servings} new ={" "}
-              <span className="font-semibold">{membership.remaining_servings + servings} servings</span>
+              <span className="font-semibold">{membership.remaining_servings + servings + (isEarlyRenewal ? 2 : 0)} servings</span>{isEarlyRenewal ? " (incl. +2 bonus)" : ""}
               {plan ? ` · plan extended by ${plan.duration_days} days` : ""}
             </p>
           )}

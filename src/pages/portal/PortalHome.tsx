@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements, useAddWeight } from "@/hooks/useWellness";
+import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements, useAddWeight, useSupervisorStatus, useMemberNetwork } from "@/hooks/useWellness";
 import { useUpcomingEvent, useMyMonthlyAttendance, useWlpAttendance, currentMonthIst, monthLabel } from "@/hooks/useEvents";
 import { useAchievementDefinitions, useUnlockedAchievements } from "@/hooks/useAchievements";
 import { bmiCategory } from "@/components/wellness/bodyEvalConstants";
@@ -21,6 +21,8 @@ import { formatDate, todayIst } from "@/lib/formatters";
 import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
 import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
+import { PromotionCards } from "@/components/portal/PromotionCards";
+import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 export default function PortalHome() {
   const { data: identity } = useMemberIdentity();
@@ -32,6 +34,9 @@ export default function PortalHome() {
   const { data: evaluations } = useBodyMeasurements(identity?.memberId ?? undefined);
   const latestEvaluation = evaluations?.length ? evaluations[evaluations.length - 1] : null;
   const addWeight = useAddWeight();
+  const { data: supervisorStatus } = useSupervisorStatus(identity?.memberId ?? undefined);
+  const { data: myNetwork } = useMemberNetwork(identity?.memberId ?? undefined);
+
 
   const month = currentMonthIst();
   const { data: familyDay } = useUpcomingEvent("family_day");
@@ -68,9 +73,38 @@ export default function PortalHome() {
   const changeText = (delta: number) =>
     `${delta > 0 ? "+" : ""}${delta.toFixed(1)} kg`;
 
-  const maxW = history.length ? Math.max(...history.map((w) => Number(w.weight))) : 0;
-  const minW = history.length ? Math.min(...history.map((w) => Number(w.weight))) : 0;
-  const span = Math.max(maxW - minW, 1);
+  const sortedHistory = [...history].sort((a, b) => a.recorded_date.localeCompare(b.recorded_date));
+  const deltaSeries = sortedHistory.slice(1).map((w, i) => ({
+    id: w.id,
+    date: w.recorded_date,
+    label: formatDate(w.recorded_date).slice(0, 6),
+    weight: Number(w.weight),
+    delta: Number((Number(w.weight) - Number(sortedHistory[i].weight)).toFixed(1)),
+  }));
+  const monthPrefix = today.slice(0, 7);
+  const elapsedMonthDays = Number(today.slice(8, 10));
+  const presentDays = Math.min(monthDays ?? 0, elapsedMonthDays);
+  const absentDays = Math.max(0, elapsedMonthDays - presentDays);
+  const monthStats = deltaSeries
+    .filter((d) => d.date.startsWith(monthPrefix))
+    .reduce(
+      (s, d) => {
+        if (d.delta > 0) { s.upCount++; s.upKg += d.delta; }
+        else if (d.delta < 0) { s.downCount++; s.downKg += -d.delta; }
+        else s.sameCount++;
+        return s;
+      },
+      { upCount: 0, upKg: 0, downCount: 0, downKg: 0, sameCount: 0 },
+    );
+
+  const monthReadings = sortedHistory.filter((w) => w.recorded_date.startsWith(monthPrefix));
+  const monthNetChange =
+    monthReadings.length >= 2
+      ? Number((Number(monthReadings[monthReadings.length - 1].weight) - Number(monthReadings[0].weight)).toFixed(1))
+      : null;
+  const qualTarget = gaining ? 3 : 5;
+  const qualProgress = monthNetChange == null ? 0 : Math.max(0, gaining ? monthNetChange : -monthNetChange);
+  const qualQualified = qualProgress >= qualTarget;
 
   const saveWeight = async () => {
     const value = Number(newWeight);
@@ -123,6 +157,8 @@ export default function PortalHome() {
         </CardContent>
       </Card>
 
+      {profile && <PromotionCards memberId={profile.id} memberMode={profile.member_mode} />}
+
       {profile && (
         <PayOnlineDialog
           open={payOpen}
@@ -154,7 +190,7 @@ export default function PortalHome() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Progress</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
                 <p className="text-muted-foreground">Start</p>
@@ -172,30 +208,73 @@ export default function PortalHome() {
 
             {history.length > 1 && (
               <div>
-                <div className="flex h-28 items-end gap-1 rounded-md border bg-muted/30 p-2">
-                  {history.slice(-14).map((w, i, arr) => {
-                    const prev = i > 0 ? Number(arr[i - 1].weight) : Number(w.weight);
-                    const delta = Number(w.weight) - prev;
-                    const good = delta === 0 ? null : isGood(delta);
-                    const height = 8 + ((Number(w.weight) - minW) / span) * 80;
-                    return (
-                      <div key={w.id} className="flex flex-1 flex-col items-center justify-end gap-1">
-                        <span
-                          className={`h-2.5 w-2.5 rounded-full ${
-                            good === null
-                              ? "bg-muted-foreground"
-                              : good
-                                ? "bg-emerald-500"
-                                : "bg-destructive"
-                          }`}
-                          style={{ marginBottom: `${height}px` }}
-                          title={`${formatDate(w.recorded_date)} — ${w.weight} kg`}
-                        />
-                      </div>
-                    );
-                  })}
+                <div className="h-52 w-full rounded-md border bg-muted/30 p-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={deltaSeries.slice(-14)} margin={{ left: 8, right: 8, top: 24, bottom: 18 }}>
+                      <XAxis dataKey="label" fontSize={9} tickLine={false} axisLine={false} interval="preserveStartEnd" stroke="hsl(var(--muted-foreground))" />
+                      <ReferenceLine y={0} stroke="hsl(var(--border))" />
+                      <Tooltip
+                        cursor={{ fill: "hsl(var(--muted))" }}
+                        contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--popover-foreground))", fontSize: 12 }}
+                        formatter={(v: number, _n, p) => [`${changeText(v)} (now ${p.payload.weight} kg)`, "Change"]}
+                        labelFormatter={(_l, p) => (p?.[0] ? formatDate(p[0].payload.date) : "")}
+                      />
+                      <Bar dataKey="delta" radius={[3, 3, 3, 3]}>
+                        <LabelList dataKey="delta" content={(props: { x?: number; y?: number; width?: number; height?: number; value?: number | string; index?: number }) => {
+                          const { x, y, width, height, value, index } = props;
+                          const delta = Number(value);
+                          if (x == null || y == null || width == null || height == null || !Number.isFinite(delta)) return null;
+                          const color =
+                            delta === 0
+                              ? "hsl(var(--muted-foreground))"
+                              : isGood(delta)
+                                ? "hsl(142 71% 40%)"
+                                : "hsl(var(--destructive))";
+                           const labelY = delta >= 0
+                             ? Math.min(y, y + height) - 5 - ((index ?? 0) % 2) * 10
+                             : Math.max(y, y + height) + 13 + ((index ?? 0) % 2) * 10;
+                          return (
+                             <text x={x + width / 2} y={labelY} fill={color} fontSize={9} fontWeight={600} textAnchor="middle">
+                              {delta === 0 ? "0.0" : changeText(delta)}
+                            </text>
+                          );
+                        }} />
+                        {deltaSeries.slice(-14).map((d) => (
+                          <Cell
+                            key={d.id}
+                            fill={d.delta === 0 ? "hsl(var(--muted-foreground))" : isGood(d.delta) ? "hsl(142 71% 40%)" : "hsl(var(--destructive))"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="mt-2 flex justify-between text-xs">
+                <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                  <div className={`min-w-0 rounded-md border p-3 ${gaining ? "border-emerald-500/40" : "border-destructive/40"}`}>
+                    <p className="text-muted-foreground">Increased this month</p>
+                    <p className={`mt-1 text-lg font-semibold leading-tight ${gaining ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
+                      {monthStats.upCount} visit{monthStats.upCount === 1 ? "" : "s"}
+                    </p>
+                    <p className={`font-semibold ${gaining ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>+{monthStats.upKg.toFixed(1)} kg</p>
+                  </div>
+                  <div className={`min-w-0 rounded-md border p-3 ${gaining ? "border-destructive/40" : "border-emerald-500/40"}`}>
+                    <p className="text-muted-foreground">Reduced this month</p>
+                    <p className={`mt-1 text-lg font-semibold leading-tight ${gaining ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"}`}>
+                      {monthStats.downCount} visit{monthStats.downCount === 1 ? "" : "s"}
+                    </p>
+                    <p className={`font-semibold ${gaining ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"}`}>−{monthStats.downKg.toFixed(1)} kg</p>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-2 rounded-md border p-3 text-sm">
+                  <span className="text-muted-foreground">Maintained this month</span>
+                  <span className="shrink-0 font-semibold">{monthStats.sameCount} reading{monthStats.sameCount === 1 ? "" : "s"}</span>
+                </div>
+                <p className="mt-2 text-center text-xs text-muted-foreground">
+                  {monthStats.upCount + monthStats.downCount + monthStats.sameCount === 0
+                    ? "No readings this month yet"
+                    : <>Net change this month: <span className="font-semibold text-foreground">{changeText(monthStats.upKg - monthStats.downKg)}</span></>}
+                </p>
+                <div className="mt-2 flex flex-wrap justify-between gap-x-4 gap-y-1 text-xs">
                   <span className="text-muted-foreground">
                     Latest change:{" "}
                     {latestChange == null ? (
@@ -235,6 +314,46 @@ export default function PortalHome() {
                 </div>
               </div>
             )}
+
+            <div className="space-y-3 border-t pt-4">
+              <p className="text-sm font-semibold">Attendance this month</p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="min-w-0 rounded-md border p-3">
+                  <p className="text-muted-foreground">Present</p>
+                  <p className="text-xl font-semibold">{presentDays} <span className="text-sm font-normal">days</span></p>
+                </div>
+                <div className="min-w-0 rounded-md border p-3">
+                  <p className="text-muted-foreground">Absent</p>
+                  <p className="text-xl font-semibold">{absentDays} <span className="text-sm font-normal">days</span></p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <span className="font-medium">Consistency reward</span>
+                  <span className="shrink-0 font-semibold">{presentDays}/26 days</span>
+                </div>
+                <Progress value={Math.min(100, (presentDays / 26) * 100)} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  {presentDays >= 26
+                    ? "You qualify for the consistency reward"
+                    : `${26 - presentDays} more day${26 - presentDays === 1 ? "" : "s"} to earn the consistency reward.`}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <span className="font-medium">{gaining ? "Weight gain" : "Weight loss"} qualification</span>
+                  <span className="shrink-0 font-semibold">{qualProgress.toFixed(1)}/{qualTarget} kg</span>
+                </div>
+                <Progress value={Math.min(100, (qualProgress / qualTarget) * 100)} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  {monthNetChange == null
+                    ? "Not enough readings this month yet."
+                    : qualQualified
+                      ? `You qualify for the Family Day ${gaining ? "weight gain" : "weight loss"} reward`
+                      : `${(qualTarget - qualProgress).toFixed(1)} more kg to earn the Family Day ${gaining ? "weight gain" : "weight loss"} reward.`}
+                </p>
+              </div>
+            </div>
 
             <Button
               variant="outline"
@@ -283,19 +402,6 @@ export default function PortalHome() {
             {familyDay.description && (
               <p className="text-muted-foreground">{familyDay.description}</p>
             )}
-            <p className="text-muted-foreground">
-              You have attended <span className="font-semibold text-foreground">{monthDays ?? 0}</span> days
-              this month.
-            </p>
-            {(monthDays ?? 0) >= 26 ? (
-              <Badge className="bg-emerald-600 hover:bg-emerald-600">
-                You qualify for the consistency reward
-              </Badge>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                {26 - (monthDays ?? 0)} more days to earn the consistency reward.
-              </p>
-            )}
             {topMilestone && (
               <p className="text-muted-foreground">
                 Milestone achieved: <span className="font-semibold text-foreground">{topMilestone.icon} {topMilestone.name}</span>
@@ -322,23 +428,25 @@ export default function PortalHome() {
             <CardTitle className="text-base">My network</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {(profile.network_total ?? 0) > 0 ? (
+            {(profile.network_total ?? 0) > 0 || (myNetwork?.length ?? 0) > 0 ? (
               <MasterTitleCard
                 frontline={profile.frontline_count ?? 0}
                 cluster={profile.cluster_count ?? 0}
                 total={profile.network_total ?? 0}
+                isSupervisor={((profile as { tags?: string[] | null }).tags ?? []).includes("supervisor")}
+                status={supervisorStatus}
+                members={myNetwork}
                 compact
               />
+
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Start building your community by referring friends and family to the centre. Reach 10
-                  members to earn the Master 10 title!
+                  Start building your community by referring friends and family to the centre.
                 </p>
-                <p className="text-xs text-muted-foreground">0 of 10 for Master 10</p>
-                <Progress value={0} className="h-2 [&>div]:bg-amber-500 dark:[&>div]:bg-amber-400" />
               </div>
             )}
+
             <Button variant="outline" size="sm" asChild className="w-full">
               <Link to="/portal/network">
                 View my network <ChevronRight className="ml-1 h-4 w-4" />

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import {
   AchievementCategory,
   buildLadder,
-  isActiveMemberStatus,
+  useCoachTitleStatus,
   istMonthKey,
   useAchievementDefinitions,
   useCoachMonthlyActivity,
@@ -41,6 +41,7 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
   const { data: unlocked } = useUnlockedAchievements(member.id);
   const { data: referrals } = useMemberReferrals(member.id);
   const { data: activity } = useCoachMonthlyActivity(member.id);
+  const { data: titleStatus } = useCoachTitleStatus(member.id);
 
   const unlockedIds = useMemo(
     () => new Set((unlocked ?? []).map((u) => u.achievement_id)),
@@ -51,10 +52,12 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
     [unlocked],
   );
 
-  const activeReferralCount = (referrals ?? []).filter((r) => isActiveMemberStatus(r.status)).length;
+  const activeIds = useMemo(() => new Set(titleStatus?.active_frontline_ids ?? []), [titleStatus]);
+  const countsThisMonth = (id: string) => activeIds.has(id);
+  const activeReferralCount = activeIds.size;
   const totalReferralCount = (referrals ?? []).filter((r) => r.status !== "inactive").length;
   const referralCount = activeReferralCount;
-  const ownMembershipActive = member.status == null || isActiveMemberStatus(member.status);
+  const ownMembershipActive = titleStatus ? titleStatus.own_qualified : true;
 
   const thisMonth = istMonthKey();
   const currentActivity = (activity ?? []).find((a) => a.month === thisMonth);
@@ -240,9 +243,9 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
               </div>
             ))}
             <p className="text-xs text-muted-foreground">
-              Add {community.current && community.current.sort_order > 4 ? "2 new memberships" : "1 new membership"} to
-              your frontline each month to keep this title. Titles also need your own membership active and enough
-              active frontline members.
+              Add {community.current && community.current.sort_order > 4 ? "2 new UMS 30 memberships" : "1 new UMS 30 membership"} to
+              your frontline each month to keep this title. Only frontline members who joined or renewed a UMS 30 plan
+              this month count, and you must renew your own UMS 30 this month too.
             </p>
           </div>
 
@@ -250,7 +253,7 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
             <div className="space-y-1">
               <p className="text-sm font-medium">People helped</p>
               {referrals.map((r) => {
-                const active = isActiveMemberStatus(r.status);
+                const active = countsThisMonth(r.id);
                 return (
                   <div
                     key={r.id}
@@ -259,7 +262,7 @@ export function AchievementsPanel({ member, weights = [], compact = false }: Pro
                     <span className={active ? "" : "text-muted-foreground"}>{r.full_name}</span>
                     <div className="flex items-center gap-2">
                       <Badge variant={active ? "default" : "outline"} className="text-xs">
-                        {r.status.replace(/_/g, " ")}
+                        {active ? "Counts ✓" : r.status.replace(/_/g, " ")}
                       </Badge>
                       <span className="text-xs text-muted-foreground">{formatDate(r.joining_date)}</span>
                     </div>

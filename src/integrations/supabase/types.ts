@@ -293,6 +293,39 @@ export type Database = {
           },
         ]
       }
+      daily_operations_log: {
+        Row: {
+          created_at: string
+          id: string
+          log_date: string
+          milk_amount: number
+          note: string | null
+          product_retail_amount: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          log_date: string
+          milk_amount?: number
+          note?: string | null
+          product_retail_amount?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          log_date?: string
+          milk_amount?: number
+          note?: string | null
+          product_retail_amount?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           close_date: string | null
@@ -530,6 +563,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      monthly_operations_summary: {
+        Row: {
+          ae_qualify_count: number
+          afresh_party_count: number
+          capital_amount: number
+          created_at: string
+          id: string
+          lead_generation_count: number | null
+          lsd_ticket_count: number
+          month: string
+          total_retail_by_coaches: number
+          updated_at: string
+          updated_by: string | null
+          volume_points: number
+        }
+        Insert: {
+          ae_qualify_count?: number
+          afresh_party_count?: number
+          capital_amount?: number
+          created_at?: string
+          id?: string
+          lead_generation_count?: number | null
+          lsd_ticket_count?: number
+          month: string
+          total_retail_by_coaches?: number
+          updated_at?: string
+          updated_by?: string | null
+          volume_points?: number
+        }
+        Update: {
+          ae_qualify_count?: number
+          afresh_party_count?: number
+          capital_amount?: number
+          created_at?: string
+          id?: string
+          lead_generation_count?: number | null
+          lsd_ticket_count?: number
+          month?: string
+          total_retail_by_coaches?: number
+          updated_at?: string
+          updated_by?: string | null
+          volume_points?: number
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -1033,6 +1111,7 @@ export type Database = {
           checkin_method: Database["public"]["Enums"]["checkin_method"]
           created_at: string
           id: string
+          is_trial_advance: boolean
           member_id: string
           membership_id: string | null
           remaining_balance_snapshot: number | null
@@ -1046,6 +1125,7 @@ export type Database = {
           checkin_method?: Database["public"]["Enums"]["checkin_method"]
           created_at?: string
           id?: string
+          is_trial_advance?: boolean
           member_id: string
           membership_id?: string | null
           remaining_balance_snapshot?: number | null
@@ -1059,6 +1139,7 @@ export type Database = {
           checkin_method?: Database["public"]["Enums"]["checkin_method"]
           created_at?: string
           id?: string
+          is_trial_advance?: boolean
           member_id?: string
           membership_id?: string | null
           remaining_balance_snapshot?: number | null
@@ -1785,6 +1866,126 @@ export type Database = {
         }
         Relationships: []
       }
+      wellness_promotion_progress: {
+        Row: {
+          created_at: string
+          current_count: number
+          id: string
+          member_id: string
+          notes: string | null
+          promotion_id: string
+          qualified: boolean
+          qualified_at: string | null
+          reward_claimed: boolean
+          reward_claimed_at: string | null
+          reward_claimed_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_count?: number
+          id?: string
+          member_id: string
+          notes?: string | null
+          promotion_id: string
+          qualified?: boolean
+          qualified_at?: string | null
+          reward_claimed?: boolean
+          reward_claimed_at?: string | null
+          reward_claimed_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_count?: number
+          id?: string
+          member_id?: string
+          notes?: string | null
+          promotion_id?: string
+          qualified?: boolean
+          qualified_at?: string | null
+          reward_claimed?: boolean
+          reward_claimed_at?: string | null
+          reward_claimed_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_promotion_progress_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_promotion_progress_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_promotions: {
+        Row: {
+          banner_message: string | null
+          card_color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string
+          icon: string
+          id: string
+          is_active: boolean
+          offer_type: string
+          reward_description: string
+          start_date: string
+          target_count: number | null
+          target_metric: string
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          banner_message?: string | null
+          card_color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          offer_type?: string
+          reward_description?: string
+          start_date: string
+          target_count?: number | null
+          target_metric?: string
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          banner_message?: string | null
+          card_color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          offer_type?: string
+          reward_description?: string
+          start_date?: string
+          target_count?: number | null
+          target_metric?: string
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: []
+      }
       wellness_trials: {
         Row: {
           created_at: string
@@ -1924,6 +2125,7 @@ export type Database = {
       }
       whatsapp_conversations: {
         Row: {
+          archived_at: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -1937,6 +2139,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -1950,6 +2153,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -2120,6 +2324,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      apply_joining_bonus: {
+        Args: { p_membership_id: string }
+        Returns: undefined
+      }
       approve_checkin_request: {
         Args: { p_request_id: string; p_weight?: number }
         Returns: Json
@@ -2134,6 +2342,14 @@ export type Database = {
         Returns: undefined
       }
       calc_monthly_rewards: { Args: { p_month: string }; Returns: undefined }
+      calc_promotion_progress: {
+        Args: { p_member_id: string; p_promotion_id: string }
+        Returns: number
+      }
+      calc_promotion_progress_all: {
+        Args: { p_promotion_id: string }
+        Returns: number
+      }
       checkin_member: {
         Args: {
           p_member_id: string
@@ -2145,6 +2361,10 @@ export type Database = {
         Args: { p_code: string; p_mobile: string }
         Returns: Json
       }
+      coach_new_frontline: {
+        Args: { p_member_id: string; p_month: string }
+        Returns: number
+      }
       convert_trial_to_membership: {
         Args: { p_plan_id: string; p_price?: number; p_trial_id: string }
         Returns: string
@@ -2153,6 +2373,7 @@ export type Database = {
         Args: { p_member_id: string; p_plan_id: string; p_price?: number }
         Returns: string
       }
+      daily_coach_title_check: { Args: never; Returns: undefined }
       delete_wellness_plan: { Args: { p_plan_id: string }; Returns: Json }
       display_milestone_achievers: {
         Args: { p_category?: string }
@@ -2190,6 +2411,49 @@ export type Database = {
         Args: { p_order_id: string; p_payment_id: string }
         Returns: Json
       }
+      get_club_daily_report: {
+        Args: { p_month: string }
+        Returns: {
+          cash: number
+          day: string
+          milk: number
+          new_guest: number
+          online: number
+          product_retail: number
+          swipe: number
+          total_amount: number
+          total_shake: number
+          tp_new: number
+          tp_repeat: number
+          ums15_new: number
+          ums15_renew: number
+          ums30_coach: number
+          ums30_cust_new: number
+          ums30_cust_renew: number
+          upi: number
+        }[]
+      }
+      get_club_monthly_report: { Args: { p_month: string }; Returns: Json }
+      get_coach_title_status: { Args: { p_member_id: string }; Returns: Json }
+      get_member_network: {
+        Args: { p_member_id: string }
+        Returns: {
+          depth: number
+          duration_days: number
+          end_date: string
+          full_name: string
+          member_id: string
+          membership_status: string
+          plan_name: string
+          plan_type: string
+          qualifies_this_month: boolean
+          referred_by: string
+          remaining_servings: number
+          start_date: string
+          status: string
+          total_servings: number
+        }[]
+      }
       get_network_summary: {
         Args: { member_ids: string[] }
         Returns: {
@@ -2207,10 +2471,12 @@ export type Database = {
           full_name: string
           member_id: string
           mobile_number: string
+          qualifies_this_month: boolean
           referred_by: string
           status: string
         }[]
       }
+      get_supervisor_status: { Args: { p_member_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2226,12 +2492,26 @@ export type Database = {
       is_wellness_manager: { Args: { _user_id: string }; Returns: boolean }
       is_wellness_staff: { Args: { _user_id: string }; Returns: boolean }
       issue_servings: {
-        Args: { p_membership_id: string; p_quantity: number; p_reason?: string }
+        Args: {
+          p_dates?: string[]
+          p_membership_id: string
+          p_quantity: number
+          p_reason?: string
+        }
         Returns: number
       }
+      ist_month: { Args: never; Returns: string }
       mark_notification_sent: {
         Args: { p_error?: string; p_log_id: string; p_status?: string }
         Returns: undefined
+      }
+      mark_promotion_reward: {
+        Args: { p_claimed: boolean; p_note?: string; p_progress_id: string }
+        Returns: undefined
+      }
+      member_active_in_month: {
+        Args: { p_member_id: string; p_month: string }
+        Returns: boolean
       }
       member_self_checkin: {
         Args: { p_code: string; p_weight?: number }
@@ -2242,6 +2522,14 @@ export type Database = {
         Args: { _member_id: string; _user_id: string }
         Returns: boolean
       }
+      plan_gets_bonus: { Args: { p_plan_id: string }; Returns: boolean }
+      queue_birthday_notifications: { Args: never; Returns: undefined }
+      queue_member_notification: {
+        Args: { p_dedupe?: string; p_member_id: string; p_trigger: string }
+        Returns: undefined
+      }
+      queue_renewal_reminder_notifications: { Args: never; Returns: undefined }
+      queue_trial_ending_notifications: { Args: never; Returns: undefined }
       recalc_all_member_achievements: { Args: never; Returns: undefined }
       recalc_member_achievements: {
         Args: { p_member_id: string }
@@ -2270,6 +2558,10 @@ export type Database = {
         }
         Returns: number
       }
+      refresh_coach_activity: {
+        Args: { p_coach_id: string; p_month: string }
+        Returns: undefined
+      }
       refresh_wellness_statuses: { Args: never; Returns: undefined }
       reject_checkin_request: {
         Args: { p_reason?: string; p_request_id: string }
@@ -2294,6 +2586,10 @@ export type Database = {
       }
       rotate_checkin_code: { Args: never; Returns: string }
       seed_default_pipeline: { Args: { p_user_id: string }; Returns: string }
+      supervisor_new_frontline: {
+        Args: { p_member_id: string; p_month: string }
+        Returns: number
+      }
       switch_membership_plan: {
         Args: {
           p_carry_servings?: boolean
@@ -2303,6 +2599,7 @@ export type Database = {
         }
         Returns: string
       }
+      trial_advance_eligible: { Args: { p_member_id: string }; Returns: string }
       wellness_plan_usage: {
         Args: never
         Returns: {
@@ -2319,6 +2616,7 @@ export type Database = {
         | "barcode_scan"
         | "admin_manual"
         | "staff_entry"
+        | "serving_issue"
       membership_status:
         | "active"
         | "expiring_soon"
@@ -2333,6 +2631,7 @@ export type Database = {
         | "renewal_allocation"
         | "refund_adjustment"
         | "pack_and_issue"
+        | "trial_advance_deduction"
       trial_status:
         | "active"
         | "completed"
@@ -2488,6 +2787,7 @@ export const Constants = {
         "barcode_scan",
         "admin_manual",
         "staff_entry",
+        "serving_issue",
       ],
       membership_status: [
         "active",
@@ -2504,6 +2804,7 @@ export const Constants = {
         "renewal_allocation",
         "refund_adjustment",
         "pack_and_issue",
+        "trial_advance_deduction",
       ],
       trial_status: [
         "active",

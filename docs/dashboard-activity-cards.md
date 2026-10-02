@@ -12,12 +12,12 @@ Add eight cards below the existing dashboard summary, using the existing card st
 | UMS renewals today | Distinct members with a positive renewal payment dated today, linked to a UMS membership. |
 | Daily renewals today | Distinct members with a positive renewal payment dated today, linked to a paid one-day plan. |
 | 3-day paid trials | Distinct members with an active, already-started, unexpired three-day trial linked to a plan priced above zero. |
-| 3-day free trials | The same trial window, with a zero-price plan or no plan (including the existing guest flow). |
+| 3-day free trials | The same trial window, with a zero-price plan or no plan (including the three-day guest option; one-day guest trials are excluded). |
 | New guests today | Current guest profiles whose joining date is today. A guest converted to a member is no longer counted here. |
 
 Renewal cards represent purchases, as requested, rather than upcoming expiry. Split payment lines count once per member. Extended, queued and replacement renewals are included through payment context `renewal`; activation payments and unpaid renewals are excluded. Backdated payments follow `paid_at`, not creation time. The current schema does not snapshot the purchased plan on individual payment lines, so classification uses the linked membership's plan.
 
-UMS plans use the UMS name or the existing UMS 30 signature (membership type, 30 days, ₹7,500 list price). Daily plans use one-day duration and a positive list price. Discounts do not change classification. All plan rows, including deactivated plans still referenced by records, are loaded.
+UMS plans follow the club report's 15/30-serving membership families (excluding one-day plans). UMS 30 additionally requires a 30-day duration and 30 plan servings, matching the current network qualification rule. Daily plans use one-day duration and a positive list price. Discounts do not change classification. All plan rows, including deactivated plans still referenced by records, are loaded.
 
 ## Implementation
 

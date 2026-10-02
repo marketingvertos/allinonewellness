@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCurrency , planGetsBonus } from "@/lib/formatters";
 
 interface Props {
   open: boolean;
@@ -157,7 +157,7 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
             <SelectContent>
               {payable.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings
+                  {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings{planGetsBonus(p) ? " + 2 bonus" : ""}
                 </SelectItem>
               ))}
             </SelectContent>

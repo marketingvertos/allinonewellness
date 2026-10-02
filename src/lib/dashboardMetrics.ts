@@ -10,6 +10,7 @@ export interface DashboardPlan {
   name: string;
   plan_type: string;
   duration_days: number;
+  total_servings: number;
   price: number;
 }
 
@@ -52,8 +53,8 @@ export interface DashboardMetricInput {
 
 /** Keep plan classification independent of discounts or consumed serving balances. */
 export function isUmsPlan(plan: DashboardPlan | undefined): boolean {
-  return !!plan && plan.plan_type === "membership" &&
-    (/\bums\b/i.test(plan.name) || (plan.duration_days === 30 && Number(plan.price) === 7500));
+  return !!plan && plan.plan_type === "membership" && plan.duration_days > 1 &&
+    (plan.total_servings === 15 || plan.total_servings === 30);
 }
 
 export function isDailyPlan(plan: DashboardPlan | undefined): boolean {
@@ -99,7 +100,7 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
     if (started >= monthStart && started <= today) {
       newMembersThisMonth += 1;
       const plan = plans.get(membership.plan_id);
-      if (isUmsPlan(plan) && plan?.duration_days === 30) newUms30ThisMonth += 1;
+      if (isUmsPlan(plan) && plan?.duration_days === 30 && plan.total_servings === 30) newUms30ThisMonth += 1;
     }
   }
 

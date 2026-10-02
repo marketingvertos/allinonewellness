@@ -3,9 +3,9 @@ import { calculateDashboardMetrics, isUmsPlan, paymentDateIst } from "./dashboar
 
 const today = "2026-10-02";
 const member = (id = "m1", extra = {}) => ({ id, is_guest: false, member_mode: "physical", joining_date: today, ...extra });
-const ums = { id: "ums", name: "UMS 30", plan_type: "membership", duration_days: 30, price: 7500 };
-const daily = { id: "daily", name: "Daily Paid", plan_type: "day", duration_days: 1, price: 300 };
-const trialPlan = { id: "trial", name: "Paid trial", plan_type: "trial", duration_days: 3, price: 500 };
+const ums = { id: "ums", name: "UMS 30", plan_type: "membership", duration_days: 30, total_servings: 30, price: 7500 };
+const daily = { id: "daily", name: "Daily Paid", plan_type: "day", duration_days: 1, total_servings: 1, price: 300 };
+const trialPlan = { id: "trial", name: "Paid trial", plan_type: "trial", duration_days: 3, total_servings: 3, price: 500 };
 const membership = (id = "s1", extra = {}) => ({
   id, member_id: "m1", plan_id: "ums", start_date: today,
   created_at: "2026-10-02T06:00:00Z", renewed_from: null, status: "active", ...extra,
@@ -145,8 +145,9 @@ describe("dashboard activity counts", () => {
 
   it("classifies UMS from plan metadata, not a discounted payment or serving balance", () => {
     expect(isUmsPlan(ums)).toBe(true);
+    expect(isUmsPlan({ ...ums, name: "White Card", duration_days: 15, total_servings: 15 })).toBe(true);
     expect(isUmsPlan({ ...ums, name: "Monthly membership" })).toBe(true);
-    expect(isUmsPlan({ ...ums, name: "Transform 90", duration_days: 90, price: 14500 })).toBe(false);
+    expect(isUmsPlan({ ...ums, name: "Transform 90", duration_days: 90, total_servings: 90, price: 14500 })).toBe(false);
     expect(isUmsPlan({ ...ums, plan_type: "trial" })).toBe(false);
   });
 
