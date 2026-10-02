@@ -49,7 +49,7 @@ export function useDashboardMetrics(mode: MemberModeFilter) {
       const [members, plans, memberships, trials, payments] = await Promise.all([
         readAllMetricRows<DashboardMember>((from, to) => supabase
           .from("wellness_members")
-          .select("id, is_guest, member_mode, joining_date")
+          .select("id, is_guest, member_mode, joining_date, full_name, mobile_number")
           .order("id").range(from, to)),
         readAllMetricRows<DashboardPlan>((from, to) => supabase
           .from("wellness_plans")
@@ -73,7 +73,12 @@ export function useDashboardMetrics(mode: MemberModeFilter) {
           .lt("paid_at", tomorrow + "T00:00:00+05:30")
           .order("id").range(from, to)),
       ]);
-      return calculateDashboardMetrics({ members, plans, memberships, trials, payments, today, mode });
+      const result = calculateDashboardMetrics({ members, plans, memberships, trials, payments, today, mode });
+      return {
+        ...result,
+        memberById: Object.fromEntries(members.map((m) => [m.id, m])),
+        planById: Object.fromEntries(plans.map((p) => [p.id, p])),
+      };
     },
   });
 }
