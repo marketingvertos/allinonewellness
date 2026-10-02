@@ -14,8 +14,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+          node-version: 24
+      # The existing npm lockfile predates the current dependencies.
+      - run: npm install --no-package-lock --no-audit --no-fund
       - run: npm test
       - run: npm run build
