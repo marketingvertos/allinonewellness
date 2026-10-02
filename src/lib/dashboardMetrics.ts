@@ -3,6 +3,17 @@ export interface DashboardMember {
   is_guest: boolean;
   member_mode: string;
   joining_date: string;
+  full_name?: string;
+  mobile_number?: string;
+}
+
+export interface ActivityListItem {
+  memberId: string;
+  planId: string | null;
+  date: string;
+  endDate?: string | null;
+  amount?: number;
+  label: string;
 }
 
 export interface DashboardPlan {
@@ -90,17 +101,26 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
     }
   }
 
+  const lists: Record<string, ActivityListItem[]> = {
+    newMembersToday: [], newMembersThisMonth: [], newUms30ThisMonth: [], umsRenewalsToday: [],
+    dailyRenewalsToday: [], paidTrials3Day: [], freeTrials3Day: [], newGuestsToday: [],
+  };
   let newMembersToday = 0;
   let newMembersThisMonth = 0;
   let newUms30ThisMonth = 0;
   for (const membership of firstMemberships.values()) {
     if (membership.renewed_from) continue;
     const started = membership.start_date;
-    if (started === today) newMembersToday += 1;
+    const item = { memberId: membership.member_id, planId: membership.plan_id, date: started, label: "New" };
+    if (started === today) { newMembersToday += 1; lists.newMembersToday.push(item); }
     if (started >= monthStart && started <= today) {
       newMembersThisMonth += 1;
+      lists.newMembersThisMonth.push(item);
       const plan = plans.get(membership.plan_id);
-      if (isUmsPlan(plan) && plan?.duration_days === 30 && plan.total_servings === 30) newUms30ThisMonth += 1;
+      if (isUmsPlan(plan) && plan?.duration_days === 30 && plan.total_servings === 30) {
+        newUms30ThisMonth += 1;
+        lists.newUms30ThisMonth.push({ ...item, label: "New UMS 30" });
+      }
     }
   }
 
@@ -115,8 +135,14 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
         membership.member_id !== member.id) continue;
     const plan = plans.get(membership.plan_id);
     // Count people, not split payment lines; extend/queue/replace all use renewal payments.
-    if (isUmsPlan(plan)) umsRenewals.add(member.id);
-    if (isDailyPlan(plan)) dailyRenewals.add(member.id);
+    const addRenewal = (set: Set<string>, key: string) => {
+      const existing = lists[key].find((i) => i.memberId === member.id);
+      if (existing) existing.amount = (existing.amount ?? 0) + Number(payment.amount);
+      else lists[key].push({ memberId: member.id, planId: membership.plan_id, date: today, amount: Number(payment.amount), label: "Renewal" });
+      set.add(member.id);
+    };
+    if (isUmsPlan(plan)) addRenewal(umsRenewals, "umsRenewalsToday");
+    if (isDailyPlan(plan)) addRenewal(dailyRenewals, "dailyRenewalsToday");
   }
 
   const paidTrials = new Set<string>();
@@ -129,11 +155,25 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
     // No-plan trials include the existing three-day free guest flow.
     // A missing referenced plan is unknown, rather than silently counted as free.
     if (trial.plan_id && !plan) continue;
-    if (Number(plan?.price ?? 0) > 0) paidTrials.add(trial.member_id);
-    else freeTrials.add(trial.member_id);
+    const paid = Number(plan?.price ?? 0) > 0;
+    const set = paid ? paidTrials : freeTrials;
+    if (!set.has(trial.member_id)) {
+      lists[paid ? "paidTrials3Day" : "freeTrials3Day"].push({
+        memberId: trial.member_id, planId: trial.plan_id, date: trial.start_date, endDate: trial.end_date,
+        label: paid ? "Paid trial" : "Free trial",
+      });
+    }
+    set.add(trial.member_id);
+  }
+
+  for (const member of members.values()) {
+    if (member.is_guest && member.joining_date === today) {
+      lists.newGuestsToday.push({ memberId: member.id, planId: null, date: member.joining_date, label: "Guest" });
+    }
   }
 
   return {
+    lists,
     newMembersToday,
     newMembersThisMonth,
     newUms30ThisMonth,

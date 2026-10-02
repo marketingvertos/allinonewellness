@@ -153,6 +153,8 @@ describe("dashboard activity counts", () => {
 
   it("returns zero counts for empty data", () => {
     const result = calculateDashboardMetrics(input({ members: [] }));
-    expect(Object.values(result).every((value) => value === 0)).toBe(true);
+    const { lists, ...counts } = result;
+    expect(Object.values(counts).every((value) => value === 0)).toBe(true);
+    expect(Object.values(lists).every((l) => l.length === 0)).toBe(true);
   });
 });
