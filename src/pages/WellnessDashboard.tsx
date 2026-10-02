@@ -1,3 +1,4 @@
+import { DashboardActivityCards } from "@/components/wellness/DashboardActivityCards";
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { MasterTitleBadge } from "@/components/wellness/MasterTitleBadge";
@@ -171,6 +172,8 @@ export default function WellnessDashboard() {
           })}
         </div>
       )}
+
+      <DashboardActivityCards mode={mode} />
 
       <Card>
         <CardHeader>
