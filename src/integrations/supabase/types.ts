@@ -2509,6 +2509,10 @@ export type Database = {
         Args: { p_claimed: boolean; p_note?: string; p_progress_id: string }
         Returns: undefined
       }
+      mark_trial_attendance: {
+        Args: { p_date?: string; p_trial_id: string }
+        Returns: Json
+      }
       member_active_in_month: {
         Args: { p_member_id: string; p_month: string }
         Returns: boolean

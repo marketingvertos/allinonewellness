@@ -225,6 +225,13 @@
       "when": 1790778693141,
       "tag": "0031_get_member_network",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790999140040,
+      "tag": "0032_mark_trial_attendance",
+      "breakpoints": true
     }
   ]
 }
