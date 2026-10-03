@@ -50,7 +50,7 @@ export function TrialAttendanceControls({
   const { toast } = useToast();
   const used = dates.filter((d) => !d.extra).length;
   const extraCount = dates.length - used;
-  const full = used >= total || endDate < today;
+  const full = used >= total;
   const yesterday = (() => { const d = new Date(today + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); })();
   const marked = new Set(dates.map((d) => d.date));
   const openDialog = () => { const t = todayIst(); setToday(t); setDate(t); setOpen(true); };
@@ -110,7 +110,9 @@ export function TrialAttendanceControls({
               {name} — trial {formatDate(startDate)} to {formatDate(endDate)}.{" "}
               {full
                 ? "Trial servings are used up, so this is an extra visit — 1 serving will be deducted from their plan when they join."
-                : "This uses 1 trial serving. Visits after the trial ends count as extra visits."}
+                : endDate < today
+                  ? "The trial dates have passed, but leftover servings are still usable — this visit uses 1 trial serving."
+                  : "This uses 1 trial serving. Leftover servings stay usable even after the trial ends; extra visits start only once all servings are used."}
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2">
