@@ -14,6 +14,7 @@ import {
   Bell,
   MessageSquare,
   FileText,
+  Megaphone,
   CalendarCheck,
   Package,
   ScrollText,
@@ -64,6 +65,7 @@ const navGroups = [
     items: [
       { title: "WhatsApp", icon: MessageSquare, to: "/whatsapp", end: true },
       { title: "WhatsApp templates", icon: FileText, to: "/whatsapp/templates", end: false },
+      { title: "WhatsApp broadcast", icon: Megaphone, to: "/whatsapp/broadcast", end: false },
       { title: "Message Logs", icon: ScrollText, to: "/whatsapp/logs", end: false },
       { title: "Notifications", icon: Bell, to: "/notifications", end: false },
     ],

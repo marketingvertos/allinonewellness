@@ -2126,6 +2126,108 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_broadcast_recipients: {
+        Row: {
+          broadcast_id: string
+          created_at: string
+          error: string | null
+          full_name: string | null
+          id: string
+          member_id: string | null
+          phone: string | null
+          sent_at: string | null
+          status: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          broadcast_id: string
+          created_at?: string
+          error?: string | null
+          full_name?: string | null
+          id?: string
+          member_id?: string | null
+          phone?: string | null
+          sent_at?: string | null
+          status?: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          broadcast_id?: string
+          created_at?: string
+          error?: string | null
+          full_name?: string | null
+          id?: string
+          member_id?: string | null
+          phone?: string | null
+          sent_at?: string | null
+          status?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_broadcast_recipients_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_broadcasts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_broadcast_recipients_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_broadcasts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          failed_count: number
+          filters: Json
+          id: string
+          sent_count: number
+          skipped_count: number
+          status: string
+          template_language: string
+          template_name: string
+          total_count: number
+          updated_at: string
+          variable_mapping: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          filters?: Json
+          id?: string
+          sent_count?: number
+          skipped_count?: number
+          status?: string
+          template_language: string
+          template_name: string
+          total_count?: number
+          updated_at?: string
+          variable_mapping?: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          filters?: Json
+          id?: string
+          sent_count?: number
+          skipped_count?: number
+          status?: string
+          template_language?: string
+          template_name?: string
+          total_count?: number
+          updated_at?: string
+          variable_mapping?: Json
+        }
+        Relationships: []
+      }
       whatsapp_conversations: {
         Row: {
           archived_at: string | null
