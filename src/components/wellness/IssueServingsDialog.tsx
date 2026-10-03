@@ -39,13 +39,15 @@ export function IssueServingsDialog({ open, onOpenChange, memberId, memberName }
 
   const [qty, setQty] = useState(1);
   const [reason, setReason] = useState("");
-  const [dates, setDates] = useState<string[]>([todayIst()]);
+  // Today's serving is taken at the club, so packed servings start tomorrow.
+  const tomorrowIst = () => addIsoDays(todayIst(), 1);
+  const [dates, setDates] = useState<string[]>([tomorrowIst()]);
 
   useEffect(() => {
     if (open) {
       setQty(1);
       setReason("");
-      setDates([todayIst()]);
+      setDates([tomorrowIst()]);
     }
   }, [open]);
 
@@ -56,7 +58,7 @@ export function IssueServingsDialog({ open, onOpenChange, memberId, memberName }
       if (prev.length > qty) return prev.slice(0, qty);
       const next = [...prev];
       while (next.length < qty) {
-        let d = addIsoDays(next[next.length - 1] ?? todayIst(), 1);
+        let d = next.length ? addIsoDays(next[next.length - 1], 1) : addIsoDays(todayIst(), 1);
         while (next.includes(d)) d = addIsoDays(d, 1);
         next.push(d);
       }
@@ -70,7 +72,12 @@ export function IssueServingsDialog({ open, onOpenChange, memberId, memberName }
 
   const submit = async () => {
     if (!membership) return;
-    await issue.mutateAsync({ membershipId: membership.id, quantity: qty, reason: reason.trim() || undefined, dates });
+    const sorted = [...dates].sort();
+    const fmt = (iso: string) => format(isoToLocal(iso), "dd MMM");
+    const forText =
+      sorted.length === 1 ? `for ${fmt(sorted[0])}` : `for ${fmt(sorted[0])} to ${fmt(sorted[sorted.length - 1])}`;
+    const fullReason = `${reason.trim() || "Packed for member"} · ${forText}`;
+    await issue.mutateAsync({ membershipId: membership.id, quantity: qty, reason: fullReason, dates });
     onOpenChange(false);
   };
 
@@ -139,7 +146,9 @@ export function IssueServingsDialog({ open, onOpenChange, memberId, memberName }
                 Serving dates ({qty} {qty === 1 ? "day" : "days"})
               </Label>
               <p className="text-xs text-muted-foreground">
-                Each date is marked present (serving issued) in the attendance register.
+                Issued today ({format(isoToLocal(todayIst()), "dd MMM")}). Servings start from tomorrow because
+                today's serving is taken at the club. Each date is marked present (serving issued) in the
+                attendance register.
               </p>
               <div className="grid gap-2">
                 {dates.map((d, i) => (
