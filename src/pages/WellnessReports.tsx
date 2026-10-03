@@ -16,7 +16,7 @@ import {
   useWellnessEvents,
   useWlpAttendance,
 } from "@/hooks/useEvents";
-import { PAYMENT_MODES, paymentModeLabel, useMilestoneHolders, useRevenueReport } from "@/hooks/useReports";
+import { PAYMENT_MODES, paymentModeLabel, useMilestoneHolders, useMonthlyWeightRewards, useRevenueReport, useWeightDataMonths } from "@/hooks/useReports";
 import { useWellnessMembers } from "@/hooks/useWellness";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,6 +95,7 @@ function EventTab({ eventType, month }: { eventType: EventType; month: string })
       </Card>
 
       {eventType === "family_day" && <RewardsCard month={month} />}
+      {eventType === "family_day" && <WeightRewardsCard month={month} />}
 
       <ScheduleEventDialog
         eventType={eventType}
