@@ -612,6 +612,7 @@ export type Database = {
       notifications: {
         Row: {
           created_at: string
+          dedupe_key: string | null
           id: string
           message: string | null
           read: boolean
@@ -623,6 +624,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dedupe_key?: string | null
           id?: string
           message?: string | null
           read?: boolean
@@ -634,6 +636,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dedupe_key?: string | null
           id?: string
           message?: string | null
           read?: boolean
@@ -2522,6 +2525,17 @@ export type Database = {
         Returns: Json
       }
       monthly_coach_title_check: { Args: never; Returns: undefined }
+      notify_staff: {
+        Args: {
+          p_dedupe_key: string
+          p_message: string
+          p_ref_id: string
+          p_ref_type: string
+          p_title: string
+          p_type: string
+        }
+        Returns: undefined
+      }
       owns_wellness_member: {
         Args: { _member_id: string; _user_id: string }
         Returns: boolean

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageBanner } from "@/components/PageBanner";
 import { ScheduleEventDialog } from "@/components/wellness/ScheduleEventDialog";
 import {
@@ -646,7 +647,14 @@ export function RevenueTab() {
 /* -------------------------------- Page -------------------------------- */
 
 export default function WellnessReports() {
-  const [month, setMonth] = useState(currentMonthIst());
+  const [searchParams] = useSearchParams();
+  const monthParam = searchParams.get("month");
+  const [month, setMonth] = useState(
+    monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : currentMonthIst(),
+  );
+  useEffect(() => {
+    if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) setMonth(monthParam);
+  }, [monthParam]);
 
   return (
     <div className="space-y-6">
