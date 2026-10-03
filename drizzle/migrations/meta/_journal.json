@@ -253,6 +253,13 @@
       "when": 1791016260900,
       "tag": "0035_staff_milestone_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791042722269,
+      "tag": "0036_whatsapp_broadcasts",
+      "breakpoints": true
     }
   ]
 }
