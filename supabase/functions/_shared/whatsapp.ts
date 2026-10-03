@@ -183,6 +183,7 @@ export interface SendInput {
   /** Optional document/media attachment (public or signed URL). */
   mediaUrl?: string | null;
   mediaFileName?: string | null;
+  mediaType?: "image" | "document";
 }
 
 export function isWachat(cfg: WhatsAppConfig): boolean {
@@ -264,17 +265,16 @@ export function buildSendRequest(
         name: input.templateName,
         language: { code: input.templateLanguage || cfg.defaultLanguage || "en" },
         components: [
-          // Document header (used for fee receipts and other attachments).
+          // The header parameter must match the approved template's media format.
           ...(input.mediaUrl
             ? [{
               type: "header",
-              parameters: [{
-                type: "document",
-                document: {
-                  link: input.mediaUrl,
-                  filename: input.mediaFileName || "document.pdf",
-                },
-              }],
+              parameters: input.mediaType === "image"
+                ? [{ type: "image", image: { link: input.mediaUrl } }]
+                : [{ type: "document", document: {
+                    link: input.mediaUrl,
+                    filename: input.mediaFileName || "document.pdf",
+                  } }],
             }]
             : []),
           ...(vars.length

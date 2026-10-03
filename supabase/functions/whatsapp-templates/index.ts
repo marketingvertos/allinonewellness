@@ -47,6 +47,7 @@ function shape(t: MetaTemplate) {
     buttons: (t.components?.find((c) => c.type?.toUpperCase() === "BUTTONS")?.buttons ??
       []) as unknown[],
     variable_count: variableCount(body),
+    header_format: String(t.components?.find((c) => c.type?.toUpperCase() === "HEADER")?.format || "").toUpperCase(),
     has_media_header: Boolean(
       t.components?.some(
         (c) =>

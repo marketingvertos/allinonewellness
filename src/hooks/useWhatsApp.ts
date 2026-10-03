@@ -316,6 +316,7 @@ export interface WhatsAppTemplate {
   body: string;
   variable_count: number;
   has_media_header: boolean;
+  header_format: string;
 }
 
 /** Approved templates read live from the connected WhatsApp Business account. */
