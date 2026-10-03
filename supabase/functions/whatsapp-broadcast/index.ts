@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
         to, templateName: body.template_name, templateLanguage: body.template_language, vars,
         mediaUrl: FAMILY_POSTER, mediaType: "image",
       }, { functionName: "whatsapp-broadcast", sourceModule: "manual", sentBy: userId, logContent: `[${body.template_name}] test` });
-      return json({ success: res.ok, error: res.error });
+      return json({ success: res.ok, error: res.error, provider_message_id: res.providerMessageId });
     }
 
     if (action === "create") {
