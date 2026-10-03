@@ -179,6 +179,8 @@ export interface SendInput {
   templateName?: string | null;
   templateLanguage?: string | null;
   vars?: string[];
+  /** Names for templates approved with named variables, e.g. {{customer_name}}. */
+  varNames?: string[];
   text?: string | null;
   /** Optional document/media attachment (public or signed URL). */
   mediaUrl?: string | null;
@@ -280,7 +282,10 @@ export function buildSendRequest(
           ...(vars.length
             ? [{
               type: "body",
-              parameters: vars.map((text) => ({ type: "text", text })),
+              parameters: vars.map((text, i) =>
+                input.varNames?.[i]
+                  ? { type: "text", parameter_name: input.varNames[i], text }
+                  : { type: "text", text }),
             }]
             : []),
         ],
