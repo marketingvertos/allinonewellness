@@ -2705,6 +2705,12 @@ export interface AttendanceRow {
   servingDays: number;
   absentDays: number;
   percentage: number;
+  initialWeight: number | null;
+  goal: string | null;
+  weightByDate: Record<string, number>;
+  latestWeight: number | null;
+  latestWeightDate: string | null;
+  totalChange: number | null;
 }
 
 export interface AttendanceRegisterResult {
@@ -2739,7 +2745,7 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
     queryFn: async (): Promise<AttendanceRegisterResult> => {
       let mq = supabase
         .from("wellness_members")
-        .select("id, full_name, mobile_number, member_mode, status")
+        .select("id, full_name, mobile_number, member_mode, status, initial_weight, goal")
         .in("status", ["active_member", "renewal_due", "trial", "expired"]);
       if (memberMode && memberMode !== "all") mq = mq.eq("member_mode", memberMode);
       const { data: members, error: mErr } = await mq.limit(5000);
@@ -2785,12 +2791,34 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
         if (!data || data.length < pageSize) break;
       }
 
+      // Weight readings up to `to`, ordered so later readings overwrite earlier ones.
+      const wByDate: Record<string, Record<string, number>> = {};
+      const wLatest: Record<string, { w: number; d: string }> = {};
+      for (let page = 0; page < 50; page++) {
+        const { data, error } = await supabase
+          .from("weight_tracking")
+          .select("member_id, recorded_date, weight, created_at")
+          .lte("recorded_date", to)
+          .order("recorded_date")
+          .order("created_at")
+          .range(page * pageSize, page * pageSize + pageSize - 1);
+        if (error) throw error;
+        for (const w of data ?? []) {
+          const val = Number(w.weight);
+          if (w.recorded_date >= from) (wByDate[w.member_id] ??= {})[w.recorded_date] = val;
+          wLatest[w.member_id] = { w: val, d: w.recorded_date };
+        }
+        if (!data || data.length < pageSize) break;
+      }
+
       const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       const dates = isoDateRange(from, to);
       const countedDates = dates.filter((d) => d <= today);
       let todayPresent = 0;
 
       const rows: AttendanceRow[] = (members ?? []).map((m) => {
+        const init = m.initial_weight != null ? Number(m.initial_weight) : null;
+        const latest = wLatest[m.id] ?? null;
         const visited = attMap[m.id] ?? new Map<string, AttendanceMark>();
         const dayMap: Record<string, AttendanceMark | null> = {};
         for (const d of dates) dayMap[d] = visited.get(d) ?? null;
