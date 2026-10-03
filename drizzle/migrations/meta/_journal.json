@@ -260,6 +260,13 @@
       "when": 1791042722269,
       "tag": "0036_whatsapp_broadcasts",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791043430784,
+      "tag": "0037_broadcast_image_template_header",
+      "breakpoints": true
     }
   ]
 }

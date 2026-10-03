@@ -2186,6 +2186,8 @@ export type Database = {
           created_by: string | null
           failed_count: number
           filters: Json
+          header_media_type: string | null
+          header_media_url: string | null
           id: string
           sent_count: number
           skipped_count: number
@@ -2201,6 +2203,8 @@ export type Database = {
           created_by?: string | null
           failed_count?: number
           filters?: Json
+          header_media_type?: string | null
+          header_media_url?: string | null
           id?: string
           sent_count?: number
           skipped_count?: number
@@ -2216,6 +2220,8 @@ export type Database = {
           created_by?: string | null
           failed_count?: number
           filters?: Json
+          header_media_type?: string | null
+          header_media_url?: string | null
           id?: string
           sent_count?: number
           skipped_count?: number

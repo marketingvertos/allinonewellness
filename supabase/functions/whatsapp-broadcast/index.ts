@@ -10,6 +10,9 @@ import {
 import { sendWhatsApp } from "../_shared/whatsappService.ts";
 
 type Mapping = { source: "first_name" | "full_name" | "fixed"; value?: string };
+const FAMILY_TEMPLATE = "family_day_4_oct";
+const FAMILY_POSTER = "https://club.weightlossmentorshri.com/__l5e/assets-v1/daa86d8f-9564-4140-8c00-5d92711a1495/family-day-4-oct-2026.jpg";
+const FAMILY_LANGUAGE = "hi";
 
 // deno-lint-ignore no-explicit-any
 type Sb = any;
@@ -21,6 +24,33 @@ function resolveVars(mapping: Mapping[], fullName: string | null) {
     : m.source === "first_name" ? (name.split(/\s+/)[0] || "Member")
     : String(m.value ?? "")
   );
+}
+
+async function validateTemplate(sb: Sb, cfg: Awaited<ReturnType<typeof loadWhatsAppConfig>>, name: string, language: string, mapping: Mapping[]) {
+  if (name !== FAMILY_TEMPLATE) return null; // Existing text broadcasts remain unchanged.
+  if (cfg.provider !== "meta" || !cfg.apiKey) return "An active Meta WhatsApp connection is required";
+  if (language !== FAMILY_LANGUAGE) return "Select the approved Family Day picture template";
+  const { data: row } = await sb.from("integration_credentials").select("value").eq("key", "whatsapp_waba_id").maybeSingle();
+  const wabaId = (row?.value || Deno.env.get("META_WABA_ID") || "").trim();
+  if (!wabaId) return "WhatsApp Business account is not configured";
+  const query = new URLSearchParams({ name, fields: "name,language,status,components", limit: "50" });
+  const res = await fetch(`${cfg.apiUrl}/${wabaId}/message_templates?${query}`, {
+    headers: { Authorization: `Bearer ${cfg.apiKey}` },
+  });
+  if (!res.ok) return `Could not verify the approved picture template (${res.status})`;
+  const payload = await res.json();
+  const tpl = (payload.data || []).find((t: { name: string; language: string }) => t.name === name && t.language === language);
+  if (!tpl || tpl.status !== "APPROVED" ||
+    !tpl.components?.some((c: { type: string; format?: string }) => c.type === "HEADER" && c.format === "IMAGE")) {
+    return "The Family Day template must be approved with an image header before sending";
+  }
+  const body = tpl.components.find((c: { type: string }) => c.type === "BODY")?.text || "";
+  const count = Math.max(0, ...Array.from(body.matchAll(/\{\{\s*(\d+)\s*\}\}/g), (m: RegExpExecArray) => Number(m[1])));
+  if (mapping.length !== count || mapping.some((m) => !["first_name", "full_name", "fixed"].includes(m.source) ||
+    (m.source === "fixed" && !String(m.value || "").trim()))) return "Fill in every message field before sending";
+  const image = await fetch(FAMILY_POSTER, { method: "HEAD" }).catch(() => null);
+  if (!image?.ok || !image.headers.get("content-type")?.startsWith("image/jpeg")) return "The Family Day picture is not available; sending was stopped";
+  return null;
 }
 
 async function refreshCounts(sb: Sb, id: string) {
@@ -59,6 +89,7 @@ async function processBatch(sb: Sb, id: string, userId: string | null, size = 20
     try {
       const res = await sendWhatsApp(sb, cfg, {
         to, templateName: b.template_name, templateLanguage: b.template_language, vars,
+        mediaUrl: b.header_media_url, mediaType: b.header_media_type,
       }, {
         functionName: "whatsapp-broadcast",
         sourceModule: "manual",
@@ -116,17 +147,25 @@ Deno.serve(async (req) => {
     if (action === "test") {
       const to = toE164(String(body.phone || ""));
       if (!to) return json({ success: false, error: "Enter a valid 10-digit mobile number" });
-      const vars = resolveVars(body.variable_mapping || [], String(body.sample_name || "Test"));
+      const mapping = Array.isArray(body.variable_mapping) ? body.variable_mapping : [];
+      const validation = await validateTemplate(sb, cfg, String(body.template_name || ""), String(body.template_language || ""), mapping);
+      if (validation) return json({ success: false, error: validation });
+      const vars = resolveVars(mapping, String(body.sample_name || "Test"));
       const res = await sendWhatsApp(sb, cfg, {
         to, templateName: body.template_name, templateLanguage: body.template_language, vars,
+        mediaUrl: body.template_name === FAMILY_TEMPLATE ? FAMILY_POSTER : undefined,
+        mediaType: body.template_name === FAMILY_TEMPLATE ? "image" : undefined,
       }, { functionName: "whatsapp-broadcast", sourceModule: "manual", sentBy: userId, logContent: `[${body.template_name}] test` });
-      return json({ success: res.ok, error: res.error });
+      return json({ success: res.ok, error: res.error, provider_message_id: res.providerMessageId });
     }
 
     if (action === "create") {
       const ids = (Array.isArray(body.member_ids) ? body.member_ids : []).map(String).slice(0, 5000);
       if (!ids.length) return json({ success: false, error: "No recipients selected" });
       if (!body.template_name) return json({ success: false, error: "Pick a template" });
+      const mapping = Array.isArray(body.variable_mapping) ? body.variable_mapping : [];
+      const validation = await validateTemplate(sb, cfg, String(body.template_name), String(body.template_language || ""), mapping);
+      if (validation) return json({ success: false, error: validation });
       const members: { id: string; full_name: string; mobile_number: string }[] = [];
       for (let i = 0; i < ids.length; i += 500) {
         const { data } = await sb.from("wellness_members").select("id, full_name, mobile_number").in("id", ids.slice(i, i + 500));
@@ -147,7 +186,9 @@ Deno.serve(async (req) => {
       const { data: b, error } = await sb.from("whatsapp_broadcasts").insert({
         template_name: body.template_name,
         template_language: body.template_language || "en_US",
-        variable_mapping: body.variable_mapping || [],
+        variable_mapping: mapping,
+        header_media_url: body.template_name === FAMILY_TEMPLATE ? FAMILY_POSTER : null,
+        header_media_type: body.template_name === FAMILY_TEMPLATE ? "image" : null,
         filters: body.filters || {},
         total_count: rows.length,
         created_by: userId,
