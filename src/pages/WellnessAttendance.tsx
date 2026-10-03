@@ -216,6 +216,8 @@ export default function WellnessAttendance() {
                     <th className="p-2 text-center text-xs font-medium">P</th>
                     <th className="p-2 text-center text-xs font-medium">A</th>
                     <th className="p-2 text-center text-xs font-medium">%</th>
+                    <th className="p-2 text-center text-xs font-medium">Latest kg</th>
+                    <th className="min-w-[90px] p-2 text-center text-xs font-medium">Change</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -238,6 +240,7 @@ export default function WellnessAttendance() {
                               : on ? "bg-primary/15 text-primary" : "bg-destructive/10 text-destructive",
                             d === data.today && "ring-1 ring-inset ring-primary")}>
                             {serving ? "S" : future ? "-" : on ? <Check className="mx-auto h-3.5 w-3.5" /> : <X className="mx-auto h-3.5 w-3.5" />}
+                            {on && r.weightByDate[d] != null && <div className="text-[10px] font-normal leading-tight">{r.weightByDate[d]}</div>}
                           </td>
                         );
                       })}
@@ -247,10 +250,12 @@ export default function WellnessAttendance() {
                       </td>
                       <td className="p-2 text-center">{r.absentDays}</td>
                       <td className="p-2 text-center"><Badge variant={pctVariant(r.percentage)}>{r.percentage}%</Badge></td>
+                      <td className="p-2 text-center">{r.latestWeight ?? "—"}</td>
+                      <td className="p-2 text-center text-xs"><ChangeLabel r={r} /></td>
                     </tr>
                   ))}
                   {!rows.length && (
-                    <tr><td colSpan={data.dates.length + 4} className="p-6 text-center text-muted-foreground">No members match.</td></tr>
+                    <tr><td colSpan={data.dates.length + 6} className="p-6 text-center text-muted-foreground">No members match.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -300,6 +305,19 @@ function MemberList({ title, tone, rows, onSelect }: {
             <div className="min-w-0">
               <p className="truncate font-medium">{r.name}</p>
               <p className="truncate text-xs text-muted-foreground">{r.planName ?? "No active plan"}</p>
+              {tone === "present" && (
+                <p className="truncate text-xs">
+                  {r.latestWeight != null ? (
+                    <>
+                      {r.latestWeight} kg
+                      {r.latestWeightDate && r.latestWeightDate !== Object.keys(r.dayMap)[0] && (
+                        <span className="text-muted-foreground"> (last: {fmt(r.latestWeightDate, { day: "2-digit", month: "short" })})</span>
+                      )}
+                      {" · "}<ChangeLabel r={r} />
+                    </>
+                  ) : <span className="text-muted-foreground">No reading</span>}
+                </p>
+              )}
             </div>
             {tone === "present" && Object.values(r.dayMap).includes("serving") && (
               <Badge variant="outline" className="shrink-0 text-[10px]">Serving issued</Badge>
