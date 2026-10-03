@@ -90,30 +90,33 @@ export default function WellnessAttendance() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const buildTable = () => {
     if (!data) return null;
-    const head = ["Sr.", "Member", "Mobile", "Mode", "Status", "Plan", "Serv. left", "Join kg", "Goal",
+    const dayCount = data.dates.length;
+    const head = ["Sr.", "Member",
       ...data.dates.map((d) => fmt(d, { day: "2-digit", month: "short" })),
-      "Visits", "Servings", "P", "A", "%", "Latest kg", "Change"];
+      "Total Present", "Total Absent", "Latest Weight (kg)", "Total Change"];
     // Export always includes ALL members (ignores the search filter).
     const body = (data.rows ?? []).map((r, i) => [
-      i + 1, r.name, r.mobile, r.memberMode, r.status, r.planName ?? "", r.remainingServings ?? "",
-      r.initialWeight ?? "", r.goal === "weight_gain" ? "Gain" : r.goal ? "Loss" : "",
+      i + 1, r.name,
       ...data.dates.map((d) => {
         if (d > data.today) return "-";
         const w = r.weightByDate[d];
         const mark = r.dayMap[d] === "serving" ? "S" : r.dayMap[d] ? "P" : "A";
         return mark !== "A" && w != null ? `${mark} ${w}` : mark;
       }),
-      r.visitDays, r.servingDays, r.presentDays, r.absentDays, `${r.percentage}%`,
-      r.latestWeight ?? "", changeText(r.totalChange),
+      r.presentDays, r.absentDays, r.latestWeight ?? "", changeText(r.totalChange),
     ]);
-    return { head, body };
+    // Narrow day columns, wide name and total columns.
+    const xlsxWidths = [5, 24, ...Array<number>(dayCount).fill(7), 13, 13, 17, 15];
+    const pdfWidthsMm = [8, 42, ...Array<number>(dayCount).fill(11), 20, 20, 24, 24];
+    const pageWidthMm = 20 + pdfWidthsMm.reduce((s, w) => s + w, 0);
+    return { head, body, xlsxWidths, pdfWidthsMm, pageWidthMm };
   };
   const fileBase = `AIOW-Attendance-${view}-${from}-to-${to}`;
   const period = from === to ? fmt(from, { day: "2-digit", month: "short", year: "numeric" })
     : `${fmt(from, { day: "2-digit", month: "short", year: "numeric" })} - ${fmt(to, { day: "2-digit", month: "short", year: "numeric" })}`;
   const exportXlsx = () => {
     const t = buildTable();
-    if (t) downloadXlsx(`${fileBase}.xlsx`, "Attendance", [t.head, ...t.body]);
+    if (t) downloadXlsx(`${fileBase}.xlsx`, "Attendance", [t.head, ...t.body], t.xlsxWidths);
   };
   const exportPdf = async () => {
     const t = buildTable();
@@ -123,6 +126,8 @@ export default function WellnessAttendance() {
       await downloadBrandedPdf({
         filename: `${fileBase}.pdf`, title: "Attendance Register", period, orientation: "landscape",
         sections: [{ head: t.head, body: t.body }],
+        pageWidthMm: t.pageWidthMm,
+        colWidthsMm: t.pdfWidthsMm,
       });
     } finally { setPdfBusy(false); }
   };

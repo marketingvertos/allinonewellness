@@ -30,8 +30,16 @@ export async function downloadBrandedPdf(opts: {
   period: string;
   orientation: "portrait" | "landscape";
   sections: PdfSection[];
+  /** Custom page width in mm (landscape). When set, the page grows to fit wide tables instead of squeezing into A4. */
+  pageWidthMm?: number;
+  /** Per-section column widths in mm; index matches the column. Unlisted columns share the remaining space. */
+  colWidthsMm?: number[];
 }) {
-  const doc = new jsPDF({ orientation: opts.orientation, unit: "mm", format: "a4" });
+  const doc = new jsPDF({
+    orientation: opts.orientation,
+    unit: "mm",
+    format: opts.pageWidthMm ? [210, opts.pageWidthMm] : "a4",
+  });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const img = await loadLogo();
@@ -59,16 +67,21 @@ export async function downloadBrandedPdf(opts: {
       doc.text(s.title, 10, y + 3); y += 5;
     }
     const cols = s.head.length;
-    const fontSize = cols > 16 ? 6.5 : cols > 10 ? 7.5 : 9.5;
+    const fontSize = opts.pageWidthMm ? 8 : cols > 16 ? 6.5 : cols > 10 ? 7.5 : 9.5;
     const colStyles: Record<number, any> = {};
     for (let i = s.rightAlignFrom ?? cols; i < cols; i++) colStyles[i] = { halign: "right" };
+    if (opts.colWidthsMm) {
+      opts.colWidthsMm.forEach((w, i) => {
+        colStyles[i] = { ...(colStyles[i] ?? {}), cellWidth: w };
+      });
+    }
     autoTable(doc, {
       startY: y,
       head: [s.head],
       body: s.body,
       foot: s.foot ? [s.foot] : undefined,
       margin: { top: 28, left: 10, right: 10, bottom: 14 },
-      styles: { fontSize, cellPadding: 1.4, lineColor: [229, 229, 224], lineWidth: 0.1, textColor: [30, 30, 30] },
+      styles: { fontSize, cellPadding: opts.pageWidthMm ? 2 : 1.4, lineColor: [229, 229, 224], lineWidth: 0.1, textColor: [30, 30, 30] },
       headStyles: { fillColor: GREEN, textColor: 255, fontStyle: "bold", halign: "center", valign: "middle" },
       footStyles: { fillColor: GREEN, textColor: GOLD, fontStyle: "bold" },
       alternateRowStyles: { fillColor: ZEBRA },
