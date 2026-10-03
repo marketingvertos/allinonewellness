@@ -33,7 +33,7 @@ async function validateTemplate(sb: Sb, cfg: Awaited<ReturnType<typeof loadWhats
   const { data: row } = await sb.from("integration_credentials").select("value").eq("key", "whatsapp_waba_id").maybeSingle();
   const wabaId = (row?.value || Deno.env.get("META_WABA_ID") || "").trim();
   if (!wabaId) return "WhatsApp Business account is not configured";
-  const query = new URLSearchParams({ name, fields: "name,language,status,components", limit: "50" });
+  const query = new URLSearchParams({ name, fields: "name,language,status,components,parameter_format", limit: "50" });
   const res = await fetch(`${cfg.apiUrl}/${wabaId}/message_templates?${query}`, {
     headers: { Authorization: `Bearer ${cfg.apiKey}` },
   });
@@ -45,7 +45,10 @@ async function validateTemplate(sb: Sb, cfg: Awaited<ReturnType<typeof loadWhats
     return "The Family Day template must be approved with an image header before sending";
   }
   const body = tpl.components.find((c: { type: string }) => c.type === "BODY")?.text || "";
-  const count = Math.max(0, ...Array.from(body.matchAll(/\{\{\s*(\d+)\s*\}\}/g), (m: RegExpExecArray) => Number(m[1])));
+  const named = String(tpl.parameter_format || "").toUpperCase() === "NAMED";
+  const names = named ? [...new Set(Array.from(body.matchAll(/\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/gi), (m: RegExpExecArray) => m[1]))] : [];
+  const count = named ? names.length : Math.max(0, ...Array.from(body.matchAll(/\{\{\s*(\d+)\s*\}\}/g), (m: RegExpExecArray) => Number(m[1])));
+  mapping.forEach((m, i) => { (m as Mapping & { name?: string }).name = named ? names[i] : undefined; });
   if (mapping.length !== count || mapping.some((m) => !["first_name", "full_name", "fixed"].includes(m.source) ||
     (m.source === "fixed" && !String(m.value || "").trim()))) return "Fill in every message field before sending";
   const image = await fetch(FAMILY_POSTER, { method: "HEAD" }).catch(() => null);
@@ -88,7 +91,7 @@ async function processBatch(sb: Sb, id: string, userId: string | null, size = 20
     const vars = resolveVars(b.variable_mapping || [], r.full_name);
     try {
       const res = await sendWhatsApp(sb, cfg, {
-        to, templateName: b.template_name, templateLanguage: b.template_language, vars,
+        to, templateName: b.template_name, templateLanguage: b.template_language, vars, varNames: varNames(mapping_PLACEHOLDER),
         mediaUrl: b.header_media_url, mediaType: b.header_media_type,
       }, {
         functionName: "whatsapp-broadcast",
@@ -152,7 +155,7 @@ Deno.serve(async (req) => {
       if (validation) return json({ success: false, error: validation });
       const vars = resolveVars(mapping, String(body.sample_name || "Test"));
       const res = await sendWhatsApp(sb, cfg, {
-        to, templateName: body.template_name, templateLanguage: body.template_language, vars,
+        to, templateName: body.template_name, templateLanguage: body.template_language, vars, varNames: varNames(mapping_PLACEHOLDER),
         mediaUrl: body.template_name === FAMILY_TEMPLATE ? FAMILY_POSTER : undefined,
         mediaType: body.template_name === FAMILY_TEMPLATE ? "image" : undefined,
       }, { functionName: "whatsapp-broadcast", sourceModule: "manual", sentBy: userId, logContent: `[${body.template_name}] test` });
