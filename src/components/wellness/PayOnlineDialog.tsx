@@ -199,11 +199,11 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
         </div>
 
         {maxCredits > 0 && (
-          <button
-            type="button"
-            aria-pressed={usePink}
+          <div
+            role="switch"
+            aria-checked={usePink}
             onClick={() => setUsePink((v) => !v)}
-            className="flex w-full items-center justify-between gap-3 rounded-xl border border-[hsl(330_70%_55%/0.4)] bg-[hsl(330_70%_55%/0.06)] p-4 text-left transition-colors active:bg-[hsl(330_70%_55%/0.12)]"
+            className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-[hsl(330_70%_55%/0.4)] bg-[hsl(330_70%_55%/0.06)] p-4 text-left transition-colors active:bg-[hsl(330_70%_55%/0.12)]"
           >
             <span>
               <span className="block text-sm font-semibold text-[hsl(330_70%_45%)]">
@@ -212,8 +212,10 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
               </span>
               <span className="mt-0.5 block text-xs text-muted-foreground">Tap to switch on or off. Taken off before you pay.</span>
             </span>
-            <Switch checked={usePink} onCheckedChange={setUsePink} tabIndex={-1} />
-          </button>
+            <span onClick={(e) => e.stopPropagation()}>
+              <Switch checked={usePink} onCheckedChange={setUsePink} />
+            </span>
+          </div>
         )}
 
         <div className="space-y-2 rounded-xl border bg-muted/40 p-4">
