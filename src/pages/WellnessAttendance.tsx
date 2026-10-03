@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Download, FileText, Search, TrendingUp, Trophy, UserCheck, Users, UserX, X } from "lucide-react";
+import { Check, Download, FileText, RefreshCw, Search, TrendingUp, Trophy, UserCheck, Users, UserX, X } from "lucide-react";
 import { MemberModeFilter, useAttendanceRegister, AttendanceRow } from "@/hooks/useWellness";
 import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { cn } from "@/lib/utils";
@@ -78,7 +78,7 @@ export default function WellnessAttendance() {
   const [selected, setSelected] = useState<string | null>(null);
 
   const { from, to } = rangeFor(view, customFrom, customTo);
-  const { data, isLoading } = useAttendanceRegister(from, to, mode);
+  const { data, isLoading, isFetching, refetch } = useAttendanceRegister(from, to, mode);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
