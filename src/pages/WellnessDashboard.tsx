@@ -72,6 +72,10 @@ function ServingsIssuedCard({ mode }: { mode: MemberModeFilter }) {
 
 function SalesTile({ label, period, mode, onClick }: { label: string; period: (typeof PERIODS)[number]["key"]; mode: MemberModeFilter; onClick: () => void }) {
   const { data } = useSalesAnalytics(periodRange(period), mode);
+  const isToday = period === "today";
+  const topPlans = (data?.byPlan ?? []).filter((p) => p.revenue > 0);
+  const shownPlans = topPlans.slice(0, 2);
+  const morePlans = topPlans.length - shownPlans.length;
   return (
     <button
       onClick={onClick}
@@ -79,9 +83,24 @@ function SalesTile({ label, period, mode, onClick }: { label: string; period: (t
     >
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-xl font-bold">{formatCurrency(data?.revenue ?? 0)}</p>
-      <p className="text-xs text-muted-foreground">
-        {data?.memberships ?? 0} sold · {data?.servings ?? 0} servings
-      </p>
+      {isToday || !data ? (
+        <p className="text-xs text-muted-foreground">
+          {data?.memberships ?? 0} sold · {data?.servings ?? 0} servings
+        </p>
+      ) : (
+        <div className="mt-0.5 space-y-0.5 text-xs text-muted-foreground">
+          <p>
+            New {formatCurrency(data.newRevenue)} · Renewal {formatCurrency(data.renewalRevenue)}
+            {data.trialRevenue > 0 ? ` · Trial ${formatCurrency(data.trialRevenue)}` : ""}
+          </p>
+          {shownPlans.length > 0 && (
+            <p className="truncate">
+              {shownPlans.map((p) => `${p.name} ${formatCurrency(p.revenue)}`).join(" · ")}
+              {morePlans > 0 ? ` +${morePlans} more` : ""}
+            </p>
+          )}
+        </div>
+      )}
     </button>
   );
 }

@@ -2383,6 +2383,12 @@ export interface SalesSummary {
   memberships: number;
   revenue: number;
   servings: number;
+  /** Revenue split: new memberships vs renewals vs trials. */
+  newRevenue: number;
+  renewalRevenue: number;
+  trialRevenue: number;
+  /** Revenue per plan name, sorted highest first. */
+  byPlan: { name: string; revenue: number }[];
 }
 
 /** Memberships sold, revenue and servings used inside a date range. */
@@ -2393,7 +2399,7 @@ export function useSalesAnalytics(range: PeriodRange, memberMode?: MemberModeFil
       const ids = await memberIdsForMode(memberMode);
       let salesQ = supabase
         .from("wellness_memberships")
-        .select("price_paid, created_at, member_id")
+        .select("price_paid, created_at, member_id, renewed_from, wellness_plans(name, plan_type)")
         .gte("created_at", `${range.from}T00:00:00+05:30`)
         .lte("created_at", `${range.to}T23:59:59+05:30`);
       let servingsQ = supabase
@@ -2408,10 +2414,33 @@ export function useSalesAnalytics(range: PeriodRange, memberMode?: MemberModeFil
       const [sales, servings] = await Promise.all([salesQ, servingsQ]);
       if (sales.error) throw sales.error;
       if (servings.error) throw servings.error;
+      const rows = (sales.data ?? []) as unknown as {
+        price_paid: number;
+        renewed_from: string | null;
+        wellness_plans: { name: string; plan_type: string } | null;
+      }[];
+      let newRevenue = 0,
+        renewalRevenue = 0,
+        trialRevenue = 0;
+      const planMap = new Map<string, number>();
+      for (const r of rows) {
+        const amt = Number(r.price_paid ?? 0);
+        if (r.wellness_plans?.plan_type === "trial") trialRevenue += amt;
+        else if (r.renewed_from) renewalRevenue += amt;
+        else newRevenue += amt;
+        const name = r.wellness_plans?.name ?? "Plan";
+        planMap.set(name, (planMap.get(name) ?? 0) + amt);
+      }
       return {
-        memberships: sales.data?.length ?? 0,
-        revenue: (sales.data ?? []).reduce((sum, r) => sum + Number((r as { price_paid: number }).price_paid ?? 0), 0),
+        memberships: rows.length,
+        revenue: rows.reduce((sum, r) => sum + Number(r.price_paid ?? 0), 0),
         servings: (servings.data ?? []).filter((r) => (r as { serving_deducted: boolean }).serving_deducted).length,
+        newRevenue,
+        renewalRevenue,
+        trialRevenue,
+        byPlan: [...planMap.entries()]
+          .map(([name, revenue]) => ({ name, revenue }))
+          .sort((a, b) => b.revenue - a.revenue),
       };
     },
   });
