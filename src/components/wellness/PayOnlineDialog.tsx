@@ -44,6 +44,8 @@ function loadCheckout(): Promise<boolean> {
   });
 }
 
+let retryPlanId: string | null = null;
+
 export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, defaultPlanId }: Props) {
   const { data: plans } = useWellnessPlans();
   const qc = useQueryClient();
@@ -57,7 +59,9 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
     if (!open) return;
     setUsePink(false);
     setBusy(false);
-    setPlanId(defaultPlanId && payable.some((p) => p.id === defaultPlanId) ? defaultPlanId : payable[0]?.id ?? "");
+    const want = retryPlanId ?? defaultPlanId;
+    retryPlanId = null;
+    setPlanId(want && payable.some((p) => p.id === want) ? want : payable[0]?.id ?? "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultPlanId, plans]);
 
@@ -100,7 +104,9 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
         modal: {
           ondismiss: () => {
             setBusy(false);
-            toast.info("Payment cancelled — nothing was charged.");
+            toast.info("Payment cancelled — nothing was charged.", {
+              action: { label: "Try again", onClick: () => { retryPlanId = plan.id; onOpenChange(true); } },
+            });
           },
         },
         handler: async (res: RazorpayResponse) => {
@@ -115,9 +121,8 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
             });
             if (ve) throw new Error(ve.message);
             if (vd?.error) throw new Error(vd.error);
-            toast.success("Payment received — your plan is active.");
+            toast.success("Payment successful — your plan is active.");
             qc.invalidateQueries();
-            onOpenChange(false);
           } catch (err) {
             toast.error(
               "Payment went through, but we could not update your plan yet. It will update shortly — please contact the centre if it does not.",
@@ -128,6 +133,13 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
           }
         },
       });
+      // Close our modal first: a locked modal blocks taps on anything outside it (incl. Razorpay's sheet).
+      onOpenChange(false);
+      await new Promise((r) => setTimeout(r, 320));
+      document.body.style.pointerEvents = "";
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.removeAttribute("data-scroll-locked");
       rzp.open();
     } catch (e) {
       toast.error((e as Error).message ?? "Could not start the payment.");
