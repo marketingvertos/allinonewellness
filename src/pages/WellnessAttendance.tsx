@@ -5,10 +5,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Download, Search, TrendingUp, Trophy, UserCheck, Users, UserX, X } from "lucide-react";
+import { Check, Download, FileText, Search, TrendingUp, Trophy, UserCheck, Users, UserX, X } from "lucide-react";
 import { MemberModeFilter, useAttendanceRegister, AttendanceRow } from "@/hooks/useWellness";
 import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { cn } from "@/lib/utils";
+import { downloadXlsx } from "@/lib/reportExport";
+import { downloadBrandedPdf } from "@/lib/reportPdf";
+
+const changeText = (c: number | null) =>
+  c == null ? "" : c === 0 ? "No change" : c < 0 ? `${Math.abs(c)} kg loss` : `${c} kg gain`;
+const isGood = (r: AttendanceRow) =>
+  r.totalChange == null || r.totalChange === 0 ? null : (r.goal === "weight_gain" ? r.totalChange > 0 : r.totalChange < 0);
+function ChangeLabel({ r }: { r: AttendanceRow }) {
+  if (r.totalChange == null) return <span className="text-muted-foreground">—</span>;
+  const good = isGood(r);
+  return <span className={cn("font-medium", good === true && "text-primary", good === false && "text-destructive")}>{changeText(r.totalChange)}</span>;
+}
 
 type ViewMode = "daily" | "weekly" | "monthly" | "custom";
 
@@ -75,24 +87,40 @@ export default function WellnessAttendance() {
     return all.filter((r) => r.name.toLowerCase().includes(q) || r.mobile.includes(q));
   }, [data, search]);
 
-  const exportCsv = () => {
-    if (!data) return;
-    const header = ["Sr.", "Member", "Mobile", "Mode", "Plan", "Servings Left",
-      ...data.dates.map((d) => fmt(d, { day: "2-digit", month: "short" })), "Present", "Visits", "Servings issued", "Absent", "Attendance %"];
-    const lines = rows.map((r, i) => [
-      i + 1, r.name, r.mobile, r.memberMode, r.planName ?? "", r.remainingServings ?? "",
-      ...data.dates.map((d) => (d > data.today ? "-" : r.dayMap[d] === "serving" ? "S" : r.dayMap[d] ? "P" : "A")),
-      r.presentDays, r.visitDays, r.servingDays, r.absentDays, `${r.percentage}%`,
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const buildTable = () => {
+    if (!data) return null;
+    const head = ["Sr.", "Member", "Mobile", "Mode", "Plan", "Serv. left", "Join kg",
+      ...data.dates.map((d) => fmt(d, { day: "2-digit", month: "short" })), "P", "A", "%", "Latest kg", "Change"];
+    const body = rows.map((r, i) => [
+      i + 1, r.name, r.mobile, r.memberMode, r.planName ?? "", r.remainingServings ?? "", r.initialWeight ?? "",
+      ...data.dates.map((d) => {
+        if (d > data.today) return "-";
+        const w = r.weightByDate[d];
+        const mark = r.dayMap[d] === "serving" ? "S" : r.dayMap[d] ? "P" : "A";
+        return mark !== "A" && w != null ? `${mark} ${w}` : mark;
+      }),
+      r.presentDays, r.absentDays, `${r.percentage}%`, r.latestWeight ?? "", changeText(r.totalChange),
     ]);
-    const csv = [header, ...lines]
-      .map((l) => l.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `attendance-${view}-${from}-to-${to}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    return { head, body };
+  };
+  const fileBase = `AIOW-Attendance-${view}-${from}-to-${to}`;
+  const period = from === to ? fmt(from, { day: "2-digit", month: "short", year: "numeric" })
+    : `${fmt(from, { day: "2-digit", month: "short", year: "numeric" })} - ${fmt(to, { day: "2-digit", month: "short", year: "numeric" })}`;
+  const exportXlsx = () => {
+    const t = buildTable();
+    if (t) downloadXlsx(`${fileBase}.xlsx`, "Attendance", [t.head, ...t.body]);
+  };
+  const exportPdf = async () => {
+    const t = buildTable();
+    if (!t) return;
+    setPdfBusy(true);
+    try {
+      await downloadBrandedPdf({
+        filename: `${fileBase}.pdf`, title: "Attendance Register", period, orientation: "landscape",
+        sections: [{ head: t.head, body: t.body }],
+      });
+    } finally { setPdfBusy(false); }
   };
 
   const present = rows.filter((r) => r.dayMap[data?.today ?? ""]);
@@ -108,9 +136,14 @@ export default function WellnessAttendance() {
               : `${fmt(from, { day: "2-digit", month: "short", year: "numeric" })} → ${fmt(to, { day: "2-digit", month: "short", year: "numeric" })}`}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={exportCsv} disabled={!rows.length}>
-          <Download className="mr-2 h-4 w-4" /> Export to Excel
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={exportXlsx} disabled={!rows.length}>
+            <Download className="mr-2 h-4 w-4" /> Excel
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportPdf} disabled={!rows.length || pdfBusy}>
+            <FileText className="mr-2 h-4 w-4" /> {pdfBusy ? "Preparing…" : "PDF"}
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

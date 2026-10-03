@@ -2841,6 +2841,12 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
           servingDays,
           absentDays,
           percentage: countedDates.length ? Math.round((presentDays / countedDates.length) * 100) : 0,
+          initialWeight: init,
+          goal: (m.goal as string | null) ?? null,
+          weightByDate: wByDate[m.id] ?? {},
+          latestWeight: latest?.w ?? null,
+          latestWeightDate: latest?.d ?? null,
+          totalChange: init != null && latest ? Math.round((latest.w - init) * 10) / 10 : null,
         };
       });
       rows.sort((a, b) => a.name.localeCompare(b.name));
