@@ -43,14 +43,17 @@ export function TrialAttendanceControls({
   dates: { date: string; extra: boolean }[];
 }) {
   const [open, setOpen] = useState(false);
-  const today = todayIst();
+  const [today, setToday] = useState(todayIst());
   const maxDate = today;
-  const [date, setDate] = useState(maxDate);
+  const [date, setDate] = useState(today);
   const qc = useQueryClient();
   const { toast } = useToast();
   const used = dates.filter((d) => !d.extra).length;
   const extraCount = dates.length - used;
   const full = used >= total || endDate < today;
+  const yesterday = (() => { const d = new Date(today + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); })();
+  const marked = new Set(dates.map((d) => d.date));
+  const openDialog = () => { const t = todayIst(); setToday(t); setDate(t); setOpen(true); };
 
   const mark = useMutation({
     mutationFn: async () => {
@@ -82,10 +85,13 @@ export function TrialAttendanceControls({
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium">Servings used: {Math.min(used, total)} of {total}</span>
-        <Button size="sm" variant="outline" onClick={() => { setDate(maxDate); setOpen(true); }}>
+        <Button size="sm" variant="outline" onClick={openDialog}>
           <CalendarCheck className="mr-2 h-4 w-4" /> {full ? "Mark extra visit" : "Mark attendance"}
         </Button>
       </div>
+      <p className="text-xs text-muted-foreground">
+        {full ? "Next visit = extra visit (deducted when they join)" : `Next visit uses trial serving ${used + 1} of ${total}`}
+      </p>
       {extraCount > 0 && (
         <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
           {extraCount} extra visit{extraCount === 1 ? "" : "s"} — will be deducted when they join
@@ -107,6 +113,14 @@ export function TrialAttendanceControls({
                 : "This uses 1 trial serving. Visits after the trial ends count as extra visits."}
             </DialogDescription>
           </DialogHeader>
+          <div className="flex gap-2">
+            {[{ l: "Today", d: today }, ...(yesterday >= startDate ? [{ l: "Yesterday", d: yesterday }] : [])].map((o) => (
+              <Button key={o.l} type="button" size="sm" className="h-10 flex-1" variant={date === o.d ? "default" : "outline"}
+                disabled={marked.has(o.d)} onClick={() => setDate(o.d)}>
+                {o.l}{marked.has(o.d) ? " · Already marked" : ""}
+              </Button>
+            ))}
+          </div>
           <div className="space-y-1">
             <Label htmlFor={`ta-${trialId}`}>Visit date</Label>
             <Input id={`ta-${trialId}`} type="date" min={startDate} max={maxDate} value={date} onChange={(e) => setDate(e.target.value)} />
