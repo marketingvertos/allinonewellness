@@ -94,8 +94,8 @@ function EventTab({ eventType, month }: { eventType: EventType; month: string })
         </CardContent>
       </Card>
 
-      {eventType === "family_day" && <RewardsCard month={month} />}
       {eventType === "family_day" && <WeightRewardsCard month={month} />}
+      {eventType === "family_day" && <RewardsCard month={month} />}
 
       <ScheduleEventDialog
         eventType={eventType}
