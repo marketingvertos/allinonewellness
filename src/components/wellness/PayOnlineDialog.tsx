@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Check, Loader2 } from "lucide-react";
 import { PINK_CARD_SERVING_VALUE, useWellnessPlans } from "@/hooks/useWellness";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatCurrency , planGetsBonus } from "@/lib/formatters";
+import { formatCurrency, planGetsBonus } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -141,51 +142,96 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
       title="Pay online"
       description="Pay for your plan by UPI, card, netbanking or wallet."
       footer={
-        <>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={pay} disabled={!plan || busy || amount <= 0}>
-            {busy ? "Opening…" : `Pay ${formatCurrency(amount)}`}
+        <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" className="h-11 w-full shrink-0 sm:w-auto" onClick={() => onOpenChange(false)}>
+            Cancel
           </Button>
-        </>
+          <Button className="h-12 w-full text-base sm:w-auto" onClick={pay} disabled={!plan || busy || amount <= 0}>
+            {busy ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Opening…
+              </>
+            ) : (
+              `Pay ${formatCurrency(amount)}`
+            )}
+          </Button>
+        </div>
       }
     >
       <div className="space-y-5">
         <div className="space-y-2">
-          <Label>Plan</Label>
-          <Select value={planId} onValueChange={setPlanId}>
-            <SelectTrigger><SelectValue placeholder="Choose a plan" /></SelectTrigger>
-            <SelectContent>
-              {payable.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings{planGetsBonus(p) ? " + 2 bonus" : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label>Choose your plan</Label>
+          <div className="space-y-2" role="radiogroup" aria-label="Plan">
+            {payable.map((p) => {
+              const selected = p.id === planId;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setPlanId(p.id)}
+                  className={cn(
+                    "flex w-full min-h-[4rem] items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors",
+                    selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-card hover:bg-muted/50",
+                  )}
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold leading-tight">{p.name}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {p.total_servings} serving{p.total_servings === 1 ? "" : "s"}{planGetsBonus(p) ? " + 2 bonus" : ""}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className={cn("text-sm font-semibold", selected && "text-primary")}>
+                      {formatCurrency(Number(p.price))}
+                    </span>
+                    {selected && (
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <Check className="h-4 w-4" />
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {maxCredits > 0 && (
-          <div className="flex items-center justify-between gap-3 rounded-md border border-[hsl(330_70%_55%/0.4)] bg-[hsl(330_70%_55%/0.06)] p-3">
-            <div>
-              <p className="text-sm font-medium text-[hsl(330_70%_45%)]">
+          <div
+            role="switch"
+            aria-checked={usePink}
+            onClick={() => setUsePink((v) => !v)}
+            className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-[hsl(330_70%_55%/0.4)] bg-[hsl(330_70%_55%/0.06)] p-4 text-left transition-colors active:bg-[hsl(330_70%_55%/0.12)]"
+          >
+            <span>
+              <span className="block text-sm font-semibold text-[hsl(330_70%_45%)]">
                 Use Pink Card credit — {maxCredits} serving{maxCredits === 1 ? "" : "s"} ·{" "}
                 {formatCurrency(maxCredits * PINK_CARD_SERVING_VALUE)}
-              </p>
-              <p className="text-xs text-muted-foreground">Taken off before you pay.</p>
-            </div>
-            <Switch checked={usePink} onCheckedChange={setUsePink} />
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">Tap to switch on or off. Taken off before you pay.</span>
+            </span>
+            <span onClick={(e) => e.stopPropagation()}>
+              <Switch checked={usePink} onCheckedChange={setUsePink} />
+            </span>
           </div>
         )}
 
-        <div className="space-y-1 rounded-md border bg-muted/40 p-3 text-sm">
-          <div className="flex justify-between"><span>Plan amount</span><span>{formatCurrency(price)}</span></div>
+        <div className="space-y-2 rounded-xl border bg-muted/40 p-4">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Plan amount</span>
+            <span>{formatCurrency(price)}</span>
+          </div>
           {discount > 0 && (
-            <div className="flex justify-between text-[hsl(330_70%_45%)]">
-              <span>Pink Card discount</span><span>− {formatCurrency(discount)}</span>
+            <div className="flex items-center justify-between text-sm text-[hsl(330_70%_45%)]">
+              <span>Pink Card discount</span>
+              <span>− {formatCurrency(discount)}</span>
             </div>
           )}
-          <div className="flex justify-between border-t pt-1 font-semibold">
-            <span>To pay now</span><span>{formatCurrency(amount)}</span>
+          <div className="flex items-center justify-between border-t pt-2">
+            <span className="text-sm font-medium">To pay now</span>
+            <span className="text-xl font-bold">{formatCurrency(amount)}</span>
           </div>
         </div>
       </div>
