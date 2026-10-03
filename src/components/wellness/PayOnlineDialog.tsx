@@ -179,7 +179,7 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold leading-tight">{p.name}</span>
                     <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {p.total_servings} servings{planGetsBonus(p) ? " + 2 bonus" : ""}
+                      {p.total_servings} serving{p.total_servings === 1 ? "" : "s"}{planGetsBonus(p) ? " + 2 bonus" : ""}
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-2">
