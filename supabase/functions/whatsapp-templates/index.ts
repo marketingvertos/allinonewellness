@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
     // ---------------- list ----------------
     const approvedOnly = payload?.approved_only !== false;
     const url =
-      `${base}?fields=id,name,language,status,category,components,rejected_reason&limit=200`;
+      `${base}?fields=id,name,language,status,category,components,rejected_reason,parameter_format&limit=200`;
     const res = await fetch(url, { headers: authHeaders });
     const raw = await res.text();
     if (!res.ok) {
