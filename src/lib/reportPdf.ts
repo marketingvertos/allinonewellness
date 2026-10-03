@@ -67,16 +67,21 @@ export async function downloadBrandedPdf(opts: {
       doc.text(s.title, 10, y + 3); y += 5;
     }
     const cols = s.head.length;
-    const fontSize = cols > 16 ? 6.5 : cols > 10 ? 7.5 : 9.5;
+    const fontSize = opts.pageWidthMm ? 8 : cols > 16 ? 6.5 : cols > 10 ? 7.5 : 9.5;
     const colStyles: Record<number, any> = {};
     for (let i = s.rightAlignFrom ?? cols; i < cols; i++) colStyles[i] = { halign: "right" };
+    if (opts.colWidthsMm) {
+      opts.colWidthsMm.forEach((w, i) => {
+        colStyles[i] = { ...(colStyles[i] ?? {}), cellWidth: w };
+      });
+    }
     autoTable(doc, {
       startY: y,
       head: [s.head],
       body: s.body,
       foot: s.foot ? [s.foot] : undefined,
       margin: { top: 28, left: 10, right: 10, bottom: 14 },
-      styles: { fontSize, cellPadding: 1.4, lineColor: [229, 229, 224], lineWidth: 0.1, textColor: [30, 30, 30] },
+      styles: { fontSize, cellPadding: opts.pageWidthMm ? 2 : 1.4, lineColor: [229, 229, 224], lineWidth: 0.1, textColor: [30, 30, 30] },
       headStyles: { fillColor: GREEN, textColor: 255, fontStyle: "bold", halign: "center", valign: "middle" },
       footStyles: { fillColor: GREEN, textColor: GOLD, fontStyle: "bold" },
       alternateRowStyles: { fillColor: ZEBRA },
