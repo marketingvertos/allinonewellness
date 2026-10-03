@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageBanner } from "@/components/PageBanner";
 import { ScheduleEventDialog } from "@/components/wellness/ScheduleEventDialog";
 import {
