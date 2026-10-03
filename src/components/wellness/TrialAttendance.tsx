@@ -16,12 +16,12 @@ export function useTrialAttendance(trialIds: string[]) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("wellness_attendance")
-        .select("trial_id, visit_date")
+        .select("trial_id, visit_date, is_trial_advance")
         .in("trial_id", trialIds)
         .order("visit_date");
       if (error) throw error;
-      const map: Record<string, string[]> = {};
-      for (const r of data ?? []) if (r.trial_id) (map[r.trial_id] ??= []).push(r.visit_date);
+      const map: Record<string, { date: string; extra: boolean }[]> = {};
+      for (const r of data ?? []) if (r.trial_id) (map[r.trial_id] ??= []).push({ date: r.visit_date, extra: !!r.is_trial_advance });
       return map;
     },
   });
@@ -40,29 +40,35 @@ export function TrialAttendanceControls({
   startDate: string;
   endDate: string;
   total: number;
-  dates: string[];
+  dates: { date: string; extra: boolean }[];
 }) {
   const [open, setOpen] = useState(false);
   const today = todayIst();
-  const maxDate = endDate < today ? endDate : today;
+  const maxDate = today;
   const [date, setDate] = useState(maxDate);
   const qc = useQueryClient();
   const { toast } = useToast();
-  const used = dates.length;
-  const full = used >= total;
+  const used = dates.filter((d) => !d.extra).length;
+  const extraCount = dates.length - used;
+  const full = used >= total || endDate < today;
 
   const mark = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc("mark_trial_attendance" as never, { p_trial_id: trialId, p_date: date } as never);
       if (error) throw error;
-      return data as unknown as { status: string; message?: string; used?: number; total?: number };
+      return data as unknown as { status: string; message?: string; used?: number; total?: number; extra?: boolean; extra_count?: number };
     },
     onSuccess: (res) => {
       if (res.status !== "ok") {
         toast({ title: "Not marked", description: res.message, variant: "destructive" });
         return;
       }
-      toast({ title: "Attendance marked", description: `${name}: ${res.used} of ${res.total} trial servings used.` });
+      toast({
+        title: res.extra ? "Extra visit marked" : "Attendance marked",
+        description: res.extra
+          ? `${name}: ${res.extra_count} extra visit(s) — deducted from the plan when they join.`
+          : `${name}: ${res.used} of ${res.total} trial servings used.`,
+      });
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["trial-attendance"] });
       qc.invalidateQueries({ queryKey: ["wellness-trials-active"] });
@@ -75,20 +81,30 @@ export function TrialAttendanceControls({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium">Servings used: {used} of {total}</span>
-        <Button size="sm" variant="outline" disabled={full} onClick={() => { setDate(maxDate); setOpen(true); }}>
-          <CalendarCheck className="mr-2 h-4 w-4" /> {full ? "All servings used" : "Mark attendance"}
+        <span className="text-sm font-medium">Servings used: {Math.min(used, total)} of {total}</span>
+        <Button size="sm" variant="outline" onClick={() => { setDate(maxDate); setOpen(true); }}>
+          <CalendarCheck className="mr-2 h-4 w-4" /> {full ? "Mark extra visit" : "Mark attendance"}
         </Button>
       </div>
+      {extraCount > 0 && (
+        <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+          {extraCount} extra visit{extraCount === 1 ? "" : "s"} — will be deducted when they join
+        </p>
+      )}
       {dates.length > 0 && (
-        <p className="text-xs text-muted-foreground">Marked: {dates.map((d) => formatDate(d)).join(", ")}</p>
+        <p className="text-xs text-muted-foreground">
+          Marked: {dates.map((d) => formatDate(d.date) + (d.extra ? " (extra)" : "")).join(", ")}
+        </p>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Mark attendance</DialogTitle>
             <DialogDescription>
-              {name} — trial {formatDate(startDate)} to {formatDate(endDate)}. This uses 1 trial serving.
+              {name} — trial {formatDate(startDate)} to {formatDate(endDate)}.{" "}
+              {full
+                ? "Trial servings are used up, so this is an extra visit — 1 serving will be deducted from their plan when they join."
+                : "This uses 1 trial serving. Visits after the trial ends count as extra visits."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">

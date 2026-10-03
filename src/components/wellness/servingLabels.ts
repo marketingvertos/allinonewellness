@@ -6,7 +6,7 @@ export const SERVING_TXN_LABELS: Record<string, string> = {
   renewal_allocation: "Renewal",
   refund_adjustment: "Refund",
   pack_and_issue: "Packed / issued",
-  trial_advance_deduction: "Trial Day 2 courtesy visit",
+  trial_advance_deduction: "Extra trial visit",
 };
 
 export function servingTxnLabel(type: string) {

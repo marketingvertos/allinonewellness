@@ -232,6 +232,13 @@
       "when": 1790999140040,
       "tag": "0032_mark_trial_attendance",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790999965336,
+      "tag": "0033_trial_extra_visits",
+      "breakpoints": true
     }
   ]
 }

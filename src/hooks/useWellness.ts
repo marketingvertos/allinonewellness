@@ -1647,6 +1647,33 @@ export function useActiveTrials(memberMode?: MemberModeFilter) {
 }
 
 
+/** Trials that ended in the last 30 days where the person has not joined yet. */
+export function useRecentEndedTrials() {
+  return useQuery({
+    queryKey: ["wellness-trials-active", "ended"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 30 * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      const { data, error } = await supabase
+        .from("wellness_trials")
+        .select("*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight, is_guest)")
+        .in("status", ["expired", "completed"])
+        .gte("end_date", since)
+        .order("end_date", { ascending: false });
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as (WellnessTrial & { wellness_members?: WellnessMember | null })[];
+      if (!rows.length) return rows;
+      const { data: ms } = await supabase
+        .from("wellness_memberships")
+        .select("member_id")
+        .in("member_id", rows.map((r) => r.member_id))
+        .in("status", ["active", "expiring_soon", "queued"]);
+      const joined = new Set((ms ?? []).map((m) => m.member_id));
+      const seen = new Set<string>();
+      return rows.filter((r) => !joined.has(r.member_id) && !seen.has(r.member_id) && seen.add(r.member_id));
+    },
+  });
+}
+
 /* --------------------------- Serving consumption -------------------------- */
 
 export function useServingTrend(days = 30, memberMode?: MemberModeFilter) {
@@ -2255,16 +2282,25 @@ export function useStartGuestTrial() {
 
       const memberId = (member as { id: string }).id;
 
-      const { error: e2 } = await supabase.from("wellness_trials").insert({
+      const { data: trialRow, error: e2 } = await supabase.from("wellness_trials").insert({
         member_id: memberId,
         start_date: args.start_date,
         duration_days: duration,
         status: "active",
         weight_at_start: args.weight ?? null,
         created_by: args.created_by,
-      } as never);
+      } as never).select("id").single();
 
       if (e2) throw e2;
+
+      // Day one is the walk-in visit: record it automatically (not for future start dates).
+      const todayIstStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      if (args.start_date <= todayIstStr) {
+        await supabase.rpc("mark_trial_attendance" as never, {
+          p_trial_id: (trialRow as { id: string }).id,
+          p_date: args.start_date,
+        } as never);
+      }
 
       if (args.weight != null) {
         await supabase.from("weight_tracking").insert({

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useActiveTrials, useCreateMembership, useTrialCandidates, useWellnessPlans } from "@/hooks/useWellness";
+import { useActiveTrials, useRecentEndedTrials, useCreateMembership, useTrialCandidates, useWellnessPlans } from "@/hooks/useWellness";
 import { PageBanner } from "@/components/PageBanner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,10 @@ function daysLeft(endDate: string) {
 }
 
 export default function WellnessTrials() {
-  const { data: trials, isLoading } = useActiveTrials();
+  const { data: activeTrials, isLoading } = useActiveTrials();
+  const { data: endedTrials } = useRecentEndedTrials();
+  const activeCount = activeTrials?.length ?? 0;
+  const trials = [...(activeTrials ?? []), ...((endedTrials ?? []) as typeof activeTrials & object)];
   const { data: plans } = useWellnessPlans();
   const createMembership = useCreateMembership();
   const [planByTrial, setPlanByTrial] = useState<Record<string, string>>({});
@@ -109,12 +112,16 @@ export default function WellnessTrials() {
         </div>
       ) : trials?.length ? (
         <div className="space-y-2">
-          {trials.map((t) => {
+          {trials.map((t, idx) => {
             const left = daysLeft(t.end_date);
             const planId = planByTrial[t.id] ?? "";
             const isGuest = !!t.wellness_members?.is_guest;
             return (
-              <Card key={t.id}>
+              <div key={t.id} className="space-y-2">
+              {idx === activeCount && (
+                <h2 className="pt-4 text-sm font-semibold text-muted-foreground">Trial ended — not joined yet</h2>
+              )}
+              <Card>
                 <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
                   <button
                     className="text-left"
@@ -138,7 +145,7 @@ export default function WellnessTrials() {
                   />
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant={left <= 0 ? "destructive" : left <= 1 ? "secondary" : "outline"}>
-                      {left <= 0 ? "Ends today" : `${left} day${left === 1 ? "" : "s"} left`}
+                      {left < 0 ? "Trial ended" : left === 0 ? "Ends today" : `${left} day${left === 1 ? "" : "s"} left`}
                     </Badge>
                     <Select
                       value={planId}
@@ -186,6 +193,7 @@ export default function WellnessTrials() {
                   </div>
                 </CardContent>
               </Card>
+              </div>
             );
           })}
         </div>
