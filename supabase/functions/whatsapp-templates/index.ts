@@ -32,8 +32,16 @@ function variableCount(text: string): number {
   return numbers.length ? Math.max(...numbers) : 0;
 }
 
-function shape(t: MetaTemplate) {
-  const body = componentText(t, "BODY");
+function shape(t: MetaTemplate & { parameter_format?: string }) {
+  const raw = componentText(t, "BODY");
+  // Named variables ({{customer_name}}) are shown as {{1}}, {{2}} in order.
+  const names: string[] = [];
+  const body = String(t.parameter_format || "").toUpperCase() === "NAMED"
+    ? raw.replace(/\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/gi, (_m, n) => {
+      if (!names.includes(n)) names.push(n);
+      return `{{${names.indexOf(n) + 1}}}`;
+    })
+    : raw;
   return {
     id: t.id ?? null,
     name: t.name,

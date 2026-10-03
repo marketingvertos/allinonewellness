@@ -17,6 +17,11 @@ const FAMILY_LANGUAGE = "hi";
 // deno-lint-ignore no-explicit-any
 type Sb = any;
 
+function varNames(mapping: (Mapping & { name?: string })[]) {
+  const names = mapping.map((m) => m.name || "");
+  return names.length && names.every(Boolean) ? names : undefined;
+}
+
 function resolveVars(mapping: Mapping[], fullName: string | null) {
   const name = (fullName || "").trim();
   return mapping.map((m) =>
@@ -91,7 +96,7 @@ async function processBatch(sb: Sb, id: string, userId: string | null, size = 20
     const vars = resolveVars(b.variable_mapping || [], r.full_name);
     try {
       const res = await sendWhatsApp(sb, cfg, {
-        to, templateName: b.template_name, templateLanguage: b.template_language, vars, varNames: varNames(mapping_PLACEHOLDER),
+        to, templateName: b.template_name, templateLanguage: b.template_language, vars, varNames: varNames(b.variable_mapping || []),
         mediaUrl: b.header_media_url, mediaType: b.header_media_type,
       }, {
         functionName: "whatsapp-broadcast",
@@ -155,7 +160,7 @@ Deno.serve(async (req) => {
       if (validation) return json({ success: false, error: validation });
       const vars = resolveVars(mapping, String(body.sample_name || "Test"));
       const res = await sendWhatsApp(sb, cfg, {
-        to, templateName: body.template_name, templateLanguage: body.template_language, vars, varNames: varNames(mapping_PLACEHOLDER),
+        to, templateName: body.template_name, templateLanguage: body.template_language, vars, varNames: varNames(mapping),
         mediaUrl: body.template_name === FAMILY_TEMPLATE ? FAMILY_POSTER : undefined,
         mediaType: body.template_name === FAMILY_TEMPLATE ? "image" : undefined,
       }, { functionName: "whatsapp-broadcast", sourceModule: "manual", sentBy: userId, logContent: `[${body.template_name}] test` });
