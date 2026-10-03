@@ -30,8 +30,16 @@ export async function downloadBrandedPdf(opts: {
   period: string;
   orientation: "portrait" | "landscape";
   sections: PdfSection[];
+  /** Custom page width in mm (landscape). When set, the page grows to fit wide tables instead of squeezing into A4. */
+  pageWidthMm?: number;
+  /** Per-section column widths in mm; index matches the column. Unlisted columns share the remaining space. */
+  colWidthsMm?: number[];
 }) {
-  const doc = new jsPDF({ orientation: opts.orientation, unit: "mm", format: "a4" });
+  const doc = new jsPDF({
+    orientation: opts.orientation,
+    unit: "mm",
+    format: opts.pageWidthMm ? [210, opts.pageWidthMm] : "a4",
+  });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const img = await loadLogo();
