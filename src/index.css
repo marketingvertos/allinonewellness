@@ -181,3 +181,5 @@
   main { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
   @page { size: A4 landscape; margin: 10mm; }
 }
+
+.razorpay-container { z-index: 2147483647 !important; pointer-events: auto !important; }

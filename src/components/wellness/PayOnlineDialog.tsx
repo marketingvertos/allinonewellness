@@ -44,6 +44,8 @@ function loadCheckout(): Promise<boolean> {
   });
 }
 
+let retryPlanId: string | null = null;
+
 export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, defaultPlanId }: Props) {
   const { data: plans } = useWellnessPlans();
   const qc = useQueryClient();
