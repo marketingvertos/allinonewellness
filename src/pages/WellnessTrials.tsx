@@ -13,6 +13,7 @@ import { MemberDetailSheet } from "@/components/wellness/MemberDetailSheet";
 import { StartTrialDialog } from "@/components/wellness/StartTrialDialog";
 import { GuestTrialDialog } from "@/components/wellness/GuestTrialDialog";
 import { Search, UserPlus } from "lucide-react";
+import { TrialAttendanceControls, useTrialAttendance } from "@/components/wellness/TrialAttendance";
 import type { WellnessMember } from "@/hooks/useWellness";
 
 function daysLeft(endDate: string) {
@@ -34,6 +35,7 @@ export default function WellnessTrials() {
   const [trialFor, setTrialFor] = useState<WellnessMember | null>(null);
   const [guestOpen, setGuestOpen] = useState(false);
 
+  const { data: trialVisits } = useTrialAttendance((trials ?? []).map((t) => t.id));
   const membershipPlans = (plans ?? []).filter((p) => p.plan_type === "membership");
   const searching = query.trim().length > 1;
   const noMatches = searching && !isFetching && (candidates ?? []).length === 0;
@@ -113,7 +115,7 @@ export default function WellnessTrials() {
             const isGuest = !!t.wellness_members?.is_guest;
             return (
               <Card key={t.id}>
-                <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
                   <button
                     className="text-left"
                     onClick={() => t.wellness_members && setSelected(t.wellness_members as WellnessMember)}
@@ -126,6 +128,14 @@ export default function WellnessTrials() {
                       {t.wellness_members?.mobile_number} · {formatDate(t.start_date)} → {formatDate(t.end_date)}
                     </p>
                   </button>
+                  <TrialAttendanceControls
+                    trialId={t.id}
+                    name={t.wellness_members?.full_name ?? "Guest"}
+                    startDate={t.start_date}
+                    endDate={t.end_date}
+                    total={Math.max(1, t.duration_days ?? 1)}
+                    dates={trialVisits?.[t.id] ?? []}
+                  />
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant={left <= 0 ? "destructive" : left <= 1 ? "secondary" : "outline"}>
                       {left <= 0 ? "Ends today" : `${left} day${left === 1 ? "" : "s"} left`}
