@@ -18,6 +18,7 @@ import {
 import { Loader2, Megaphone, RefreshCw, Send } from "lucide-react";
 import { useAllWhatsAppTemplates } from "@/hooks/useWhatsApp";
 import { fillTemplate } from "@/components/whatsapp/TemplatePicker";
+import familyPoster from "@/assets/family-day-4-oct-2026.jpg.asset.json";
 
 type Mapping = { source: "first_name" | "full_name" | "fixed"; value?: string };
 type Audience = "active" | "expired" | "trial" | "all";
@@ -97,6 +98,8 @@ export default function WhatsAppBroadcast() {
   const vars = mapping.map((m) => varValue(m, sample));
   const preview = tpl ? fillTemplate(tpl.body, vars) : "";
   const approved = tpl?.status === "APPROVED";
+  const isFamilyPoster = tpl?.name === "family_day_4_oct";
+  const imageReady = !isFamilyPoster || (tpl?.language === "hi" && tpl?.header_format === "IMAGE");
   const mappingOk = mapping.every((m) => m.source !== "fixed" || (m.value || "").trim());
 
   const [testPhone, setTestPhone] = useState("");
@@ -194,6 +197,9 @@ export default function WhatsAppBroadcast() {
                 Waiting for Meta approval (status: {tpl.status}{tpl.rejected_reason ? ` — ${tpl.rejected_reason}` : ""}). Tap refresh to check again.
               </p>
             )}
+            {isFamilyPoster && !imageReady && (
+              <p className="border border-destructive p-3 text-sm text-destructive">This template needs an approved image header in Hindi before the picture can be sent.</p>
+            )}
             {mapping.map((m, i) => (
               <div key={i} className="grid grid-cols-[80px_1fr] items-center gap-2">
                 <Label className="text-xs">{`{{${i + 1}}}`}</Label>
@@ -216,6 +222,7 @@ export default function WhatsAppBroadcast() {
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Preview for {sample}</Label>
                 <div className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-3 text-sm">
+                  {isFamilyPoster && imageReady && <img src={familyPoster.url} alt="Family Day invitation poster" className="mx-auto mb-3 max-h-52 w-auto object-contain" />}
                   {tpl.header && <p className="mb-2 font-semibold">{tpl.header}</p>}
                   {preview}
                 </div>
@@ -224,7 +231,7 @@ export default function WhatsAppBroadcast() {
             {tpl && (
               <div className="flex gap-2">
                 <Input placeholder="Your mobile for a test" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} />
-                <Button variant="outline" disabled={!approved || !mappingOk || test.isPending || !testPhone} onClick={() => test.mutate()}>
+                <Button variant="outline" disabled={!approved || !imageReady || !mappingOk || test.isPending || !testPhone} onClick={() => test.mutate()}>
                   {test.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Send test
                 </Button>
               </div>
@@ -276,7 +283,7 @@ export default function WhatsAppBroadcast() {
                 </label>
               ))}
             </ScrollArea>
-            <Button className="w-full" size="lg" disabled={!approved || !mappingOk || !validCount || create.isPending || active?.status === "sending"} onClick={() => setConfirm(true)}>
+            <Button className="w-full" size="lg" disabled={!approved || !imageReady || !mappingOk || !validCount || create.isPending || active?.status === "sending"} onClick={() => setConfirm(true)}>
               <Send className="mr-2 h-4 w-4" /> Send to {validCount} members
             </Button>
           </CardContent>
@@ -325,7 +332,7 @@ export default function WhatsAppBroadcast() {
           <AlertDialogHeader>
             <AlertDialogTitle>Send to {validCount} members?</AlertDialogTitle>
             <AlertDialogDescription>
-              "{tpl?.name}" will go out from the centre's WhatsApp number. This cannot be undone.
+              "{tpl?.name}" {isFamilyPoster ? "with the Family Day picture " : ""}will go out from the centre's WhatsApp number. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
