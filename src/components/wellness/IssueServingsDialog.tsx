@@ -72,7 +72,12 @@ export function IssueServingsDialog({ open, onOpenChange, memberId, memberName }
 
   const submit = async () => {
     if (!membership) return;
-    await issue.mutateAsync({ membershipId: membership.id, quantity: qty, reason: reason.trim() || undefined, dates });
+    const sorted = [...dates].sort();
+    const fmt = (iso: string) => format(isoToLocal(iso), "dd MMM");
+    const forText =
+      sorted.length === 1 ? `for ${fmt(sorted[0])}` : `for ${fmt(sorted[0])} to ${fmt(sorted[sorted.length - 1])}`;
+    const fullReason = `${reason.trim() || "Packed for member"} · ${forText}`;
+    await issue.mutateAsync({ membershipId: membership.id, quantity: qty, reason: fullReason, dates });
     onOpenChange(false);
   };
 
