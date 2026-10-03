@@ -170,6 +170,96 @@ function RewardsCard({ month }: { month: string }) {
   );
 }
 
+/** Family Day: members who lost 5+ kg or gained 3+ kg in a chosen month. */
+function WeightRewardsCard({ month }: { month: string }) {
+  const [selected, setSelected] = useState(month);
+  const { data: months } = useWeightDataMonths();
+  const { data, isPending } = useMonthlyWeightRewards(selected);
+
+  const options = useMemo(() => {
+    const list = months ?? [selected];
+    // Show newest first so the current month is at the top.
+    return [...list].sort().reverse();
+  }, [months, selected]);
+
+  return (
+    <Card>
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 space-y-0 pb-3">
+        <CardTitle className="text-base">Weight rewards — 5 kg loss / 3 kg gain</CardTitle>
+        <div className="flex items-center gap-2">
+          <Select value={selected} onValueChange={setSelected}>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {options.map((mo) => (
+                <SelectItem key={mo} value={mo}>{monthLabel(mo)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={isPending || (!data?.loss.length && !data?.gain.length)}
+            onClick={() =>
+              downloadCsv(
+                `weight-rewards-${selected}`,
+                ["Name", "Goal", "First weigh-in (kg)", "Last weigh-in (kg)", "Change"],
+                [
+                  ...(data?.loss ?? []).map((r) => [r.name, "Weight loss", r.firstWeight, r.lastWeight, `${Math.abs(r.change)} kg lost`]),
+                  ...(data?.gain ?? []).map((r) => [r.name, "Weight gain", r.firstWeight, r.lastWeight, `${r.change} kg gained`]),
+                ],
+              )
+            }
+          >
+            <Download className="mr-2 h-4 w-4" /> Download
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isPending ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : (
+          <>
+            <div>
+              <p className="mb-2 text-sm font-medium text-emerald-600">
+                Weight loss — 5 kg or more ({data?.loss.length ?? 0})
+              </p>
+              {data?.loss.length ? (
+                <div className="space-y-2">
+                  {data.loss.map((r) => (
+                    <div key={r.memberId} className="flex items-center justify-between rounded-md border p-3 text-sm">
+                      <span className="font-medium">{r.name}</span>
+                      <Badge className="bg-emerald-600 hover:bg-emerald-600">{Math.abs(r.change)} kg lost</Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No one qualified this month.</p>
+              )}
+            </div>
+            <div>
+              <p className="mb-2 text-sm font-medium text-sky-600">
+                Weight gain — 3 kg or more ({data?.gain.length ?? 0})
+              </p>
+              {data?.gain.length ? (
+                <div className="space-y-2">
+                  {data.gain.map((r) => (
+                    <div key={r.memberId} className="flex items-center justify-between rounded-md border p-3 text-sm">
+                      <span className="font-medium">{r.name}</span>
+                      <Badge className="bg-sky-600 hover:bg-sky-600">{r.change} kg gained</Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No one qualified this month.</p>
+              )}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 /* ------------------------------- MIW tab ------------------------------ */
 
 function MiwTab({ month }: { month: string }) {
