@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Download, FileText, Search, TrendingUp, Trophy, UserCheck, Users, UserX, X } from "lucide-react";
+import { Check, Download, FileText, RefreshCw, Search, TrendingUp, Trophy, UserCheck, Users, UserX, X } from "lucide-react";
 import { MemberModeFilter, useAttendanceRegister, AttendanceRow } from "@/hooks/useWellness";
 import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { cn } from "@/lib/utils";
@@ -78,7 +78,7 @@ export default function WellnessAttendance() {
   const [selected, setSelected] = useState<string | null>(null);
 
   const { from, to } = rangeFor(view, customFrom, customTo);
-  const { data, isLoading } = useAttendanceRegister(from, to, mode);
+  const { data, isLoading, isFetching, refetch } = useAttendanceRegister(from, to, mode);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -90,17 +90,21 @@ export default function WellnessAttendance() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const buildTable = () => {
     if (!data) return null;
-    const head = ["Sr.", "Member", "Mobile", "Mode", "Plan", "Serv. left", "Join kg",
-      ...data.dates.map((d) => fmt(d, { day: "2-digit", month: "short" })), "P", "A", "%", "Latest kg", "Change"];
-    const body = rows.map((r, i) => [
-      i + 1, r.name, r.mobile, r.memberMode, r.planName ?? "", r.remainingServings ?? "", r.initialWeight ?? "",
+    const head = ["Sr.", "Member", "Mobile", "Mode", "Status", "Plan", "Serv. left", "Join kg", "Goal",
+      ...data.dates.map((d) => fmt(d, { day: "2-digit", month: "short" })),
+      "Visits", "Servings", "P", "A", "%", "Latest kg", "Change"];
+    // Export always includes ALL members (ignores the search filter).
+    const body = (data.rows ?? []).map((r, i) => [
+      i + 1, r.name, r.mobile, r.memberMode, r.status, r.planName ?? "", r.remainingServings ?? "",
+      r.initialWeight ?? "", r.goal === "weight_gain" ? "Gain" : r.goal ? "Loss" : "",
       ...data.dates.map((d) => {
         if (d > data.today) return "-";
         const w = r.weightByDate[d];
         const mark = r.dayMap[d] === "serving" ? "S" : r.dayMap[d] ? "P" : "A";
         return mark !== "A" && w != null ? `${mark} ${w}` : mark;
       }),
-      r.presentDays, r.absentDays, `${r.percentage}%`, r.latestWeight ?? "", changeText(r.totalChange),
+      r.visitDays, r.servingDays, r.presentDays, r.absentDays, `${r.percentage}%`,
+      r.latestWeight ?? "", changeText(r.totalChange),
     ]);
     return { head, body };
   };
@@ -137,6 +141,9 @@ export default function WellnessAttendance() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} /> Refresh
+          </Button>
           <Button variant="outline" size="sm" onClick={exportXlsx} disabled={!rows.length}>
             <Download className="mr-2 h-4 w-4" /> Excel
           </Button>
