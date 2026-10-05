@@ -598,6 +598,7 @@ export function useTodayAttendance(memberMode?: MemberModeFilter) {
         .from("wellness_attendance")
         .select("*, wellness_members(id, full_name, mobile_number)")
         .eq("visit_date", today)
+        .neq("checkin_method", "serving_issue" as never)
         .order("visit_time", { ascending: false });
       if (ids) q = q.in("member_id", ids);
       const { data, error } = await q;
@@ -812,7 +813,8 @@ export function useWellnessStats(memberMode?: MemberModeFilter) {
       let checkinsQ = supabase
         .from("wellness_attendance")
         .select("id", { count: "exact", head: true })
-        .eq("visit_date", today);
+        .eq("visit_date", today)
+        .neq("checkin_method", "serving_issue" as never);
       let membershipsQ = supabase
         .from("wellness_memberships")
         .select("status, end_date, remaining_servings, price_paid, start_date");
@@ -2055,6 +2057,7 @@ export function useCheckInReport(from: string, to: string) {
         supabase
           .from("wellness_attendance")
           .select("id, member_id, visit_date, visit_time, serving_deducted, wellness_members(id, full_name)")
+          .neq("checkin_method", "serving_issue" as never)
           .gte("visit_date", from)
           .lte("visit_date", to)
           .order("visit_time", { ascending: false }),
@@ -2722,6 +2725,7 @@ export interface AttendanceRegisterResult {
   today: string;
   totalMembers: number;
   todayPresent: number;
+  todayServed: number;
   todayAbsent: number;
   avgAttendance: number;
   bestAttendee: { name: string; percentage: number } | null;
@@ -2817,6 +2821,7 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
       const dates = isoDateRange(from, to);
       const countedDates = dates.filter((d) => d <= today);
       let todayPresent = 0;
+      let todayServed = 0;
 
       const rows: AttendanceRow[] = (members ?? []).map((m) => {
         const init = m.initial_weight != null ? Number(m.initial_weight) : null;
@@ -2828,7 +2833,8 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
         const presentDays = counted.length;
         const servingDays = counted.filter((d) => visited.get(d) === "serving").length;
         const absentDays = countedDates.length - presentDays;
-        if (visited.has(today)) todayPresent++;
+        if (visited.get(today) === "visit") todayPresent++;
+        else if (visited.get(today) === "serving") todayServed++;
         return {
           memberId: m.id,
           name: m.full_name,
@@ -2856,8 +2862,8 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
       const avgAttendance = totalMembers ? Math.round(rows.reduce((s, r) => s + r.percentage, 0) / totalMembers) : 0;
       const best = rows.length ? rows.reduce((a, b) => (b.percentage > a.percentage ? b : a)) : null;
       return {
-        rows, dates, countedDates, today, totalMembers, todayPresent,
-        todayAbsent: totalMembers - todayPresent, avgAttendance,
+        rows, dates, countedDates, today, totalMembers, todayPresent, todayServed,
+        todayAbsent: totalMembers - todayPresent - todayServed, avgAttendance,
         bestAttendee: best && best.presentDays > 0 ? { name: best.name, percentage: best.percentage } : null,
       };
     },

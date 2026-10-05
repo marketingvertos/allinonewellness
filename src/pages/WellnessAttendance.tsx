@@ -132,7 +132,8 @@ export default function WellnessAttendance() {
     } finally { setPdfBusy(false); }
   };
 
-  const present = rows.filter((r) => r.dayMap[data?.today ?? ""]);
+  const present = rows.filter((r) => r.dayMap[data?.today ?? ""] === "visit");
+  const served = rows.filter((r) => r.dayMap[data?.today ?? ""] === "serving");
   const absent = rows.filter((r) => !r.dayMap[data?.today ?? ""]);
 
   return (
@@ -190,8 +191,9 @@ export default function WellnessAttendance() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Tile icon={<UserCheck className="h-4 w-4 text-primary" />} label="Present today" value={data?.todayPresent ?? 0} />
+        <Tile icon={<UserCheck className="h-4 w-4 text-muted-foreground" />} label="Serving issued today" value={data?.todayServed ?? 0} />
         <Tile icon={<UserX className="h-4 w-4 text-destructive" />} label="Absent today" value={data?.todayAbsent ?? 0} />
         <Tile icon={<TrendingUp className="h-4 w-4" />} label="Avg attendance" value={`${data?.avgAttendance ?? 0}%`} />
         <Tile icon={<Trophy className="h-4 w-4" />} label="Best attendee" value={data?.bestAttendee?.name ?? "—"}
@@ -202,8 +204,9 @@ export default function WellnessAttendance() {
       {isLoading || !data ? (
         <Skeleton className="h-64 w-full" />
       ) : view === "daily" ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          <MemberList title="Present" tone="present" rows={present} onSelect={setSelected} />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <MemberList title="Present at club" tone="present" rows={present} onSelect={setSelected} />
+          <MemberList title="Serving issued (not at club)" tone="served" rows={served} onSelect={setSelected} />
           <MemberList title="Absent" tone="absent" rows={absent} onSelect={setSelected} />
         </div>
       ) : (
@@ -300,14 +303,14 @@ function Tile({ icon, label, value, sub }: { icon: React.ReactNode; label: strin
 }
 
 function MemberList({ title, tone, rows, onSelect }: {
-  title: string; tone: "present" | "absent"; rows: AttendanceRow[]; onSelect: (id: string) => void;
+  title: string; tone: "present" | "served" | "absent"; rows: AttendanceRow[]; onSelect: (id: string) => void;
 }) {
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           {title}
-          <Badge variant={tone === "present" ? "default" : "destructive"}>{rows.length}</Badge>
+          <Badge variant={tone === "present" ? "default" : tone === "served" ? "secondary" : "destructive"}>{rows.length}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-1.5">
@@ -331,7 +334,7 @@ function MemberList({ title, tone, rows, onSelect }: {
                 </p>
               )}
             </div>
-            {tone === "present" && Object.values(r.dayMap).includes("serving") && (
+            {tone === "served" && (
               <Badge variant="outline" className="shrink-0 text-[10px]">Serving issued</Badge>
             )}
             {r.remainingServings !== null && (
