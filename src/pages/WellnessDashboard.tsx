@@ -38,12 +38,7 @@ import { SalesDrillDownSheet } from "@/components/wellness/SalesDrillDownSheet";
 import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { useState } from "react";
 
-const PERIODS = [
-  { key: "today", label: "Today" },
-  { key: "week", label: "This week" },
-  { key: "month", label: "This month" },
-  { key: "last_month", label: "Last month" },
-] as const;
+type SalesSegment = "all" | "new" | "renewal" | "trial";
 
 function ServingsIssuedCard({ mode }: { mode: MemberModeFilter }) {
   const { data } = useTodayServingsIssued(mode);
