@@ -281,6 +281,13 @@
       "when": 1791165628088,
       "tag": "0039_renewal_reminders_thresholds",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791166467208,
+      "tag": "0040_reactivation_reminders",
+      "breakpoints": true
     }
   ]
 }
