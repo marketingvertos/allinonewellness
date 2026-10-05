@@ -141,6 +141,32 @@ Deno.serve(async (req) => {
       if (!memberships.has(m.member_id)) memberships.set(m.member_id, m);
     }
 
+    // latest expired membership, for reactivation reminders
+    const expiredInfo = new Map<string, { plan: string; on: string }>();
+    const reactivationIds = queue
+      .filter((q) => q.trigger_key.startsWith("membership_reactivation"))
+      .map((q) => q.member_id);
+    if (reactivationIds.length) {
+      const { data: expRows } = await supabase
+        .from("wellness_memberships")
+        .select("member_id, end_date, servings_exhausted_on, wellness_plans(name)")
+        .in("member_id", reactivationIds)
+        .eq("status", "expired")
+        .order("end_date", { ascending: false });
+      for (const e of expRows || []) {
+        if (expiredInfo.has(e.member_id)) continue;
+        const addDays = (d: string, n: number) =>
+          new Date(new Date(`${d}T00:00:00Z`).getTime() + n * 86400000).toISOString().slice(0, 10);
+        let on = addDays(e.end_date, 1);
+        if (e.servings_exhausted_on) {
+          const s = addDays(e.servings_exhausted_on, 11);
+          if (s < on) on = s;
+        }
+        // deno-lint-ignore no-explicit-any
+        expiredInfo.set(e.member_id, { plan: (e as any).wellness_plans?.name || "", on: fmtDate(on) });
+      }
+    }
+
     // active trials
     const { data: trialRows } = await supabase
       .from("wellness_trials")
@@ -340,6 +366,9 @@ Deno.serve(async (req) => {
         start_weight: fmtWeight(startWeight),
         weight_change: fmtChange(latestWeight, startWeight),
         date: fmtDate(new Date().toISOString()),
+        renewal_window_days: "10",
+        last_plan_name: expiredInfo.get(item.member_id)?.plan || planName,
+        expired_on: expiredInfo.get(item.member_id)?.on || "",
       };
 
 
