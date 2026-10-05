@@ -45,7 +45,7 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, s
   const exportCsv = () => {
     if (!data) return;
     const header = ["Member", "Mobile", "Plan", "Amount (₹)", "Payment Mode", "Type", "Date"];
-    const csvRows = data.rows.map((r) => [
+    const csvRows = rows.map((r) => [
       r.memberName,
       r.mobile,
       r.planName,
@@ -53,7 +53,7 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, s
       r.payments.length > 0
         ? r.payments.map((p) => `${MODE_LABELS[p.mode] ?? p.mode} ₹${p.amount}`).join(" + ")
         : (MODE_LABELS[r.paymentMode] ?? r.paymentMode),
-      r.isRenewal ? "Renewal" : "New",
+      r.planType === "trial" ? "Trial" : r.isRenewal ? "Renewal" : "New",
       new Date(r.createdAt).toLocaleDateString("en-IN", {
         day: "2-digit",
         month: "short",
@@ -85,7 +85,7 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, s
                 {formatDate(range.from)} → {formatDate(range.to)}
               </SheetDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={exportCsv} disabled={!data?.rows.length}>
+            <Button variant="outline" size="sm" onClick={exportCsv} disabled={!rows.length}>
               <Download className="mr-1.5 h-3.5 w-3.5" /> Export
             </Button>
           </div>
