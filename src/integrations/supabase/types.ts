@@ -2126,6 +2126,62 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_broadcast_list_members: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          list_id: string
+          phone: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          list_id: string
+          phone: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          list_id?: string
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_broadcast_list_members_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_broadcast_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_broadcast_lists: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       whatsapp_broadcast_recipients: {
         Row: {
           broadcast_id: string

@@ -169,24 +169,41 @@ Deno.serve(async (req) => {
 
     if (action === "create") {
       const ids = (Array.isArray(body.member_ids) ? body.member_ids : []).map(String).slice(0, 5000);
-      if (!ids.length) return json({ success: false, error: "No recipients selected" });
+      const listId = body.list_id ? String(body.list_id) : "";
+      const excludedIds = new Set((Array.isArray(body.excluded_ids) ? body.excluded_ids : []).map(String));
+      if (!ids.length && !listId) return json({ success: false, error: "No recipients selected" });
       if (!body.template_name) return json({ success: false, error: "Pick a template" });
       const mapping = Array.isArray(body.variable_mapping) ? body.variable_mapping : [];
       const validation = await validateTemplate(sb, cfg, String(body.template_name), String(body.template_language || ""), mapping);
       if (validation) return json({ success: false, error: validation });
-      const members: { id: string; full_name: string; mobile_number: string }[] = [];
-      for (let i = 0; i < ids.length; i += 500) {
-        const { data } = await sb.from("wellness_members").select("id, full_name, mobile_number").in("id", ids.slice(i, i + 500));
-        members.push(...(data || []));
+      const people: { member_id: string | null; full_name: string | null; phone: string }[] = [];
+      if (listId) {
+        for (let from = 0; ; from += 1000) {
+          const { data } = await sb.from("whatsapp_broadcast_list_members").select("id, full_name, phone").eq("list_id", listId).range(from, from + 999);
+          for (const c of data || []) if (!excludedIds.has(c.id)) people.push({ member_id: null, full_name: c.full_name, phone: c.phone });
+          if (!data || data.length < 1000) break;
+        }
+        if (people.length > 5000) people.length = 5000;
+        // Link numbers that belong to existing members.
+        const byPhone = new Map<string, string>();
+        const { data: ms } = await sb.from("wellness_members").select("id, mobile_number").limit(10000);
+        for (const m of ms || []) byPhone.set(String(m.mobile_number || "").replace(/\D/g, "").slice(-10), m.id);
+        for (const p of people) p.member_id = byPhone.get(String(p.phone).replace(/\D/g, "").slice(-10)) || null;
+      } else {
+        for (let i = 0; i < ids.length; i += 500) {
+          const { data } = await sb.from("wellness_members").select("id, full_name, mobile_number").in("id", ids.slice(i, i + 500));
+          for (const m of data || []) people.push({ member_id: m.id, full_name: m.full_name, phone: m.mobile_number });
+        }
       }
+      if (!people.length) return json({ success: false, error: "No recipients selected" });
       const seen = new Set<string>();
-      const rows = members.map((m) => {
-        const d = String(m.mobile_number || "").replace(/\D/g, "").slice(-10);
+      const rows = people.map((m) => {
+        const d = String(m.phone || "").replace(/\D/g, "").slice(-10);
         const dup = d.length === 10 && seen.has(d);
         if (d.length === 10) seen.add(d);
         const bad = d.length !== 10;
         return {
-          member_id: m.id, full_name: m.full_name, phone: m.mobile_number,
+          member_id: m.member_id, full_name: m.full_name, phone: m.phone,
           status: bad || dup ? "skipped" : "pending",
           error: bad ? "Missing or invalid mobile number" : dup ? "Duplicate number" : null,
         };
