@@ -15,13 +15,31 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Megaphone, RefreshCw, Send } from "lucide-react";
+import { Loader2, Megaphone, Plus, RefreshCw, Send, Trash2, Upload } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import * as XLSX from "xlsx";
 import { useAllWhatsAppTemplates } from "@/hooks/useWhatsApp";
 import { fillTemplate } from "@/components/whatsapp/TemplatePicker";
 import familyPoster from "@/assets/family-day-4-oct-2026.jpg.asset.json";
 
 type Mapping = { source: "first_name" | "full_name" | "fixed"; value?: string };
-type Audience = "active" | "expired" | "trial" | "all";
+type Audience = "active" | "expired" | "trial" | "all" | "list";
+
+/** Finds a name and 10-digit mobile in each row of pasted text or a sheet. */
+function parseContacts(rows: unknown[][]) {
+  const out = new Map<string, { full_name: string; phone: string }>();
+  for (const row of rows) {
+    const cells = row.map((c) => String(c ?? "").trim());
+    const phoneCell = cells.find((c) => { const d = c.replace(/\D/g, ""); return d.length >= 10 && d.length <= 13; });
+    if (!phoneCell) continue;
+    const phone = phoneCell.replace(/\D/g, "").slice(-10);
+    const full_name = cells.find((c) => c !== phoneCell && /[a-z\u0900-\u097F]/i.test(c) && !c.includes("@")) || "";
+    if (!out.has(phone)) out.set(phone, { full_name, phone });
+  }
+  return [...out.values()];
+}
+const textRows = (t: string) => t.split(/\r?\n/).filter((l) => l.trim()).map((l) => l.split(/[,\t;]/));
 
 interface MemberRow {
   id: string; full_name: string; mobile_number: string; status: string;
@@ -80,16 +98,40 @@ export default function WhatsAppBroadcast() {
       return all;
     },
   });
+  const [listId, setListId] = useState("");
+  const { data: lists = [] } = useQuery({
+    queryKey: ["broadcast-lists"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("whatsapp_broadcast_lists").select("id, name, whatsapp_broadcast_list_members(count)").order("created_at", { ascending: false });
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      return (data || []).map((l: any) => ({ id: l.id as string, name: l.name as string, count: l.whatsapp_broadcast_list_members?.[0]?.count ?? 0 }));
+    },
+  });
+  const { data: listPeople = [], isLoading: lLoading } = useQuery({
+    queryKey: ["broadcast-list-people", listId],
+    enabled: audience === "list" && !!listId,
+    queryFn: async () => {
+      const all: MemberRow[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase.from("whatsapp_broadcast_list_members").select("id, full_name, phone").eq("list_id", listId).order("full_name").range(from, from + 999);
+        if (error) throw error;
+        all.push(...(data || []).map((c) => ({ id: c.id, full_name: c.full_name || "", mobile_number: c.phone, status: "", member_mode: "", tags: [], is_guest: false })));
+        if (!data || data.length < 1000) break;
+      }
+      return all;
+    },
+  });
   const allTags = useMemo(() => [...new Set(members.flatMap((m) => m.tags || []))].sort(), [members]);
 
-  const filtered = useMemo(() => members.filter((m) => {
+  const filtered = useMemo(() => audience === "list" ? (listId ? listPeople : []) : members.filter((m) => {
     if (audience === "active" && !ACTIVE.includes(m.status)) return false;
     if (audience === "expired" && !["expired", "inactive"].includes(m.status)) return false;
     if (audience === "trial" && !(m.is_guest || m.status === "trial")) return false;
     if (mode !== "all" && m.member_mode !== mode) return false;
     if (tag !== "all" && !(m.tags || []).includes(tag)) return false;
     return true;
-  }), [members, audience, mode, tag]);
+  }), [members, audience, mode, tag, listId, listPeople]);
   const visible = filtered.filter((m) => !search || m.full_name.toLowerCase().includes(search.toLowerCase()) || m.mobile_number.includes(search));
   const selected = filtered.filter((m) => !excluded.has(m.id));
   const validCount = new Set(selected.map((m) => m.mobile_number.replace(/\D/g, "").slice(-10)).filter((d) => d.length === 10)).size;
@@ -114,8 +156,9 @@ export default function WhatsAppBroadcast() {
   const create = useMutation({
     mutationFn: () => callBroadcast({
       action: "create", template_name: tpl!.name, template_language: tpl!.language,
-      variable_mapping: mapping, member_ids: selected.map((m) => m.id),
-      filters: { audience, mode, tag, excluded: excluded.size },
+      variable_mapping: mapping,
+      ...(audience === "list" ? { list_id: listId, excluded_ids: [...excluded] } : { member_ids: selected.map((m) => m.id) }),
+      filters: { audience, mode, tag, list_id: audience === "list" ? listId : null, excluded: excluded.size },
     }),
     onSuccess: (d) => { setActiveId(d.id); toast.success("Broadcast started"); qc.invalidateQueries({ queryKey: ["broadcasts"] }); },
     onError: (e: Error) => toast.error(e.message),
@@ -141,6 +184,46 @@ export default function WhatsAppBroadcast() {
     mutationFn: (id: string) => callBroadcast({ action: "process", id }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["broadcasts"] }),
   });
+
+  const [listDialog, setListDialog] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [paste, setPaste] = useState("");
+  const [fileRows, setFileRows] = useState<{ full_name: string; phone: string }[] | null>(null);
+  const parsed = fileRows ?? parseContacts(textRows(paste));
+  const onFile = async (f: File) => {
+    const wb = XLSX.read(await f.arrayBuffer(), { type: "array" });
+    const rows: unknown[][] = wb.SheetNames.flatMap((n) => XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[n], { header: 1, raw: false }));
+    const found = parseContacts(rows);
+    setFileRows(found);
+    setPaste(found.map((c) => `${c.full_name}, ${c.phone}`).join("\n"));
+  };
+  const saveList = useMutation({
+    mutationFn: async () => {
+      if (!newName.trim()) throw new Error("Give the list a name");
+      if (!parsed.length) throw new Error("No valid 10-digit mobile numbers found");
+      const { data: u } = await supabase.auth.getUser();
+      const { data: l, error } = await supabase.from("whatsapp_broadcast_lists").insert({ name: newName.trim(), created_by: u.user?.id }).select("id").single();
+      if (error) throw error;
+      for (let i = 0; i < parsed.length; i += 500) {
+        const { error: e2 } = await supabase.from("whatsapp_broadcast_list_members").insert(parsed.slice(i, i + 500).map((c) => ({ ...c, list_id: l.id })));
+        if (e2) throw e2;
+      }
+      return { id: l.id, count: parsed.length };
+    },
+    onSuccess: (r) => {
+      toast.success(`List saved with ${r.count} contacts`);
+      setListDialog(false); setNewName(""); setPaste(""); setFileRows(null);
+      qc.invalidateQueries({ queryKey: ["broadcast-lists"] });
+      setAudience("list"); setListId(r.id); setExcluded(new Set());
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const deleteList = async (id: string) => {
+    if (!window.confirm("Delete this list? Past broadcasts are kept.")) return;
+    const { error } = await supabase.from("whatsapp_broadcast_lists").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setListId(""); qc.invalidateQueries({ queryKey: ["broadcast-lists"] });
+  };
 
   const [openFailed, setOpenFailed] = useState<string | null>(null);
   const { data: failedRows = [] } = useQuery({
@@ -250,8 +333,21 @@ export default function WhatsAppBroadcast() {
                   <SelectItem value="expired">Expired / inactive</SelectItem>
                   <SelectItem value="trial">Trial guests</SelectItem>
                   <SelectItem value="all">Everyone</SelectItem>
+                  <SelectItem value="list">Saved list</SelectItem>
                 </SelectContent>
               </Select>
+              {audience === "list" ? (
+                <div className="col-span-2 flex gap-2">
+                  <Select value={listId} onValueChange={(v) => { setListId(v); setExcluded(new Set()); }}>
+                    <SelectTrigger><SelectValue placeholder="Pick a list" /></SelectTrigger>
+                    <SelectContent>
+                      {lists.map((l) => <SelectItem key={l.id} value={l.id}>{l.name} ({l.count})</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="icon" aria-label="New list" onClick={() => setListDialog(true)}><Plus className="h-4 w-4" /></Button>
+                  {listId && <Button variant="outline" size="icon" aria-label="Delete list" onClick={() => deleteList(listId)}><Trash2 className="h-4 w-4" /></Button>}
+                </div>
+              ) : (<>
               <Select value={mode} onValueChange={setMode}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -267,6 +363,7 @@ export default function WhatsAppBroadcast() {
                   {allTags.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
+              </>)}
             </div>
             <div className="flex gap-2">
               <Input placeholder="Search name or mobile" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -274,7 +371,8 @@ export default function WhatsAppBroadcast() {
               <Button variant="outline" size="sm" onClick={() => setExcluded(new Set(filtered.map((m) => m.id)))}>None</Button>
             </div>
             <ScrollArea className="h-80 rounded-md border">
-              {mLoading && <p className="p-3 text-sm text-muted-foreground">Loading members…</p>}
+              {(mLoading || (audience === "list" && lLoading)) && <p className="p-3 text-sm text-muted-foreground">Loading…</p>}
+              {audience === "list" && !listId && <p className="p-3 text-sm text-muted-foreground">Pick a saved list or tap + to create one.</p>}
               {visible.map((m) => (
                 <label key={m.id} className="flex cursor-pointer items-center gap-3 border-b px-3 py-2 text-sm">
                   <Checkbox checked={!excluded.has(m.id)} onCheckedChange={(c) => setExcluded((o) => { const n = new Set(o); c ? n.delete(m.id) : n.add(m.id); return n; })} />
@@ -326,6 +424,29 @@ export default function WhatsAppBroadcast() {
           ))}
         </CardContent>
       </Card>
+
+      <Dialog open={listDialog} onOpenChange={setListDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>New saved list</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1"><Label>List name</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Family Day guests Oct 2026" /></div>
+            <div className="space-y-1">
+              <Label>Contacts — one per line: name, mobile</Label>
+              <Textarea rows={8} value={paste} onChange={(e) => { setPaste(e.target.value); setFileRows(null); }} placeholder={"Rahul Sharma, 9876543210\nPriya Jain, 9123456780"} />
+              <div className="flex items-center justify-between">
+                <label className="inline-flex cursor-pointer items-center gap-1 text-xs text-primary">
+                  <Upload className="h-3.5 w-3.5" /> Upload CSV or Excel
+                  <input type="file" accept=".csv,.xlsx,.xls,text/csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f).catch(() => toast.error("Could not read this file")); e.target.value = ""; }} />
+                </label>
+                <span className="text-xs text-muted-foreground">{parsed.length} valid numbers found</span>
+              </div>
+            </div>
+            <Button className="w-full" disabled={saveList.isPending} onClick={() => saveList.mutate()}>
+              {saveList.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save list
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
         <AlertDialogContent>
