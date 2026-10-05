@@ -1,7 +1,7 @@
 # Evening renewal reminders and reactivation messages
 
 ## 1. Send renewal reminders only between 8:00 and 8:30 pm (India time)
-- Servings-left reminders (7, 5, 3, 2, 1, 0), the "renewal window closing" reminder and the reactivation reminders stay in the queue during the day. They go out together between 8:00 and 8:30 pm.
+- Servings-left reminders (7, 5, 3, 2, 1, 0), the "renewal window closing" reminder and the reactivation reminders stay in the queue during the day. They go out together at 8:30 pm.
 - Check-in confirmations, payment receipts, pack notices and birthday wishes keep going out straight away, as they do now.
 - If anything is still waiting at 8:30 pm (for example while Meta reviews a template), it goes out the next evening.
 
