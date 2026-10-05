@@ -113,7 +113,7 @@ function SalesTodayRow({ mode, onOpen }: { mode: MemberModeFilter; onOpen: (segm
 export default function WellnessDashboard() {
   const [params, setParams] = useSearchParams();
   const [expiredOpen, setExpiredOpen] = useState(false);
-  const [salesDrillDown, setSalesDrillDown] = useState<{ period: (typeof PERIODS)[number]["key"]; label: string } | null>(null);
+  const [salesDrillDown, setSalesDrillDown] = useState<{ segment: SalesSegment; label: string } | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const mode = (params.get("mode") as MemberModeFilter) || "all";
   const setMode = (next: string) => {
@@ -241,9 +241,7 @@ export default function WellnessDashboard() {
           <CardTitle className="text-base">Sales &amp; servings</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {PERIODS.map((p) => (
-            <SalesTile key={p.key} label={p.label} period={p.key} mode={mode} onClick={() => setSalesDrillDown({ period: p.key, label: p.label })} />
-          ))}
+          <SalesTodayRow mode={mode} onOpen={(segment, label) => setSalesDrillDown({ segment, label })} />
         </CardContent>
       </Card>
 
@@ -254,8 +252,9 @@ export default function WellnessDashboard() {
         <SalesDrillDownSheet
           open={!!salesDrillDown}
           onOpenChange={(open) => !open && setSalesDrillDown(null)}
-          period={salesDrillDown.period}
+          period="today"
           periodLabel={salesDrillDown.label}
+          segment={salesDrillDown.segment}
           memberMode={mode}
           onSelectMember={(id) => setSelectedMemberId(id)}
         />
