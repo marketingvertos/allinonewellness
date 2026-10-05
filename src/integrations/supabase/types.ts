@@ -2691,6 +2691,12 @@ export type Database = {
         Args: { p_code: string; p_weight?: number }
         Returns: Json
       }
+      membership_expired_on: {
+        Args: {
+          _ms: Database["public"]["Tables"]["wellness_memberships"]["Row"]
+        }
+        Returns: string
+      }
       monthly_coach_title_check: { Args: never; Returns: undefined }
       notify_staff: {
         Args: {
@@ -2713,6 +2719,7 @@ export type Database = {
         Args: { p_dedupe?: string; p_member_id: string; p_trigger: string }
         Returns: undefined
       }
+      queue_reactivation_reminders: { Args: never; Returns: undefined }
       queue_renewal_reminder_notifications: { Args: never; Returns: undefined }
       queue_trial_ending_notifications: { Args: never; Returns: undefined }
       recalc_all_member_achievements: { Args: never; Returns: undefined }

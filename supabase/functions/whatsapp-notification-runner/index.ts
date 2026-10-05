@@ -14,6 +14,18 @@ import { sendWhatsApp } from "../_shared/whatsappService.ts";
 
 const MAX_ATTEMPTS = 3;
 const BATCH_SIZE = 25;
+const EVENING_BATCH_SIZE = 100;
+
+/** Renewal/reactivation reminders only go out from 8:30 pm IST. */
+function isEveningTrigger(key: string): boolean {
+  return key.startsWith("serving_balance") || key === "renewal_reminder" ||
+    key === "membership_expired" || key.startsWith("membership_reactivation");
+}
+function inEveningWindow(): boolean {
+  const ist = new Date(Date.now() + 330 * 60000);
+  const mins = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+  return mins >= 20 * 60 + 30 && mins < 21 * 60;
+}
 
 interface TemplateRow {
   trigger_key: string;
@@ -82,16 +94,20 @@ Deno.serve(async (req) => {
       return json({ skipped: "automation_disabled", sent: 0, failed: 0 });
     }
 
-    const { data: queue, error: queueError } = await supabase
+    const evening = inEveningWindow();
+    const { data: rawQueue, error: queueError } = await supabase
       .from("wellness_notification_log")
       .select("id, member_id, trigger_key, channel, message, attempts")
       .eq("status", "queued")
       .eq("channel", "whatsapp")
       .lt("attempts", MAX_ATTEMPTS)
       .order("created_at", { ascending: true })
-      .limit(BATCH_SIZE);
+      .limit(500);
     if (queueError) throw queueError;
-    if (!queue?.length) return json({ sent: 0, failed: 0, processed: 0 });
+    const queue = (rawQueue || [])
+      .filter((q) => evening || !isEveningTrigger(q.trigger_key))
+      .slice(0, evening ? EVENING_BATCH_SIZE : BATCH_SIZE);
+    if (!queue.length) return json({ sent: 0, failed: 0, processed: 0 });
 
     const { data: templateRows } = await supabase
       .from("wellness_notification_templates")
@@ -123,6 +139,32 @@ Deno.serve(async (req) => {
     const memberships = new Map<string, typeof membershipRows[number]>();
     for (const m of membershipRows || []) {
       if (!memberships.has(m.member_id)) memberships.set(m.member_id, m);
+    }
+
+    // latest expired membership, for reactivation reminders
+    const expiredInfo = new Map<string, { plan: string; on: string }>();
+    const reactivationIds = queue
+      .filter((q) => q.trigger_key.startsWith("membership_reactivation"))
+      .map((q) => q.member_id);
+    if (reactivationIds.length) {
+      const { data: expRows } = await supabase
+        .from("wellness_memberships")
+        .select("member_id, end_date, servings_exhausted_on, wellness_plans(name)")
+        .in("member_id", reactivationIds)
+        .eq("status", "expired")
+        .order("end_date", { ascending: false });
+      for (const e of expRows || []) {
+        if (expiredInfo.has(e.member_id)) continue;
+        const addDays = (d: string, n: number) =>
+          new Date(new Date(`${d}T00:00:00Z`).getTime() + n * 86400000).toISOString().slice(0, 10);
+        let on = addDays(e.end_date, 1);
+        if (e.servings_exhausted_on) {
+          const s = addDays(e.servings_exhausted_on, 11);
+          if (s < on) on = s;
+        }
+        // deno-lint-ignore no-explicit-any
+        expiredInfo.set(e.member_id, { plan: (e as any).wellness_plans?.name || "", on: fmtDate(on) });
+      }
     }
 
     // active trials
@@ -324,6 +366,9 @@ Deno.serve(async (req) => {
         start_weight: fmtWeight(startWeight),
         weight_change: fmtChange(latestWeight, startWeight),
         date: fmtDate(new Date().toISOString()),
+        renewal_window_days: "10",
+        last_plan_name: expiredInfo.get(item.member_id)?.plan || planName,
+        expired_on: expiredInfo.get(item.member_id)?.on || "",
       };
 
 
