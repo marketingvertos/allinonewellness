@@ -267,6 +267,13 @@
       "when": 1791043430784,
       "tag": "0037_broadcast_image_template_header",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791164785962,
+      "tag": "0038_broadcast_saved_lists",
+      "breakpoints": true
     }
   ]
 }
