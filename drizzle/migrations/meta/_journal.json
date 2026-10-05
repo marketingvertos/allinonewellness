@@ -274,6 +274,13 @@
       "when": 1791164785962,
       "tag": "0038_broadcast_saved_lists",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791165628088,
+      "tag": "0039_renewal_reminders_thresholds",
+      "breakpoints": true
     }
   ]
 }

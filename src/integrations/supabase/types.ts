@@ -1677,6 +1677,7 @@ export type Database = {
           attempts: number
           channel: string
           created_at: string
+          dedupe_key: string | null
           error_message: string | null
           id: string
           last_attempt_at: string | null
@@ -1691,6 +1692,7 @@ export type Database = {
           attempts?: number
           channel?: string
           created_at?: string
+          dedupe_key?: string | null
           error_message?: string | null
           id?: string
           last_attempt_at?: string | null
@@ -1705,6 +1707,7 @@ export type Database = {
           attempts?: number
           channel?: string
           created_at?: string
+          dedupe_key?: string | null
           error_message?: string | null
           id?: string
           last_attempt_at?: string | null
