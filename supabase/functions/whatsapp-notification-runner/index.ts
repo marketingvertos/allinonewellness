@@ -382,6 +382,19 @@ Deno.serve(async (req) => {
           })
           .eq("id", item.id);
         break;
+      } else if (
+        tpl?.template_name &&
+        /132001|does not exist|not approved|pending/i.test(result.error || "")
+      ) {
+        // Template still under Meta review: keep queued without burning an attempt.
+        await supabase
+          .from("wellness_notification_log")
+          .update({
+            status: "queued",
+            error_message: `Waiting for Meta approval of "${tpl.template_name}"`,
+            last_attempt_at: new Date().toISOString(),
+          })
+          .eq("id", item.id);
       } else {
         await markFailed(result.error || "WhatsApp send failed");
       }
