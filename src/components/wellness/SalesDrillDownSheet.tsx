@@ -166,7 +166,9 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, s
                             {r.totalServings} servings
                           </Badge>
                           <Badge variant={r.isRenewal ? "default" : "secondary"} className="gap-1 text-[10px]">
-                            {r.isRenewal ? (
+                            {r.planType === "trial" ? (
+                              "Trial"
+                            ) : r.isRenewal ? (
                               <>
                                 <RefreshCw className="h-2.5 w-2.5" /> Renewal
                               </>
