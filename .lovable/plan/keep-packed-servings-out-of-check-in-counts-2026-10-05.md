@@ -1,18 +1,21 @@
 # Keep packed servings out of check-in counts
 
-A packed serving means the member was **not** at the club. From now on it is never counted as a check-in or as present. It still shows as "S" on the attendance calendar and still uses up a serving.
+A packed serving means the member was **not** at the club. From now on it is never counted as a check-in or as present. It still shows as "S" on the attendance calendar and still uses up a serving. ( It will be counted as a consistent, counted in the consistency, and also counted. The total attendance will be present in the club plus serving. )
 
 ## What changes
 
 **Dashboard**
+
 - The "Check-ins today" number and today's check-in list count only real club visits (QR, front desk, barcode, staff entry).
 - The existing "Servings issued today" card stays as it is, so packed servings remain visible there.
 
 **Check-in screen**
+
 - Today's list shows only members who actually came in.
 - If a packed serving already covers today and the member then walks in, they are told "Serving already issued (packed) for today", as now.
 
 **Attendance page**
+
 - "Present today" counts club visits only.
 - New tile: **Serving issued today**, a count of packed servings for today.
 - "Absent today" = members with neither a visit nor a packed serving.
@@ -21,15 +24,18 @@ A packed serving means the member was **not** at the club. From now on it is nev
 - Excel and PDF exports follow the same split.
 
 **Check-in reports and member visit counts**
+
 - Visit counts, best attendee and the member's monthly attendance count only club visits.
 
 **Stays the same**
+
 - Packed servings still reduce the serving balance and trigger renewal reminders.
 - Sales and servings totals still include packed servings, because product was handed out.
 - The club report's "total shakes" also still includes them.
 - The member's own history still lists packed servings, labelled "Serving issued".
 
 ## Technical details
+
 - Add `.neq("checkin_method", "serving_issue")` to `useTodayAttendance`, the `useWellnessStats` check-ins count, `useCheckInReport`, `useMyMonthlyAttendance` (useEvents) and the consistency/26-day counts in the progress card.
 - Leave `useServingTrend`, `useSalesAnalytics`, the club report "shakes" and `useMemberAttendanceOnDates` (used to block duplicate dates) unchanged.
 - `useAttendanceRegister`: `todayPresent` counts only "visit" marks. Add `todayServed`. Absent = total − present − served. Per row, `presentDays` = visit days only, with `servingDays` reported separately. The % uses visits only.
