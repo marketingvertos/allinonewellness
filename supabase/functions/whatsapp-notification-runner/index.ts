@@ -14,6 +14,18 @@ import { sendWhatsApp } from "../_shared/whatsappService.ts";
 
 const MAX_ATTEMPTS = 3;
 const BATCH_SIZE = 25;
+const EVENING_BATCH_SIZE = 100;
+
+/** Renewal/reactivation reminders only go out from 8:30 pm IST. */
+function isEveningTrigger(key: string): boolean {
+  return key.startsWith("serving_balance") || key === "renewal_reminder" ||
+    key === "membership_expired" || key.startsWith("membership_reactivation");
+}
+function inEveningWindow(): boolean {
+  const ist = new Date(Date.now() + 330 * 60000);
+  const mins = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+  return mins >= 20 * 60 + 30 && mins < 21 * 60;
+}
 
 interface TemplateRow {
   trigger_key: string;
@@ -82,16 +94,20 @@ Deno.serve(async (req) => {
       return json({ skipped: "automation_disabled", sent: 0, failed: 0 });
     }
 
-    const { data: queue, error: queueError } = await supabase
+    const evening = inEveningWindow();
+    const { data: rawQueue, error: queueError } = await supabase
       .from("wellness_notification_log")
       .select("id, member_id, trigger_key, channel, message, attempts")
       .eq("status", "queued")
       .eq("channel", "whatsapp")
       .lt("attempts", MAX_ATTEMPTS)
       .order("created_at", { ascending: true })
-      .limit(BATCH_SIZE);
+      .limit(500);
     if (queueError) throw queueError;
-    if (!queue?.length) return json({ sent: 0, failed: 0, processed: 0 });
+    const queue = (rawQueue || [])
+      .filter((q) => evening || !isEveningTrigger(q.trigger_key))
+      .slice(0, evening ? EVENING_BATCH_SIZE : BATCH_SIZE);
+    if (!queue.length) return json({ sent: 0, failed: 0, processed: 0 });
 
     const { data: templateRows } = await supabase
       .from("wellness_notification_templates")
