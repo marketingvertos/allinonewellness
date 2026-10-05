@@ -99,9 +99,9 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, s
         ) : !data ? null : (
           <>
             <div className="grid grid-cols-2 gap-2 border-b px-6 py-4">
-              <MiniTile label="Revenue" value={formatCurrency(data.totalRevenue)} />
-              <MiniTile label="Plans sold" value={data.totalMemberships} />
-              <MiniTile label="Servings" value={data.totalServings} />
+              <MiniTile label="Revenue" value={formatCurrency(segment === "all" ? data.totalRevenue : filteredRevenue)} />
+              <MiniTile label="Plans sold" value={segment === "all" ? data.totalMemberships : rows.length} />
+              <MiniTile label="Servings" value={segment === "all" ? data.totalServings : filteredServings} />
               <MiniTile
                 label="By mode"
                 value=""
@@ -135,10 +135,10 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, s
 
             <ScrollArea className="flex-1">
               <div className="space-y-2 px-6 py-3">
-                {data.rows.length === 0 ? (
+                {rows.length === 0 ? (
                   <p className="py-12 text-center text-sm text-muted-foreground">No memberships sold in this period.</p>
                 ) : (
-                  data.rows.map((r) => {
+                  rows.map((r) => {
                     const ModeIcon = MODE_ICONS[r.paymentMode] ?? Banknote;
                     const hasSplitPayments = r.payments.length > 1;
                     return (
