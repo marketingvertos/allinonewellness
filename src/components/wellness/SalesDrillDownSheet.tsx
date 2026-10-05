@@ -26,13 +26,21 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   period: "today" | "week" | "month" | "last_month";
   periodLabel: string;
+  segment?: "all" | "new" | "renewal" | "trial";
   memberMode: MemberModeFilter;
   onSelectMember?: (memberId: string) => void;
 }
 
-export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, memberMode, onSelectMember }: Props) {
+export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, segment = "all", memberMode, onSelectMember }: Props) {
   const range = periodRange(period);
   const { data, isLoading } = useSalesDrillDown(range.from, range.to, memberMode, open);
+
+  const allRows = data?.rows ?? [];
+  const rows = allRows.filter((r) =>
+    segment === "all" ? true : segment === "trial" ? r.planType === "trial" : segment === "renewal" ? r.isRenewal && r.planType !== "trial" : !r.isRenewal && r.planType !== "trial",
+  );
+  const filteredRevenue = rows.reduce((s, r) => s + r.pricePaid, 0);
+  const filteredServings = rows.reduce((s, r) => s + r.totalServings, 0);
 
   const exportCsv = () => {
     if (!data) return;
