@@ -26,18 +26,26 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   period: "today" | "week" | "month" | "last_month";
   periodLabel: string;
+  segment?: "all" | "new" | "renewal" | "trial";
   memberMode: MemberModeFilter;
   onSelectMember?: (memberId: string) => void;
 }
 
-export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, memberMode, onSelectMember }: Props) {
+export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, segment = "all", memberMode, onSelectMember }: Props) {
   const range = periodRange(period);
   const { data, isLoading } = useSalesDrillDown(range.from, range.to, memberMode, open);
+
+  const allRows = data?.rows ?? [];
+  const rows = allRows.filter((r) =>
+    segment === "all" ? true : segment === "trial" ? r.planType === "trial" : segment === "renewal" ? r.isRenewal && r.planType !== "trial" : !r.isRenewal && r.planType !== "trial",
+  );
+  const filteredRevenue = rows.reduce((s, r) => s + r.pricePaid, 0);
+  const filteredServings = rows.reduce((s, r) => s + r.totalServings, 0);
 
   const exportCsv = () => {
     if (!data) return;
     const header = ["Member", "Mobile", "Plan", "Amount (₹)", "Payment Mode", "Type", "Date"];
-    const csvRows = data.rows.map((r) => [
+    const csvRows = rows.map((r) => [
       r.memberName,
       r.mobile,
       r.planName,
@@ -45,7 +53,7 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, m
       r.payments.length > 0
         ? r.payments.map((p) => `${MODE_LABELS[p.mode] ?? p.mode} ₹${p.amount}`).join(" + ")
         : (MODE_LABELS[r.paymentMode] ?? r.paymentMode),
-      r.isRenewal ? "Renewal" : "New",
+      r.planType === "trial" ? "Trial" : r.isRenewal ? "Renewal" : "New",
       new Date(r.createdAt).toLocaleDateString("en-IN", {
         day: "2-digit",
         month: "short",
@@ -77,7 +85,7 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, m
                 {formatDate(range.from)} → {formatDate(range.to)}
               </SheetDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={exportCsv} disabled={!data?.rows.length}>
+            <Button variant="outline" size="sm" onClick={exportCsv} disabled={!rows.length}>
               <Download className="mr-1.5 h-3.5 w-3.5" /> Export
             </Button>
           </div>
@@ -91,9 +99,9 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, m
         ) : !data ? null : (
           <>
             <div className="grid grid-cols-2 gap-2 border-b px-6 py-4">
-              <MiniTile label="Revenue" value={formatCurrency(data.totalRevenue)} />
-              <MiniTile label="Plans sold" value={data.totalMemberships} />
-              <MiniTile label="Servings" value={data.totalServings} />
+              <MiniTile label="Revenue" value={formatCurrency(segment === "all" ? data.totalRevenue : filteredRevenue)} />
+              <MiniTile label="Plans sold" value={segment === "all" ? data.totalMemberships : rows.length} />
+              <MiniTile label="Servings" value={segment === "all" ? data.totalServings : filteredServings} />
               <MiniTile
                 label="By mode"
                 value=""
@@ -127,10 +135,10 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, m
 
             <ScrollArea className="flex-1">
               <div className="space-y-2 px-6 py-3">
-                {data.rows.length === 0 ? (
+                {rows.length === 0 ? (
                   <p className="py-12 text-center text-sm text-muted-foreground">No memberships sold in this period.</p>
                 ) : (
-                  data.rows.map((r) => {
+                  rows.map((r) => {
                     const ModeIcon = MODE_ICONS[r.paymentMode] ?? Banknote;
                     const hasSplitPayments = r.payments.length > 1;
                     return (
@@ -158,7 +166,9 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, m
                             {r.totalServings} servings
                           </Badge>
                           <Badge variant={r.isRenewal ? "default" : "secondary"} className="gap-1 text-[10px]">
-                            {r.isRenewal ? (
+                            {r.planType === "trial" ? (
+                              "Trial"
+                            ) : r.isRenewal ? (
                               <>
                                 <RefreshCw className="h-2.5 w-2.5" /> Renewal
                               </>

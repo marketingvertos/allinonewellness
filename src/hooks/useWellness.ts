@@ -2454,6 +2454,7 @@ export interface SalesDrillDownRow {
   memberName: string;
   mobile: string;
   planName: string;
+  planType: string | null;
   pricePaid: number;
   paymentMode: string;
   totalServings: number;
@@ -2484,7 +2485,7 @@ export function useSalesDrillDown(from: string, to: string, memberMode?: MemberM
         .from("wellness_memberships")
         .select(
           "id, member_id, plan_id, price_paid, payment_mode, total_servings, renewed_from, created_at, " +
-            "wellness_members(full_name, mobile_number, member_mode), wellness_plans(name, price)",
+            "wellness_members(full_name, mobile_number, member_mode), wellness_plans(name, price, plan_type)",
         )
         .gte("created_at", `${from}T00:00:00+05:30`)
         .lte("created_at", `${to}T23:59:59+05:30`)
@@ -2503,7 +2504,7 @@ export function useSalesDrillDown(from: string, to: string, memberMode?: MemberM
         renewed_from: string | null;
         created_at: string;
         wellness_members: { full_name: string; mobile_number: string; member_mode: string } | null;
-        wellness_plans: { name: string; price: number } | null;
+        wellness_plans: { name: string; price: number; plan_type: string } | null;
       }[];
 
       const msIds = msRows.map((m) => m.id);
@@ -2545,6 +2546,7 @@ export function useSalesDrillDown(from: string, to: string, memberMode?: MemberM
           memberName: m.wellness_members?.full_name ?? "Member",
           mobile: m.wellness_members?.mobile_number ?? "",
           planName: m.wellness_plans?.name ?? "Plan",
+          planType: m.wellness_plans?.plan_type ?? null,
           pricePaid: Number(m.price_paid),
           paymentMode: m.payment_mode,
           totalServings: m.total_servings,

@@ -38,12 +38,7 @@ import { SalesDrillDownSheet } from "@/components/wellness/SalesDrillDownSheet";
 import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { useState } from "react";
 
-const PERIODS = [
-  { key: "today", label: "Today" },
-  { key: "week", label: "This week" },
-  { key: "month", label: "This month" },
-  { key: "last_month", label: "Last month" },
-] as const;
+type SalesSegment = "all" | "new" | "renewal" | "trial";
 
 function ServingsIssuedCard({ mode }: { mode: MemberModeFilter }) {
   const { data } = useTodayServingsIssued(mode);
@@ -70,45 +65,55 @@ function ServingsIssuedCard({ mode }: { mode: MemberModeFilter }) {
   );
 }
 
-function SalesTile({ label, period, mode, onClick }: { label: string; period: (typeof PERIODS)[number]["key"]; mode: MemberModeFilter; onClick: () => void }) {
-  const { data } = useSalesAnalytics(periodRange(period), mode);
-  const isToday = period === "today";
-  const topPlans = (data?.byPlan ?? []).filter((p) => p.revenue > 0);
-  const shownPlans = topPlans.slice(0, 2);
-  const morePlans = topPlans.length - shownPlans.length;
+function SalesTile({ label, value, detail, onClick }: { label: string; value: string; detail: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       className="w-full cursor-pointer rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-accent/40"
     >
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-xl font-bold">{formatCurrency(data?.revenue ?? 0)}</p>
-      {isToday || !data ? (
-        <p className="text-xs text-muted-foreground">
-          {data?.memberships ?? 0} sold · {data?.servings ?? 0} servings
-        </p>
-      ) : (
-        <div className="mt-0.5 space-y-0.5 text-xs text-muted-foreground">
-          <p>
-            New {formatCurrency(data.newRevenue)} · Renewal {formatCurrency(data.renewalRevenue)}
-            {data.trialRevenue > 0 ? ` · Trial ${formatCurrency(data.trialRevenue)}` : ""}
-          </p>
-          {shownPlans.length > 0 && (
-            <p className="truncate">
-              {shownPlans.map((p) => `${p.name} ${formatCurrency(p.revenue)}`).join(" · ")}
-              {morePlans > 0 ? ` +${morePlans} more` : ""}
-            </p>
-          )}
-        </div>
-      )}
+      <p className="mt-1 text-xl font-bold">{value}</p>
+      <p className="text-xs text-muted-foreground">{detail}</p>
     </button>
+  );
+}
+
+function SalesTodayRow({ mode, onOpen }: { mode: MemberModeFilter; onOpen: (segment: SalesSegment, label: string) => void }) {
+  const { data } = useSalesAnalytics(periodRange("today"), mode);
+  return (
+    <>
+      <SalesTile
+        label="Today's collection"
+        value={formatCurrency(data?.revenue ?? 0)}
+        detail={`${data?.memberships ?? 0} sold · ${data?.servings ?? 0} servings`}
+        onClick={() => onOpen("all", "Today's collection")}
+      />
+      <SalesTile
+        label="New today"
+        value={formatCurrency(data?.newRevenue ?? 0)}
+        detail="New memberships"
+        onClick={() => onOpen("new", "New today")}
+      />
+      <SalesTile
+        label="Renewals today"
+        value={formatCurrency(data?.renewalRevenue ?? 0)}
+        detail="Renewed memberships"
+        onClick={() => onOpen("renewal", "Renewals today")}
+      />
+      <SalesTile
+        label="Trials today"
+        value={formatCurrency(data?.trialRevenue ?? 0)}
+        detail="Paid trials"
+        onClick={() => onOpen("trial", "Trials today")}
+      />
+    </>
   );
 }
 
 export default function WellnessDashboard() {
   const [params, setParams] = useSearchParams();
   const [expiredOpen, setExpiredOpen] = useState(false);
-  const [salesDrillDown, setSalesDrillDown] = useState<{ period: (typeof PERIODS)[number]["key"]; label: string } | null>(null);
+  const [salesDrillDown, setSalesDrillDown] = useState<{ segment: SalesSegment; label: string } | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const mode = (params.get("mode") as MemberModeFilter) || "all";
   const setMode = (next: string) => {
@@ -236,9 +241,7 @@ export default function WellnessDashboard() {
           <CardTitle className="text-base">Sales &amp; servings</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {PERIODS.map((p) => (
-            <SalesTile key={p.key} label={p.label} period={p.key} mode={mode} onClick={() => setSalesDrillDown({ period: p.key, label: p.label })} />
-          ))}
+          <SalesTodayRow mode={mode} onOpen={(segment, label) => setSalesDrillDown({ segment, label })} />
         </CardContent>
       </Card>
 
@@ -249,8 +252,9 @@ export default function WellnessDashboard() {
         <SalesDrillDownSheet
           open={!!salesDrillDown}
           onOpenChange={(open) => !open && setSalesDrillDown(null)}
-          period={salesDrillDown.period}
+          period="today"
           periodLabel={salesDrillDown.label}
+          segment={salesDrillDown.segment}
           memberMode={mode}
           onSelectMember={(id) => setSelectedMemberId(id)}
         />
