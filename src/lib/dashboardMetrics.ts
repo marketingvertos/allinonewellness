@@ -174,7 +174,8 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
 
   // Trials started today: three-day paid, three-day free, and one-day free.
   for (const trial of input.trials) {
-    if (trial.status !== "active" || trial.start_date !== today || !members.has(trial.member_id)) continue;
+    if (trial.status !== "active" || trial.start_date !== today || !trial.end_date ||
+        !members.has(trial.member_id)) continue;
     const plan = trial.plan_id ? plans.get(trial.plan_id) : undefined;
     // A missing referenced plan is unknown, rather than silently counted as free.
     if (trial.plan_id && !plan) continue;
@@ -194,7 +195,7 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
     const trial = trialsById.get(attendance.trial_id);
     if (!trial || trial.duration_days !== 3 || trial.start_date !== yesterday || trial.status !== "active") continue;
     const plan = trial.plan_id ? plans.get(trial.plan_id) : undefined;
-    if (trial.plan_id && Number(plan?.price ?? 0) > 0) continue;
+    if (trial.plan_id && (!plan || Number(plan.price) > 0)) continue;
     if (!members.has(trial.member_id)) continue;
     addUnique("guestDay2VisitsToday", trial.member_id, {
       memberId: trial.member_id, planId: trial.plan_id, date: today, label: "Day 2 visit",
