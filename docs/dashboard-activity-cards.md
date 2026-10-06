@@ -1,36 +1,31 @@
 # Dashboard activity cards
 
-## Plan
+## Today's club activity (plan-specific cards)
 
-Add eight cards below the existing dashboard summary, using the existing card style and Physical / Virtual / All filter.
+The dashboard section "Today's club activity" shows ten plan-specific cards, all scoped to today in India time, all tappable, all honouring the Physical / Virtual filter. Every card's count and its drill-down list are built in the same loop in `src/lib/dashboardMetrics.ts`, so they can never disagree.
 
 | Card | Definition |
 | --- | --- |
-| New members today | Non-guest members whose first non-cancelled membership starts today. Leads and trial-only profiles are excluded. |
-| New members this month | The same first-membership rule, from the first day of the current India-time month through today. |
-| New 30-day UMS | The new-member monthly subset whose first plan is UMS with a 30-day duration. |
-| UMS renewals today | Distinct members with a positive renewal payment dated today, linked to a UMS membership. |
-| Daily renewals today | Distinct members with a positive renewal payment dated today, linked to a paid one-day plan. |
-| 3-day paid trials | Distinct members with an active, already-started, unexpired three-day trial linked to a plan priced above zero. |
-| 3-day free trials | The same trial window, with a zero-price plan or no plan (including the three-day guest option; one-day guest trials are excluded). |
-| New guests today | Current guest profiles whose joining date is today. A guest converted to a member is no longer counted here. |
+| New guests today | Guest profiles whose joining date is today. |
+| New Gold Card UMS ₹7,500 | Membership (renewed_from null) on a 30-serving, 30-day membership plan, starting today. |
+| Gold Card UMS renewals | Renewal payment today linked to a 30-serving, 30-day membership plan; people counted once, split payments summed. |
+| New White Card ₹3,750 | Membership (renewed_from null) on a 15-serving membership plan, starting today. |
+| White Card renewals | Renewal payment today linked to a 15-serving membership plan. |
+| 3-day paid trials ₹750 | Active 3-day trials started today on a priced trial plan. |
+| 3-day free trials | Active 3-day trials started today with no plan or a ₹0 plan. |
+| 3-day renewals ₹750 | Renewal payment today where the membership's plan is the paid 3-day trial plan. |
+| One-day free trials | Active 1-day free trials (no plan or ₹0 plan) started today. |
+| Guest day-2 visits | Free 3-day trials started yesterday with trial attendance marked today. |
 
-Renewal cards represent purchases, as requested, rather than upcoming expiry. Split payment lines count once per member. Extended, queued and replacement renewals are included through payment context `renewal`; activation payments and unpaid renewals are excluded. Backdated payments follow `paid_at`, not creation time. The current schema does not snapshot the purchased plan on individual payment lines, so classification uses the linked membership's plan.
-
-UMS plans follow the club report's 15/30-serving membership families (excluding one-day plans). UMS 30 additionally requires a 30-day duration and 30 plan servings, matching the current network qualification rule. Daily plans use one-day duration and a positive list price. Discounts do not change classification. All plan rows, including deactivated plans still referenced by records, are loaded.
+Classification is by plan type and servings (not price), so cards stay correct if prices change. Other membership plans (e.g. the 10-day plan) are not covered by these cards. Renewals are driven by payments with context `renewal`; activations, unpaid rows and backdated payments are excluded. Each card opens `ActivityMembersSheet` with one row per person (name, mobile, Physical/Virtual badge, plan, date, amount) and links to the full profile.
 
 ## Implementation
 
-- Pure calculation helper in `src/lib/dashboardMetrics.ts`.
-- Read-only, paginated Supabase queries in `src/hooks/useDashboardMetrics.ts`; no migration or new database function.
-- Eight responsive cards in `src/components/wellness/DashboardActivityCards.tsx`.
+- Pure calculation helper in `src/lib/dashboardMetrics.ts` (`calculateDashboardMetrics`, plan-family helpers).
+- Read-only, paginated Supabase queries in `src/hooks/useDashboardMetrics.ts`: trials are loaded for yesterday and today's start dates; today's trial attendance feeds the guest day-2 card. No migration or new database function.
+- Ten responsive cards in `src/components/wellness/DashboardActivityCards.tsx`.
 - India-time date boundaries, 30-second refresh, midnight rollover, error/retry state.
-- Existing dashboard cards and operational workflows remain in place.
 
 ## Validation
 
-Unit scenarios cover first-purchase history, renewals and switches, guest/cancelled/future records, split and extended payments, queued plans, backdated payments, India-time midnight, trial plan prices and dates, member mode filters, and empty data. GitHub checks run the Vitest suite and production build.
-
-## Delivery
-
-Push the validated changes to `main`, which this repository's README identifies as the Lovable synchronization branch. Synchronization into the editor and publication of the hosted app are separate states; verify the connected hosting environment before claiming the live app is updated.
+Unit scenarios cover plan-family classification, new versus renewal split, split-payment summing, trial started-today scoping, day-2 attendance joins, mode filters, IST midnight boundaries and empty data. GitHub checks run the Vitest suite and production build.

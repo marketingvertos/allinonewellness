@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { todayIst } from "@/lib/formatters";
 import {
   calculateDashboardMetrics,
+  type DashboardAttendance,
   type DashboardMember,
   type DashboardMembership,
   type DashboardPayment,
@@ -44,9 +45,11 @@ export function useDashboardMetrics(mode: MemberModeFilter) {
     queryKey: ["wellness-dashboard-metrics", today, mode],
     refetchInterval: 30_000,
     queryFn: async () => {
-      const tomorrow = new Date(Date.parse(today + "T00:00:00Z") + 86_400_000)
-        .toISOString().slice(0, 10);
-      const [members, plans, memberships, trials, payments] = await Promise.all([
+      const shift = (days: number) =>
+        new Date(Date.parse(today + "T00:00:00Z") + days * 86_400_000).toISOString().slice(0, 10);
+      const tomorrow = shift(1);
+      const yesterday = shift(-1);
+      const [members, plans, memberships, trials, payments, attendance] = await Promise.all([
         readAllMetricRows<DashboardMember>((from, to) => supabase
           .from("wellness_members")
           .select("id, is_guest, member_mode, joining_date, full_name, mobile_number")
@@ -61,9 +64,8 @@ export function useDashboardMetrics(mode: MemberModeFilter) {
           .order("id").range(from, to)),
         readAllMetricRows<DashboardTrial>((from, to) => supabase
           .from("wellness_trials")
-          .select("member_id, plan_id, duration_days, start_date, end_date, status")
-          .eq("status", "active").eq("duration_days", 3)
-          .lte("start_date", today).gte("end_date", today)
+          .select("id, member_id, plan_id, duration_days, start_date, end_date, status")
+          .gte("start_date", yesterday).lte("start_date", today)
           .order("id").range(from, to)),
         readAllMetricRows<DashboardPayment>((from, to) => supabase
           .from("wellness_payments")
@@ -72,8 +74,13 @@ export function useDashboardMetrics(mode: MemberModeFilter) {
           .gte("paid_at", today + "T00:00:00+05:30")
           .lt("paid_at", tomorrow + "T00:00:00+05:30")
           .order("id").range(from, to)),
+        readAllMetricRows<DashboardAttendance>((from, to) => supabase
+          .from("wellness_attendance")
+          .select("member_id, trial_id, visit_date")
+          .eq("visit_date", today).not("trial_id", "is", null)
+          .order("id").range(from, to)),
       ]);
-      const result = calculateDashboardMetrics({ members, plans, memberships, trials, payments, today, mode });
+      const result = calculateDashboardMetrics({ members, plans, memberships, trials, payments, attendance, today, mode });
       return {
         ...result,
         memberById: Object.fromEntries(members.map((m) => [m.id, m])),

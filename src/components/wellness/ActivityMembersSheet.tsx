@@ -44,7 +44,7 @@ export function ActivityMembersSheet({ open, onOpenChange, title, description, i
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       {m?.mobile_number && <span>{m.mobile_number}</span>}
                       <ModeBadge mode={m?.member_mode} />
-                      <span>{plan?.name ?? (it.label.includes("trial") ? "Free guest trial" : it.label === "Guest" ? "Guest" : "—")}</span>
+                      <span>{plan?.name ?? (/trial/i.test(it.label) || it.label === "Day 2 visit" ? "Free guest trial" : it.label === "Guest" ? "Guest" : "—")}</span>
                       <span>
                         {it.endDate ? `${formatDate(it.date)} – ${formatDate(it.endDate)}` : formatDate(it.date)}
                       </span>

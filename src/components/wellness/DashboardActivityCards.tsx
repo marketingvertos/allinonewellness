@@ -1,32 +1,37 @@
-import { BadgeCheck, CalendarDays, Gift, IndianRupee, RefreshCw, UserPlus, Users } from "lucide-react";
+import { BadgeCheck, CalendarCheck, Clock, Gift, IndianRupee, RefreshCw, Repeat, UserPlus, Award } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import type { MemberModeFilter } from "@/hooks/useWellness";
+import type { DashboardCardKey } from "@/lib/dashboardMetrics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { ActivityMembersSheet } from "@/components/wellness/ActivityMembersSheet";
 
-const cards = [
-  { key: "newMembersToday", title: "New members today", description: "First membership starts today", icon: UserPlus },
-  { key: "newMembersThisMonth", title: "New members this month", description: "First membership starts this month", icon: Users },
-  { key: "newUms30ThisMonth", title: "New 30-day UMS", description: "New members this month on UMS 30", icon: BadgeCheck },
-  { key: "umsRenewalsToday", title: "UMS renewals today", description: "Members with a paid UMS renewal today", icon: RefreshCw },
-  { key: "dailyRenewalsToday", title: "Daily renewals today", description: "Members with a paid one-day renewal today", icon: CalendarDays },
-  { key: "paidTrials3Day", title: "3-day paid trials", description: "Active today on a paid trial plan", icon: IndianRupee },
-  { key: "freeTrials3Day", title: "3-day free trials", description: "Active today, including free guest trials", icon: Gift },
-  { key: "newGuestsToday", title: "New guests today", description: "Guest joining date is today", icon: UserPlus },
-] as const;
+const cards: { key: DashboardCardKey; title: string; description: string; icon: typeof UserPlus }[] = [
+  { key: "newGuestsToday", title: "New guests today", description: "First-time visitors who joined today", icon: UserPlus },
+  { key: "newGoldCardToday", title: "New Gold Card UMS ₹7,500", description: "New 30-visit memberships started today", icon: BadgeCheck },
+  { key: "goldCardRenewalsToday", title: "Gold Card UMS renewals", description: "30-visit ₹7,500 renewals paid today", icon: RefreshCw },
+  { key: "newWhiteCardToday", title: "New White Card ₹3,750", description: "New 15-visit memberships started today", icon: Award },
+  { key: "whiteCardRenewalsToday", title: "White Card renewals", description: "15-visit ₹3,750 renewals paid today", icon: Repeat },
+  { key: "paidTrials3DayToday", title: "3-day paid trials ₹750", description: "Paid trial packs started today", icon: IndianRupee },
+  { key: "freeTrials3DayToday", title: "3-day free trials", description: "Free guest trials started today", icon: Gift },
+  { key: "renewals3DayToday", title: "3-day renewals ₹750", description: "Repeat 3-day packs paid today", icon: RefreshCw },
+  { key: "freeTrials1DayToday", title: "One-day free trials", description: "Single-visit trials started today", icon: Clock },
+  { key: "guestDay2VisitsToday", title: "Guest day-2 visits", description: "Day 2 of a trial that started yesterday", icon: CalendarCheck },
+];
 
 export function DashboardActivityCards({ mode }: { mode: MemberModeFilter }) {
   const { data, isPending, isError, refetch, isFetching } = useDashboardMetrics(mode);
-  const [openKey, setOpenKey] = useState<(typeof cards)[number]["key"] | null>(null);
+  const [openKey, setOpenKey] = useState<DashboardCardKey | null>(null);
   const openCard = cards.find((c) => c.key === openKey);
   return (
     <section className="space-y-3" aria-labelledby="dashboard-activity-heading">
       <div>
-        <h2 id="dashboard-activity-heading" className="text-base font-semibold">New members, renewals &amp; trials</h2>
-        <p className="text-xs text-muted-foreground">Today and this month use India time. Each card counts members once.</p>
+        <h2 id="dashboard-activity-heading" className="text-base font-semibold">Today&rsquo;s club activity</h2>
+        <p className="text-xs text-muted-foreground">
+          Guests, memberships, renewals and trials — India time. Tap any card to see who it counts.
+        </p>
       </div>
       {isError ? (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 p-4">
