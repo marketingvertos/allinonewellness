@@ -25,14 +25,16 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   period: "today" | "week" | "month" | "last_month";
+  /** Overrides `period` with an explicit date range. */
+  range?: { from: string; to: string };
   periodLabel: string;
   segment?: "all" | "new" | "renewal" | "trial";
   memberMode: MemberModeFilter;
   onSelectMember?: (memberId: string) => void;
 }
 
-export function SalesDrillDownSheet({ open, onOpenChange, period, periodLabel, segment = "all", memberMode, onSelectMember }: Props) {
-  const range = periodRange(period);
+export function SalesDrillDownSheet({ open, onOpenChange, period, range: rangeOverride, periodLabel, segment = "all", memberMode, onSelectMember }: Props) {
+  const range = rangeOverride ?? periodRange(period);
   const { data, isLoading } = useSalesDrillDown(range.from, range.to, memberMode, open);
 
   const allRows = data?.rows ?? [];
