@@ -6,7 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChangeTrialPlanDialog } from "@/components/wellness/ChangeTrialPlanDialog";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { formatDate, todayIst } from "@/lib/formatters";
 import { PAYMENT_MODES } from "@/hooks/useReports";
 import { MemberDetailSheet } from "@/components/wellness/MemberDetailSheet";
@@ -39,7 +43,19 @@ export default function WellnessTrials() {
   const [guestOpen, setGuestOpen] = useState(false);
 
   const { data: trialVisits } = useTrialAttendance((trials ?? []).map((t) => t.id));
-  const membershipPlans = (plans ?? []).filter((p) => p.plan_type === "membership");
+  const membershipPlans = (plans ?? []).filter((p) => p.plan_type === "membership" && p.active);
+  const paidTrialPlans = (plans ?? []).filter((p) => p.plan_type === "trial" && p.active && Number(p.price) > 0);
+  const [changeFor, setChangeFor] = useState<{ id: string; plan_id: string | null; duration_days: number | null; name: string; used: number } | null>(null);
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const toPaidTrial = useMutation({
+    mutationFn: async (a: { trialId: string; planId: string; mode: string }) => {
+      const { error } = await supabase.rpc("convert_guest_to_paid_trial", { p_trial_id: a.trialId, p_plan_id: a.planId, p_payment_mode: a.mode } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["wellness-trials"] }); toast({ title: "Moved to paid trial" }); },
+    onError: (e: Error) => toast({ title: "Could not convert", description: e.message, variant: "destructive" }),
+  });
   const searching = query.trim().length > 1;
   const noMatches = searching && !isFetching && (candidates ?? []).length === 0;
 
@@ -155,11 +171,20 @@ export default function WellnessTrials() {
                         <SelectValue placeholder="Convert to plan" />
                       </SelectTrigger>
                       <SelectContent>
-                        {membershipPlans.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
+                        <SelectGroup>
+                          <SelectLabel>Memberships</SelectLabel>
+                          {membershipPlans.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectGroup>
+                        {paidTrialPlans.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel>Paid trials</SelectLabel>
+                            {paidTrialPlans.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>{p.name} ₹{Number(p.price)}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        )}
                       </SelectContent>
                     </Select>
                     <Select
@@ -177,9 +202,11 @@ export default function WellnessTrials() {
                     </Select>
                     <Button
                       size="sm"
-                      disabled={!planId || createMembership.isPending}
+                      disabled={!planId || createMembership.isPending || toPaidTrial.isPending}
                       onClick={() =>
-                        createMembership.mutate({
+                        paidTrialPlans.some((p) => p.id === planId)
+                          ? toPaidTrial.mutate({ trialId: t.id, planId, mode: modeByTrial[t.id] ?? "cash" })
+                          : createMembership.mutate({
                           memberId: t.member_id,
                           planId,
                           trialId: t.id,
@@ -189,6 +216,13 @@ export default function WellnessTrials() {
                       }
                     >
                       Convert
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setChangeFor({ id: t.id, plan_id: (t as { plan_id?: string | null }).plan_id ?? null, duration_days: t.duration_days ?? null, name: t.wellness_members?.full_name ?? "Guest", used: (trialVisits?.[t.id] ?? []).length })}
+                    >
+                      Change trial
                     </Button>
                   </div>
                 </CardContent>
@@ -210,6 +244,9 @@ export default function WellnessTrials() {
       )}
       <GuestTrialDialog open={guestOpen} onOpenChange={setGuestOpen} defaultName={query} />
 
+      {changeFor && (
+        <ChangeTrialPlanDialog open onOpenChange={(o) => !o && setChangeFor(null)} trial={changeFor} visitsUsed={changeFor.used} />
+      )}
       <MemberDetailSheet member={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />
     </div>
   );
