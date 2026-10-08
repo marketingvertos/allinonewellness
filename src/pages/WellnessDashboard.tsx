@@ -26,7 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatCurrency, formatCurrency as fmtINR, formatDate } from "@/lib/formatters";
 import { Users, CalendarCheck, BadgeCheck, AlertTriangle, IndianRupee, QrCode, Sparkles, Trophy } from "lucide-react";
 import { BirthdaysCard } from "@/components/wellness/BirthdaysCard";
 import { ServingTrendChart } from "@/components/wellness/ServingTrendChart";
@@ -37,6 +37,8 @@ import { ExpiredMembersSheet } from "@/components/wellness/ExpiredMembersSheet";
 import { SalesDrillDownSheet } from "@/components/wellness/SalesDrillDownSheet";
 import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { useState } from "react";
+import { RevenueCard } from "@/components/wellness/RevenueCard";
+import { useRevealMoney, MASKED_AMOUNT } from "@/hooks/useRevealMoney";
 
 type SalesSegment = "all" | "new" | "renewal" | "trial";
 
@@ -78,8 +80,9 @@ function SalesTile({ label, value, detail, onClick }: { label: string; value: st
   );
 }
 
-function SalesTodayRow({ mode, onOpen }: { mode: MemberModeFilter; onOpen: (segment: SalesSegment, label: string) => void }) {
+function SalesTodayRow({ mode, onOpen, revealed }: { mode: MemberModeFilter; onOpen: (segment: SalesSegment, label: string) => void; revealed: boolean }) {
   const { data } = useSalesAnalytics(periodRange("today"), mode);
+  const formatCurrency = (v: number) => (revealed ? fmtINR(v) : MASKED_AMOUNT);
   return (
     <>
       <SalesTile
@@ -124,6 +127,7 @@ export default function WellnessDashboard() {
     setParams(p, { replace: true });
   };
 
+  const money = useRevealMoney();
   const { data, isLoading } = useWellnessStats(mode);
   const { data: trials } = useActiveTrials(mode);
   const { data: memberships } = useActiveMemberships(mode);
@@ -237,11 +241,14 @@ export default function WellnessDashboard() {
       <DashboardActivityCards mode={mode} />
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Sales &amp; servings</CardTitle>
+          {money.canReveal && (
+            <Button variant="ghost" size="sm" onClick={money.toggle}>{money.revealed ? "Hide amounts" : "Show amounts"}</Button>
+          )}
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <SalesTodayRow mode={mode} onOpen={(segment, label) => setSalesDrillDown({ segment, label })} />
+          <SalesTodayRow mode={mode} revealed={money.revealed} onOpen={(segment, label) => setSalesDrillDown({ segment, label })} />
         </CardContent>
       </Card>
 
@@ -263,13 +270,7 @@ export default function WellnessDashboard() {
       <MemberSheetById memberId={selectedMemberId} onClose={() => setSelectedMemberId(null)} />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Revenue (last 30 days)</CardTitle>
-            <IndianRupee className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{formatCurrency(data?.revenueLast30Days ?? 0)}</p>
+        <RevenueCard mode={mode} revealed={money.revealed} canReveal={money.canReveal} onToggle={money.toggle} onSelectMember={setSelectedMemberId}>
             <div className="mt-4 flex flex-wrap gap-2">
               {Object.entries(data?.statusCounts ?? {}).map(([status, count]) => (
                 <Link key={status} to={`/members?status=${status}${modeQuery}`}>
@@ -279,8 +280,7 @@ export default function WellnessDashboard() {
                 </Link>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </RevenueCard>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">

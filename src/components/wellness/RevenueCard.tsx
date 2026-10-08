@@ -58,7 +58,6 @@ export function RevenueCard({ mode, revealed, canReveal, onToggle, onSelectMembe
     return { from: shift(range.from, -len), to: shift(range.from, -1) };
   }, [range]);
 
-  // Only load figures once revealed, so nothing sits in the page for others to inspect.
   const { data } = useSalesAnalytics(range, mode);
   const { data: prevData } = useSalesAnalytics(prev, mode);
   const change = prevData && prevData.revenue > 0 && data ? ((data.revenue - prevData.revenue) / prevData.revenue) * 100 : null;
