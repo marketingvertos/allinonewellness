@@ -2520,6 +2520,15 @@ export type Database = {
         Args: { p_promotion_id: string }
         Returns: number
       }
+      change_trial_plan: {
+        Args: {
+          p_duration_days: number
+          p_payment_mode?: string
+          p_plan_id: string
+          p_trial_id: string
+        }
+        Returns: undefined
+      }
       checkin_member: {
         Args: {
           p_member_id: string
@@ -2534,6 +2543,10 @@ export type Database = {
       coach_new_frontline: {
         Args: { p_member_id: string; p_month: string }
         Returns: number
+      }
+      convert_guest_to_paid_trial: {
+        Args: { p_payment_mode?: string; p_plan_id: string; p_trial_id: string }
+        Returns: string
       }
       convert_trial_to_membership: {
         Args: { p_plan_id: string; p_price?: number; p_trial_id: string }
@@ -2776,6 +2789,10 @@ export type Database = {
         }
         Returns: string
       }
+      reverse_trial_pink_card: {
+        Args: { p_member_id: string }
+        Returns: undefined
+      }
       rotate_checkin_code: { Args: never; Returns: string }
       seed_default_pipeline: { Args: { p_user_id: string }; Returns: string }
       supervisor_new_frontline: {
@@ -2792,6 +2809,7 @@ export type Database = {
         Returns: string
       }
       trial_advance_eligible: { Args: { p_member_id: string }; Returns: string }
+      trial_is_paid3: { Args: { p_plan_id: string }; Returns: boolean }
       wellness_plan_usage: {
         Args: never
         Returns: {
