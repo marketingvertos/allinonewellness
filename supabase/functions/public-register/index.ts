@@ -112,11 +112,20 @@ Deno.serve(async (req) => {
 
     const { data: existing } = await supabase
       .from("wellness_members")
-      .select("id")
+      .select("id, full_name, tags")
       .ilike("mobile_number", `%${mobile}%`)
       .limit(1);
-    if (existing?.length) {
-      return json({ error: "This WhatsApp number is already registered with us." }, 409);
+    const prior = existing?.[0] ?? null;
+    if (prior) {
+      const { data: live } = await supabase
+        .from("wellness_memberships")
+        .select("id")
+        .eq("member_id", prior.id)
+        .in("status", ["active", "expiring_soon", "queued"])
+        .limit(1);
+      if (live?.length) {
+        return json({ error: "This WhatsApp number is already registered with us." }, 409);
+      }
     }
 
     // Attribute the record to an admin account so created_by stays valid.
@@ -129,35 +138,67 @@ Deno.serve(async (req) => {
     if (!adminRole?.user_id) return json({ error: "Registration is unavailable right now." }, 503);
 
     const isMarried = input.marital_status === "married";
-    const { data: member, error: insertErr } = await supabase
-      .from("wellness_members")
-      .insert({
-        full_name: input.full_name,
-        mobile_number: mobile,
-        email: input.email,
-        gender: input.gender,
-        date_of_birth: input.date_of_birth,
-        marital_status: input.marital_status,
-        anniversary_date: isMarried ? input.anniversary_date : null,
-        height: input.height,
-        initial_weight: input.joining_weight,
-        target_weight: input.target_weight,
-        joining_date: istToday(),
-        status: "lead",
-        goal: input.goal ?? "weight_loss",
-        member_mode: input.member_mode ?? "physical",
-        tags: ["public_form"],
-        created_by: adminRole.user_id,
-      })
-      .select("id, full_name")
-      .maybeSingle();
+    const norm = (n: string) => n.toLowerCase().replace(/[^a-z ]/g, "").trim();
+    const closeName = (x: string, y: string) => {
+      const [p, q] = [norm(x), norm(y)];
+      return p === q || p.includes(q) || q.includes(p) || p.split(" ")[0] === q.split(" ")[0];
+    };
+    let member: { id: string; full_name: string } | null = null;
+    let insertErr: unknown = null;
+    let nameMismatch = false;
+    if (prior) {
+      // Guest / lead already in the system: fill their profile, don't duplicate.
+      nameMismatch = !closeName(prior.full_name, input.full_name);
+      const patch: Record<string, unknown> = {};
+      if (!nameMismatch) patch.full_name = input.full_name;
+      if (input.email) patch.email = input.email;
+      if (input.gender) patch.gender = input.gender;
+      if (input.date_of_birth) patch.date_of_birth = input.date_of_birth;
+      if (input.marital_status) {
+        patch.marital_status = input.marital_status;
+        patch.anniversary_date = isMarried ? input.anniversary_date : null;
+      }
+      if (input.height) patch.height = input.height;
+      if (input.joining_weight) patch.initial_weight = input.joining_weight;
+      if (input.target_weight) patch.target_weight = input.target_weight;
+      if (input.goal) patch.goal = input.goal;
+      patch.tags = Array.from(new Set([...(prior.tags ?? []), "form_filled"]));
+      const res = await supabase.from("wellness_members").update(patch).eq("id", prior.id)
+        .select("id, full_name").maybeSingle();
+      member = res.data; insertErr = res.error;
+    } else {
+      const res = await supabase
+        .from("wellness_members")
+        .insert({
+          full_name: input.full_name,
+          mobile_number: mobile,
+          email: input.email,
+          gender: input.gender,
+          date_of_birth: input.date_of_birth,
+          marital_status: input.marital_status,
+          anniversary_date: isMarried ? input.anniversary_date : null,
+          height: input.height,
+          initial_weight: input.joining_weight,
+          target_weight: input.target_weight,
+          joining_date: istToday(),
+          status: "lead",
+          goal: input.goal ?? "weight_loss",
+          member_mode: input.member_mode ?? "physical",
+          tags: ["public_form"],
+          created_by: adminRole.user_id,
+        })
+        .select("id, full_name")
+        .maybeSingle();
+      member = res.data; insertErr = res.error;
+    }
 
     if (insertErr || !member) {
-      console.error("public-register insert failed", insertErr);
+      console.error("public-register save failed", insertErr);
       return json({ error: "We could not save your details. Please try again." }, 500);
     }
 
     const noteLines = [
+      nameMismatch ? `Name entered on form: ${input.full_name}` : null,
       input.city ? `City: ${input.city}` : null,
       input.alternate_mobile ? `Alternate number: ${input.alternate_mobile}` : null,
       input.referrer_name ? `Introduced by: ${input.referrer_name}` : null,
@@ -167,7 +208,7 @@ Deno.serve(async (req) => {
     if (noteLines.length) {
       await supabase.from("member_notes").insert({
         member_id: member.id,
-        note: `Public registration form\n${noteLines.join("\n")}`,
+        note: `${prior ? "Registration form filled by existing guest" : "Public registration form"}\n${noteLines.join("\n")}`,
         created_by: adminRole.user_id,
       });
     }
@@ -183,7 +224,7 @@ Deno.serve(async (req) => {
       if (alertPhone.length === 10) {
         const cfg = await loadWhatsAppConfig(supabase);
         const text = [
-          "New registration from the public form",
+          prior ? "Guest filled the registration form" : "New registration from the public form",
           `Name: ${input.full_name}`,
           `WhatsApp: ${mobile}`,
           input.city ? `City: ${input.city}` : null,

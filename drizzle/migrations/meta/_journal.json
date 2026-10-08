@@ -295,6 +295,13 @@
       "when": 1791166560221,
       "tag": "0041_fix_reactivation_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791459878394,
+      "tag": "0042_guest_trial_plan_changes",
+      "breakpoints": true
     }
   ]
 }
