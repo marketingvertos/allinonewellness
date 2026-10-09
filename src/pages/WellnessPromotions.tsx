@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gift, Plus } from "lucide-react";
+import { Gift, Image as ImageIcon, Plus, Youtube } from "lucide-react";
+import type { MediaPostType } from "@/hooks/useMediaPosts";
 import { useToast } from "@/hooks/use-toast";
 import { METRIC_LABEL, OFFER_TYPE_LABEL, Promotion, useCanEditOffers, usePromotions, usePromotionStats, useSavePromotion } from "@/hooks/usePromotions";
 import { CreatePromotionDialog } from "@/components/wellness/CreatePromotionDialog";
@@ -16,6 +17,8 @@ import { MediaPostsManager } from "@/components/wellness/MediaPostsManager";
 
 export default function WellnessPromotions() {
   const [tab, setTab] = useState<"active" | "expired" | "all">("active");
+  const [section, setSection] = useState<"offers" | "media">("offers");
+  const [mediaCreate, setMediaCreate] = useState<MediaPostType | null>(null);
   const { data: promos, isLoading } = usePromotions(tab);
   const { data: stats } = usePromotionStats();
   const canEdit = useCanEditOffers();
@@ -54,14 +57,35 @@ export default function WellnessPromotions() {
 
   return (
     <div>
-      <PageBanner title="Offers & Qualifications" description="Create and manage member promotions.">
+      <PageBanner title="Offers & Qualifications" description="Create member offers and publish media updates.">
         {canEdit && (
-          <Button onClick={() => { setEditing(null); setCreateOpen(true); }}>
-            <Plus className="mr-1 h-4 w-4" /> New offer
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => { setSection("offers"); setEditing(null); setCreateOpen(true); }}>
+              <Plus className="mr-1 h-4 w-4" /> New offer
+            </Button>
+            <Button variant="outline" onClick={() => { setSection("media"); setMediaCreate("image"); }}>
+              <ImageIcon className="mr-1 h-4 w-4" /> Upload image
+            </Button>
+            <Button variant="outline" onClick={() => { setSection("media"); setMediaCreate("youtube"); }}>
+              <Youtube className="mr-1 h-4 w-4" /> Add YouTube video
+            </Button>
+          </div>
         )}
       </PageBanner>
 
+      {canEdit && (
+        <Tabs value={section} onValueChange={(v) => setSection(v as typeof section)} className="mb-4">
+          <TabsList>
+            <TabsTrigger value="offers">Offers</TabsTrigger>
+            <TabsTrigger value="media">Media updates</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
+
+      {section === "media" && canEdit ? (
+        <MediaPostsManager createType={mediaCreate} onCreateHandled={() => setMediaCreate(null)} />
+      ) : (
+      <>
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="mb-4">
         <TabsList>
           <TabsTrigger value="active">Active</TabsTrigger>
@@ -129,8 +153,8 @@ export default function WellnessPromotions() {
           );
         })}
       </div>
-
-      {canEdit && <MediaPostsManager />}
+      </>
+      )}
 
       <CreatePromotionDialog open={createOpen} onOpenChange={setCreateOpen} promotion={editing} />
       <PromotionProgressSheet promotion={viewing} onClose={() => setViewing(null)} />

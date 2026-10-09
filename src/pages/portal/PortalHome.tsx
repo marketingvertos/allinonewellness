@@ -159,7 +159,7 @@ export default function PortalHome() {
       </Card>
 
       {profile && <PromotionCards memberId={profile.id} memberMode={profile.member_mode} />}
-      {profile && <MediaPostFeed memberMode={profile.member_mode} />}
+      {profile && <MediaPostFeed memberMode={profile.member_mode} memberId={identity?.memberId ?? undefined} />}
 
       {profile && (
         <PayOnlineDialog

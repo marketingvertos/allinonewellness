@@ -1409,6 +1409,117 @@ export type Database = {
         }
         Relationships: []
       }
+      wellness_media_post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_media_post_likes_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_media_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_media_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_media_post_shares: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          member_id: string
+          post_id: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          id?: string
+          member_id: string
+          post_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          member_id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_media_post_shares_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_media_post_shares_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_media_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_media_post_views: {
+        Row: {
+          id: string
+          member_id: string
+          post_id: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          post_id: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          post_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_media_post_views_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_media_post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_media_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wellness_media_posts: {
         Row: {
           caption: string | null
@@ -2755,9 +2866,26 @@ export type Database = {
         Args: { p_date?: string; p_trial_id: string }
         Returns: Json
       }
+      media_post_stats: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          likes: number
+          post_id: string
+          shares: number
+          unique_viewers: number
+          views: number
+        }[]
+      }
       member_active_in_month: {
         Args: { p_member_id: string; p_month: string }
         Returns: boolean
+      }
+      member_media_like_counts: {
+        Args: never
+        Returns: {
+          likes: number
+          post_id: string
+        }[]
       }
       member_self_checkin: {
         Args: { p_code: string; p_weight?: number }
