@@ -45,6 +45,7 @@ import { RenewPlanDialog } from "./RenewPlanDialog";
 import { SwitchPlanDialog } from "./SwitchPlanDialog";
 import { EditMembershipDialog } from "./EditMembershipDialog";
 import { IssueServingsDialog } from "./IssueServingsDialog";
+import { EditServingDatesDialog } from "./EditServingDatesDialog";
 import { servingTxnLabel } from "./servingLabels";
 import { MemberLoginCard } from "./MemberLoginCard";
 import { DEFAULT_MEMBER_PASSWORD } from "@/lib/memberAccess";
@@ -911,6 +912,16 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               memberName={member.full_name}
             />
           </>
+        )}
+        {editServing && (
+          <EditServingDatesDialog
+            open={!!editServing}
+            onOpenChange={(o) => !o && setEditServing(null)}
+            memberId={member.id}
+            txnId={editServing.id}
+            quantity={editServing.qty}
+            currentDates={editServing.dates}
+          />
         )}
       </SheetContent>
 
