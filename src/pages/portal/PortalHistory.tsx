@@ -95,6 +95,11 @@ export default function PortalHistory() {
                   <p className="font-medium">{servingTxnLabel(t.txn_type)}</p>
                   <p className="text-xs text-muted-foreground">{formatDateTime(t.created_at)}</p>
                   {t.note ? <p className="text-xs text-muted-foreground">{t.note}</p> : null}
+                  {t.txn_type === "pack_and_issue" && t.covered_dates.length > 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      For: {t.covered_dates.map((d) => formatDate(d)).join(", ")}
+                    </p>
+                  ) : null}
                 </div>
                 <span className="shrink-0 text-muted-foreground">
                   {t.change > 0 ? `+${t.change}` : t.change} → {t.balance_after}

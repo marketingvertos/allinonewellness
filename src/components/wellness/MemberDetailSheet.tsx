@@ -146,6 +146,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [showCredentials, setShowCredentials] = useState(false);
   const [editMembershipOpen, setEditMembershipOpen] = useState(false);
   const [issueOpen, setIssueOpen] = useState(false);
+  const [editServing, setEditServing] = useState<{ id: string; qty: number; dates: string[] } | null>(null);
   const [activationPayments, setActivationPayments] = useState<PaymentLine[]>([]);
   const recordPayment = useRecordPayment();
   const selectedNewPlan = plans?.find((p) => p.id === planId);
@@ -633,10 +634,29 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                       {t.created_by_name ? ` · by ${t.created_by_name}` : ""}
                     </p>
                     {t.note ? <p className="text-xs text-muted-foreground">{t.note}</p> : null}
+                    {t.txn_type === "pack_and_issue" && (
+                      <p className="text-xs text-muted-foreground">
+                        For: {t.covered_dates.length ? t.covered_dates.map((d) => formatDate(d)).join(", ") : "no dates set"}
+                      </p>
+                    )}
                   </div>
-                  <span className={t.change < 0 ? "shrink-0 text-muted-foreground" : "shrink-0 font-medium"}>
-                    {t.change > 0 ? `+${t.change}` : t.change} → {t.balance_after}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className={t.change < 0 ? "text-muted-foreground" : "font-medium"}>
+                      {t.change > 0 ? `+${t.change}` : t.change} → {t.balance_after}
+                    </span>
+                    {t.txn_type === "pack_and_issue" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-xs"
+                        onClick={() =>
+                          setEditServing({ id: t.id, qty: Math.abs(t.change), dates: t.covered_dates })
+                        }
+                      >
+                        <Pencil className="mr-1 h-3 w-3" /> Edit dates
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))
             ) : (
