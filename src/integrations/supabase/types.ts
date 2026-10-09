@@ -1119,6 +1119,7 @@ export type Database = {
           membership_id: string | null
           remaining_balance_snapshot: number | null
           serving_deducted: boolean
+          serving_txn_id: string | null
           staff_id: string | null
           trial_id: string | null
           visit_date: string
@@ -1133,6 +1134,7 @@ export type Database = {
           membership_id?: string | null
           remaining_balance_snapshot?: number | null
           serving_deducted?: boolean
+          serving_txn_id?: string | null
           staff_id?: string | null
           trial_id?: string | null
           visit_date?: string
@@ -1147,6 +1149,7 @@ export type Database = {
           membership_id?: string | null
           remaining_balance_snapshot?: number | null
           serving_deducted?: boolean
+          serving_txn_id?: string | null
           staff_id?: string | null
           trial_id?: string | null
           visit_date?: string
@@ -1165,6 +1168,13 @@ export type Database = {
             columns: ["membership_id"]
             isOneToOne: false
             referencedRelation: "wellness_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_attendance_serving_txn_id_fkey"
+            columns: ["serving_txn_id"]
+            isOneToOne: false
+            referencedRelation: "serving_transactions"
             referencedColumns: ["id"]
           },
           {
@@ -2633,6 +2643,10 @@ export type Database = {
           previous_weight: number
           total_change: number
         }[]
+      }
+      edit_serving_dates: {
+        Args: { p_dates: string[]; p_txn_id: string }
+        Returns: string[]
       }
       expire_stale_checkin_requests: { Args: never; Returns: undefined }
       fulfil_online_payment: {
