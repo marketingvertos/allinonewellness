@@ -1399,6 +1399,51 @@ export type Database = {
         }
         Relationships: []
       }
+      wellness_media_posts: {
+        Row: {
+          caption: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          image_path: string | null
+          is_published: boolean
+          media_type: string
+          published_at: string | null
+          updated_at: string
+          updated_by: string | null
+          visibility: string
+          youtube_video_id: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_path?: string | null
+          is_published?: boolean
+          media_type: string
+          published_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          visibility?: string
+          youtube_video_id?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_path?: string | null
+          is_published?: boolean
+          media_type?: string
+          published_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          visibility?: string
+          youtube_video_id?: string | null
+        }
+        Relationships: []
+      }
       wellness_members: {
         Row: {
           activation_code: string

@@ -302,6 +302,20 @@
       "when": 1791459878394,
       "tag": "0042_guest_trial_plan_changes",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1791513672741,
+      "tag": "0043_create_wellness_media_posts",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791513700133,
+      "tag": "0044_read_promotion_media",
+      "breakpoints": true
     }
   ]
 }

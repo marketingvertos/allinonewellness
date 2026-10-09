@@ -12,6 +12,7 @@ import { PromotionProgressSheet } from "@/components/wellness/PromotionProgressS
 import { formatDate, todayIst } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { getOfferColors, offerColorClasses } from "@/lib/offerColors";
+import { MediaPostsManager } from "@/components/wellness/MediaPostsManager";
 
 export default function WellnessPromotions() {
   const [tab, setTab] = useState<"active" | "expired" | "all">("active");
@@ -128,6 +129,8 @@ export default function WellnessPromotions() {
           );
         })}
       </div>
+
+      {canEdit && <MediaPostsManager />}
 
       <CreatePromotionDialog open={createOpen} onOpenChange={setCreateOpen} promotion={editing} />
       <PromotionProgressSheet promotion={viewing} onClose={() => setViewing(null)} />

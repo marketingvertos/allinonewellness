@@ -22,6 +22,7 @@ import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
 import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
 import { PromotionCards } from "@/components/portal/PromotionCards";
+import { MediaPostFeed } from "@/components/portal/MediaPostFeed";
 import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 export default function PortalHome() {
@@ -158,6 +159,7 @@ export default function PortalHome() {
       </Card>
 
       {profile && <PromotionCards memberId={profile.id} memberMode={profile.member_mode} />}
+      {profile && <MediaPostFeed memberMode={profile.member_mode} />}
 
       {profile && (
         <PayOnlineDialog
