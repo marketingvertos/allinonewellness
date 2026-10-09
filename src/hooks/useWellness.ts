@@ -710,12 +710,54 @@ export function useServingLedger(memberId: string | undefined) {
         }
       }
 
+      const packIds = rows.filter((r) => r.txn_type === "pack_and_issue").map((r) => r.id);
+      const datesByTxn = new Map<string, string[]>();
+      if (packIds.length) {
+        const { data: att } = await supabase
+          .from("wellness_attendance")
+          .select("serving_txn_id, visit_date")
+          .in("serving_txn_id" as never, packIds as never)
+          .order("visit_date");
+        for (const a of (att ?? []) as unknown as { serving_txn_id: string; visit_date: string }[]) {
+          const list = datesByTxn.get(a.serving_txn_id) ?? [];
+          list.push(a.visit_date);
+          datesByTxn.set(a.serving_txn_id, list);
+        }
+      }
+
       return rows.map((r) => ({
         ...r,
         created_by_name: r.created_by ? names.get(r.created_by) ?? null : null,
+        covered_dates: datesByTxn.get(r.id) ?? [],
       }));
     },
     enabled: !!memberId,
+  });
+}
+
+export function useEditServingDates() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: { txnId: string; dates: string[]; freed: string[] }) => {
+      const { error } = await supabase.rpc("edit_serving_dates" as never, {
+        p_txn_id: args.txnId,
+        p_dates: args.dates,
+      } as never);
+      if (error) throw error;
+      return args.freed;
+    },
+    onSuccess: (freed) => {
+      qc.invalidateQueries();
+      const fmt = (d: string) =>
+        new Date(`${d}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+      t.success(
+        freed.length
+          ? `Dates updated. ${freed.map(fmt).join(", ")} ${freed.length === 1 ? "is" : "are"} now free for check-in.`
+          : "Dates updated",
+      );
+    },
+    onError: t.onError,
   });
 }
 
