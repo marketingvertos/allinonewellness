@@ -3,6 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeErrorMessage } from "@/lib/sanitize";
 import { ensureMemberLogin } from "@/hooks/useMemberAccess";
+import { todayIst } from "@/lib/formatters";
+
+/** Read every page of a query; the API caps each response at 1,000 rows. */
+async function readAllPages<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+): Promise<{ data: T[]; error: unknown }> {
+  const all: T[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await page(from, from + 999);
+    if (error) return { data: all, error };
+    all.push(...(data ?? []));
+    if (!data || data.length < 1000) return { data: all, error: null };
+  }
+}
 
 function getErrorMessage(error: unknown): string {
   const e = error as { message?: string; details?: string; hint?: string } | null;
@@ -2453,16 +2467,19 @@ export function useSalesAnalytics(range: PeriodRange, memberMode?: MemberModeFil
         .select("price_paid, created_at, member_id, renewed_from, wellness_plans(name, plan_type)")
         .gte("created_at", `${range.from}T00:00:00+05:30`)
         .lte("created_at", `${range.to}T23:59:59+05:30`);
-      let servingsQ = supabase
-        .from("wellness_attendance")
-        .select("id, member_id, serving_deducted, visit_date")
-        .gte("visit_date", range.from)
-        .lte("visit_date", range.to);
-      if (ids) {
-        salesQ = salesQ.in("member_id", ids);
-        servingsQ = servingsQ.in("member_id", ids);
-      }
-      const [sales, servings] = await Promise.all([salesQ, servingsQ]);
+      const servingsPage = (from: number, to: number) => {
+        let q = supabase
+          .from("wellness_attendance")
+          .select("id, member_id, serving_deducted, visit_date")
+          .gte("visit_date", range.from)
+          .lte("visit_date", range.to)
+          .order("id")
+          .range(from, to);
+        if (ids) q = q.in("member_id", ids);
+        return q;
+      };
+      if (ids) salesQ = salesQ.in("member_id", ids);
+      const [sales, servings] = await Promise.all([salesQ, readAllPages(servingsPage)]);
       if (sales.error) throw sales.error;
       if (servings.error) throw servings.error;
       const rows = (sales.data ?? []) as unknown as {
