@@ -2779,13 +2779,13 @@ export function useRedeemPinkCardAsServings() {
   const t = useToastedMutation();
   return useMutation({
     mutationFn: async (args: { memberId: string; credits: number; note?: string | null }) => {
-      const { data, error } = await supabase.rpc("redeem_pink_card_as_servings", {
+      const { data, error } = await supabase.rpc("redeem_pink_card_as_servings" as never, {
         p_member_id: args.memberId,
         p_credits: args.credits,
         p_note: args.note ?? undefined,
-      });
+      } as never);
       if (error) throw error;
-      return data as { new_balance: number; new_servings: number };
+      return data as unknown as { new_balance: number; new_servings: number };
     },
     onSuccess: () => qc.invalidateQueries(),
     onError: t.onError,
