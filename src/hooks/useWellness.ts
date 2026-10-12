@@ -2116,13 +2116,17 @@ export function useCheckInReport(from: string, to: string) {
     queryKey: ["wellness-checkin-report", from, to],
     queryFn: async () => {
       const [attendance, weights, requests, definitions, members] = await Promise.all([
-        supabase
-          .from("wellness_attendance")
-          .select("id, member_id, visit_date, visit_time, serving_deducted, wellness_members(id, full_name)")
-          .neq("checkin_method", "serving_issue" as never)
-          .gte("visit_date", from)
-          .lte("visit_date", to)
-          .order("visit_time", { ascending: false }),
+        readAllPages((a, b) =>
+          supabase
+            .from("wellness_attendance")
+            .select("id, member_id, visit_date, visit_time, serving_deducted, wellness_members(id, full_name)")
+            .neq("checkin_method", "serving_issue" as never)
+            .gte("visit_date", from)
+            .lte("visit_date", to)
+            .order("visit_time", { ascending: false })
+            .order("id")
+            .range(a, b),
+        ),
         supabase
           .from("weight_tracking")
           .select("member_id, recorded_date, weight")
