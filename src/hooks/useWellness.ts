@@ -3,6 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeErrorMessage } from "@/lib/sanitize";
 import { ensureMemberLogin } from "@/hooks/useMemberAccess";
+import { todayIst } from "@/lib/formatters";
+
+/** Read every page of a query; the API caps each response at 1,000 rows. */
+async function readAllPages<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+): Promise<{ data: T[]; error: unknown }> {
+  const all: T[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await page(from, from + 999);
+    if (error) return { data: all, error };
+    all.push(...(data ?? []));
+    if (!data || data.length < 1000) return { data: all, error: null };
+  }
+}
 
 function getErrorMessage(error: unknown): string {
   const e = error as { message?: string; details?: string; hint?: string } | null;
@@ -1724,29 +1738,35 @@ export function useServingTrend(days = 30, memberMode?: MemberModeFilter) {
   return useQuery({
     queryKey: ["wellness-serving-trend", days, memberMode ?? "all"],
     queryFn: async () => {
-      const since = new Date();
-      since.setDate(since.getDate() - days);
+      const today = todayIst();
+      const shift = (n: number) =>
+        new Date(Date.parse(today + "T00:00:00Z") + n * 86_400_000).toISOString().slice(0, 10);
+      const since = shift(-(days - 1));
       const ids = await memberIdsForMode(memberMode);
-      let q = supabase
-        .from("wellness_attendance")
-        .select("visit_date, serving_deducted")
-        .gte("visit_date", since.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }))
-        .order("visit_date");
-      if (ids) q = q.in("member_id", ids);
-      const { data, error } = await q;
-      if (error) throw error;
+      // Paginate: a 30-day window is far above the 1,000-row response cap.
+      const rows: { visit_date: string; serving_deducted: boolean }[] = [];
+      for (let from = 0; ; from += 1000) {
+        let q = supabase
+          .from("wellness_attendance")
+          .select("visit_date, serving_deducted")
+          .gte("visit_date", since)
+          .lte("visit_date", today)
+          .order("id")
+          .range(from, from + 999);
+        if (ids) q = q.in("member_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+        const { data, error } = await q;
+        if (error) throw error;
+        rows.push(...((data ?? []) as typeof rows));
+        if (!data || data.length < 1000) break;
+      }
 
       const buckets: Record<string, { visits: number; servings: number }> = {};
-      for (let i = days - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        buckets[d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })] = { visits: 0, servings: 0 };
-      }
-      for (const row of data ?? []) {
-        const key = (row as { visit_date: string }).visit_date;
-        if (!buckets[key]) buckets[key] = { visits: 0, servings: 0 };
+      for (let i = days - 1; i >= 0; i--) buckets[shift(-i)] = { visits: 0, servings: 0 };
+      for (const row of rows) {
+        const key = row.visit_date;
+        if (!buckets[key]) continue;
         buckets[key].visits += 1;
-        if ((row as { serving_deducted: boolean }).serving_deducted) buckets[key].servings += 1;
+        if (row.serving_deducted) buckets[key].servings += 1;
       }
       return Object.entries(buckets).map(([date, v]) => ({ date, ...v }));
     },
@@ -2096,13 +2116,17 @@ export function useCheckInReport(from: string, to: string) {
     queryKey: ["wellness-checkin-report", from, to],
     queryFn: async () => {
       const [attendance, weights, requests, definitions, members] = await Promise.all([
-        supabase
-          .from("wellness_attendance")
-          .select("id, member_id, visit_date, visit_time, serving_deducted, wellness_members(id, full_name)")
-          .neq("checkin_method", "serving_issue" as never)
-          .gte("visit_date", from)
-          .lte("visit_date", to)
-          .order("visit_time", { ascending: false }),
+        readAllPages((a, b) =>
+          supabase
+            .from("wellness_attendance")
+            .select("id, member_id, visit_date, visit_time, serving_deducted, wellness_members(id, full_name)")
+            .neq("checkin_method", "serving_issue" as never)
+            .gte("visit_date", from)
+            .lte("visit_date", to)
+            .order("visit_time", { ascending: false })
+            .order("id")
+            .range(a, b),
+        ),
         supabase
           .from("weight_tracking")
           .select("member_id, recorded_date, weight")
@@ -2447,16 +2471,19 @@ export function useSalesAnalytics(range: PeriodRange, memberMode?: MemberModeFil
         .select("price_paid, created_at, member_id, renewed_from, wellness_plans(name, plan_type)")
         .gte("created_at", `${range.from}T00:00:00+05:30`)
         .lte("created_at", `${range.to}T23:59:59+05:30`);
-      let servingsQ = supabase
-        .from("wellness_attendance")
-        .select("id, member_id, serving_deducted, visit_date")
-        .gte("visit_date", range.from)
-        .lte("visit_date", range.to);
-      if (ids) {
-        salesQ = salesQ.in("member_id", ids);
-        servingsQ = servingsQ.in("member_id", ids);
-      }
-      const [sales, servings] = await Promise.all([salesQ, servingsQ]);
+      const servingsPage = (from: number, to: number) => {
+        let q = supabase
+          .from("wellness_attendance")
+          .select("id, member_id, serving_deducted, visit_date")
+          .gte("visit_date", range.from)
+          .lte("visit_date", range.to)
+          .order("id")
+          .range(from, to);
+        if (ids) q = q.in("member_id", ids);
+        return q;
+      };
+      if (ids) salesQ = salesQ.in("member_id", ids);
+      const [sales, servings] = await Promise.all([salesQ, readAllPages(servingsPage)]);
       if (sales.error) throw sales.error;
       if (servings.error) throw servings.error;
       const rows = (sales.data ?? []) as unknown as {
