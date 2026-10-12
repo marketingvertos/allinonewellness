@@ -2691,6 +2691,7 @@ export type Database = {
           p_duration_days: number
           p_payment_mode?: string
           p_plan_id: string
+          p_start_date?: string
           p_trial_id: string
         }
         Returns: undefined
@@ -2949,6 +2950,10 @@ export type Database = {
           p_note?: string
         }
         Returns: number
+      }
+      redeem_pink_card_as_servings: {
+        Args: { p_credits: number; p_member_id: string; p_note?: string }
+        Returns: Json
       }
       refresh_coach_activity: {
         Args: { p_coach_id: string; p_month: string }
