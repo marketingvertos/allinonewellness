@@ -2950,6 +2950,10 @@ export type Database = {
         }
         Returns: number
       }
+      redeem_pink_card_as_servings: {
+        Args: { p_credits: number; p_member_id: string; p_note?: string }
+        Returns: Json
+      }
       refresh_coach_activity: {
         Args: { p_coach_id: string; p_month: string }
         Returns: undefined

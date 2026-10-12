@@ -330,6 +330,13 @@
       "when": 1791568400660,
       "tag": "0046_media_post_engagement",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1791792598007,
+      "tag": "0047_pink_card_redeem_as_servings",
+      "breakpoints": true
     }
   ]
 }
