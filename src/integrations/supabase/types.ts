@@ -2690,8 +2690,7 @@ export type Database = {
         Args: {
           p_duration_days: number
           p_payment_mode?: string
-          p_plan_id?: string
-          p_start_date?: string
+          p_plan_id: string
           p_trial_id: string
         }
         Returns: undefined
