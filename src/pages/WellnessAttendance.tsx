@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Download, FileText, RefreshCw, Search, TrendingUp, Trophy, UserCheck, Users, UserX, X } from "lucide-react";
+import { Check, Download, FileText, RefreshCw, Search, Sparkles, TrendingUp, Trophy, UserCheck, Users, UserX, X } from "lucide-react";
 import { MemberModeFilter, useAttendanceRegister, AttendanceRow } from "@/hooks/useWellness";
 import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { cn } from "@/lib/utils";
@@ -305,6 +305,12 @@ function Tile({ icon, label, value, sub }: { icon: React.ReactNode; label: strin
 function MemberList({ title, tone, rows, onSelect }: {
   title: string; tone: "present" | "served" | "absent"; rows: AttendanceRow[]; onSelect: (id: string) => void;
 }) {
+  const showTrialFilter = tone === "present" || tone === "absent";
+  const [trialOnly, setTrialOnly] = useState(false);
+
+  const trialCount = showTrialFilter ? rows.filter((r) => r.status === "trial").length : 0;
+  const visible = trialOnly ? rows.filter((r) => r.status === "trial") : rows;
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -312,13 +318,26 @@ function MemberList({ title, tone, rows, onSelect }: {
           {title}
           <Badge variant={tone === "present" ? "default" : tone === "served" ? "secondary" : "destructive"}>{rows.length}</Badge>
         </CardTitle>
+        {showTrialFilter && trialCount > 0 && (
+          <div className="mt-1.5">
+            <Button size="sm" variant={trialOnly ? "default" : "outline"}
+              className="h-7 gap-1.5 text-xs" onClick={() => setTrialOnly((v) => !v)}>
+              <Sparkles className="h-3.5 w-3.5" />
+              Trial / New Guest
+              <Badge variant={trialOnly ? "secondary" : "outline"} className="ml-0.5 h-5 min-w-[20px] justify-center px-1.5 text-[10px]">{trialCount}</Badge>
+            </Button>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-1.5">
-        {rows.length ? rows.map((r) => (
+        {visible.length ? visible.map((r) => (
           <button key={r.memberId} onClick={() => onSelect(r.memberId)}
             className="flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm hover:bg-muted/50">
             <div className="min-w-0">
-              <p className="truncate font-medium">{r.name}</p>
+              <p className="truncate font-medium">
+                {r.name}
+                {r.status === "trial" && <Badge variant="outline" className="ml-1.5 text-[10px] align-middle">Trial</Badge>}
+              </p>
               <p className="truncate text-xs text-muted-foreground">{r.planName ?? "No active plan"}</p>
               {tone === "present" && (
                 <p className="truncate text-xs">
@@ -341,7 +360,7 @@ function MemberList({ title, tone, rows, onSelect }: {
               <span className="shrink-0 text-xs text-muted-foreground">{r.remainingServings} left</span>
             )}
           </button>
-        )) : <p className="text-sm text-muted-foreground">Nobody here.</p>}
+        )) : <p className="text-sm text-muted-foreground">{trialOnly ? "No trial members." : "Nobody here."}</p>}
       </CardContent>
     </Card>
   );
