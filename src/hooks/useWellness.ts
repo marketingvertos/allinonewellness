@@ -1724,29 +1724,35 @@ export function useServingTrend(days = 30, memberMode?: MemberModeFilter) {
   return useQuery({
     queryKey: ["wellness-serving-trend", days, memberMode ?? "all"],
     queryFn: async () => {
-      const since = new Date();
-      since.setDate(since.getDate() - days);
+      const today = todayIst();
+      const shift = (n: number) =>
+        new Date(Date.parse(today + "T00:00:00Z") + n * 86_400_000).toISOString().slice(0, 10);
+      const since = shift(-(days - 1));
       const ids = await memberIdsForMode(memberMode);
-      let q = supabase
-        .from("wellness_attendance")
-        .select("visit_date, serving_deducted")
-        .gte("visit_date", since.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }))
-        .order("visit_date");
-      if (ids) q = q.in("member_id", ids);
-      const { data, error } = await q;
-      if (error) throw error;
+      // Paginate: a 30-day window is far above the 1,000-row response cap.
+      const rows: { visit_date: string; serving_deducted: boolean }[] = [];
+      for (let from = 0; ; from += 1000) {
+        let q = supabase
+          .from("wellness_attendance")
+          .select("visit_date, serving_deducted")
+          .gte("visit_date", since)
+          .lte("visit_date", today)
+          .order("id")
+          .range(from, from + 999);
+        if (ids) q = q.in("member_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+        const { data, error } = await q;
+        if (error) throw error;
+        rows.push(...((data ?? []) as typeof rows));
+        if (!data || data.length < 1000) break;
+      }
 
       const buckets: Record<string, { visits: number; servings: number }> = {};
-      for (let i = days - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        buckets[d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })] = { visits: 0, servings: 0 };
-      }
-      for (const row of data ?? []) {
-        const key = (row as { visit_date: string }).visit_date;
-        if (!buckets[key]) buckets[key] = { visits: 0, servings: 0 };
+      for (let i = days - 1; i >= 0; i--) buckets[shift(-i)] = { visits: 0, servings: 0 };
+      for (const row of rows) {
+        const key = row.visit_date;
+        if (!buckets[key]) continue;
         buckets[key].visits += 1;
-        if ((row as { serving_deducted: boolean }).serving_deducted) buckets[key].servings += 1;
+        if (row.serving_deducted) buckets[key].servings += 1;
       }
       return Object.entries(buckets).map(([date, v]) => ({ date, ...v }));
     },
