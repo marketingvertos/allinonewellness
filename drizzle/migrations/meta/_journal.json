@@ -337,6 +337,20 @@
       "when": 1791792598007,
       "tag": "0047_pink_card_redeem_as_servings",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1791792638811,
+      "tag": "0048_trial_change_start_date",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1791792650680,
+      "tag": "0049_fix_pink_card_redeem_serving_txn",
+      "breakpoints": true
     }
   ]
 }
