@@ -2761,6 +2761,25 @@ export function useRedeemPinkCard() {
   });
 }
 
+/** Redeem Pink Card credit as extra servings on the active membership. */
+export function useRedeemPinkCardAsServings() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: { memberId: string; credits: number; note?: string | null }) => {
+      const { data, error } = await supabase.rpc("redeem_pink_card_as_servings", {
+        p_member_id: args.memberId,
+        p_credits: args.credits,
+        p_note: args.note ?? undefined,
+      });
+      if (error) throw error;
+      return data as { new_balance: number; new_servings: number };
+    },
+    onSuccess: () => qc.invalidateQueries(),
+    onError: t.onError,
+  });
+}
+
 // ---------- Attendance Register ----------
 
 export type AttendanceMark = "visit" | "serving";

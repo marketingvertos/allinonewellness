@@ -5,6 +5,7 @@ import {
   useIsWellnessManager,
   usePinkCardLedger,
   useRedeemPinkCard,
+  useRedeemPinkCardAsServings,
   useWellnessMember,
 } from "@/hooks/useWellness";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import { HeartHandshake } from "lucide-react";
@@ -37,6 +39,8 @@ function reasonLabel(reason: string, referredName?: string | null) {
       return referredName ? `Membership referral — ${referredName}` : "Membership referral";
     case "renewal_redemption":
       return "Redeemed at renewal";
+    case "serving_redemption":
+      return "Redeemed as extra servings";
     case "referral_reversal":
       return referredName ? `Referral reversed — ${referredName}` : "Referral reversed";
     case "manual_adjustment":
@@ -61,10 +65,12 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
   const isManager = useIsWellnessManager();
   const adjust = useAdjustPinkCard();
   const redeem = useRedeemPinkCard();
+  const redeemServings = useRedeemPinkCardAsServings();
   const [open, setOpen] = useState(false);
   const [change, setChange] = useState("1");
   const [note, setNote] = useState("");
   const [redeemOpen, setRedeemOpen] = useState(false);
+  const [redeemMode, setRedeemMode] = useState<"renewal" | "servings">("renewal");
   const [credits, setCredits] = useState("0");
   const [redeemNote, setRedeemNote] = useState("");
 
@@ -86,6 +92,7 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
                 onClick={() => {
                   setCredits(String(bal));
                   setRedeemNote("");
+                  setRedeemMode("renewal");
                   setRedeemOpen(true);
                 }}
               >
@@ -104,7 +111,7 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
             {bal} serving{bal === 1 ? "" : "s"}
           </p>
           <p className="text-sm text-muted-foreground">
-            {formatCurrency(pinkCardValue(bal))} credit, applied as a discount on the next renewal.
+            {formatCurrency(pinkCardValue(bal))} credit — redeem as a renewal discount or extra servings.
           </p>
           {referrer?.full_name && (
             <p className="mt-1 text-sm">
@@ -192,34 +199,58 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
       <ResponsiveDialog
         open={redeemOpen}
         onOpenChange={setRedeemOpen}
-        title="Mark Pink Card reward as redeemed"
-        description="Deducts the credit and records it in the Pink Card history."
+        title="Redeem Pink Card credit"
+        description="Choose how to use the credit — as a renewal discount or as extra servings on the active membership."
         footer={
           <>
             <Button variant="outline" onClick={() => setRedeemOpen(false)}>
               Cancel
             </Button>
             <Button
-              disabled={creditsNum <= 0 || creditsNum > bal || redeem.isPending}
+              disabled={creditsNum <= 0 || creditsNum > bal || redeem.isPending || redeemServings.isPending}
               onClick={async () => {
-                await redeem.mutateAsync({
-                  memberId,
-                  credits: creditsNum,
-                  membershipId: null,
-                  note: redeemNote.trim() || null,
-                });
+                if (redeemMode === "servings") {
+                  await redeemServings.mutateAsync({
+                    memberId,
+                    credits: creditsNum,
+                    note: redeemNote.trim() || null,
+                  });
+                } else {
+                  await redeem.mutateAsync({
+                    memberId,
+                    credits: creditsNum,
+                    membershipId: null,
+                    note: redeemNote.trim() || null,
+                  });
+                }
                 setRedeemOpen(false);
                 setRedeemNote("");
               }}
             >
-              Mark redeemed
+              {redeem.isPending || redeemServings.isPending ? "Redeeming…" : "Redeem"}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
+          <RadioGroup value={redeemMode} onValueChange={(v) => setRedeemMode(v as "renewal" | "servings")} className="space-y-2">
+            <Label className="flex cursor-pointer items-center gap-3 rounded-md border p-3 font-normal">
+              <RadioGroupItem value="renewal" />
+              <div>
+                <p className="font-medium">Renewal discount</p>
+                <p className="text-xs text-muted-foreground">Apply as a discount on the next membership renewal</p>
+              </div>
+            </Label>
+            <Label className="flex cursor-pointer items-center gap-3 rounded-md border p-3 font-normal">
+              <RadioGroupItem value="servings" />
+              <div>
+                <p className="font-medium">Extra servings</p>
+                <p className="text-xs text-muted-foreground">Add servings to the active membership (1 credit = 1 serving)</p>
+              </div>
+            </Label>
+          </RadioGroup>
           <div className="space-y-2">
-            <Label htmlFor="pc-redeem">Servings to redeem</Label>
+            <Label htmlFor="pc-redeem">Credits to redeem</Label>
             <Input
               id="pc-redeem"
               value={credits}
@@ -238,7 +269,7 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
               id="pc-redeem-note"
               value={redeemNote}
               onChange={(e) => setRedeemNote(e.target.value)}
-              placeholder="e.g. adjusted against renewal paid in cash"
+              placeholder={redeemMode === "servings" ? "e.g. extra servings for referral reward" : "e.g. adjusted against renewal paid in cash"}
             />
           </div>
         </div>
