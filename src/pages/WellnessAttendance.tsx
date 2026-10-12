@@ -291,12 +291,12 @@ export default function WellnessAttendance() {
 
 function Tile({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string | number; sub?: string }) {
   return (
-    <div className="rounded-lg border bg-card p-3">
-      <div className="mb-1 flex items-center gap-2">
-        {icon}
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+    <div className="rounded-xl border bg-card p-3 shadow-sm">
+      <div className="mb-1.5 flex items-center gap-2">
+        <div className="rounded-lg bg-primary/10 p-1.5">{icon}</div>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
       </div>
-      <p className="truncate text-xl font-bold">{value}</p>
+      <p className="truncate font-display text-xl font-bold tabular-nums">{value}</p>
       {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
     </div>
   );
@@ -332,7 +332,7 @@ function MemberList({ title, tone, rows, onSelect }: {
       <CardContent className="space-y-1.5">
         {visible.length ? visible.map((r) => (
           <button key={r.memberId} onClick={() => onSelect(r.memberId)}
-            className="flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm hover:bg-muted/50">
+            className="flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/50">
             <div className="min-w-0">
               <p className="truncate font-medium">
                 {r.name}

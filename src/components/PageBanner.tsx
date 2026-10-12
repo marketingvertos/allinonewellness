@@ -7,16 +7,16 @@ interface PageBannerProps {
 
 export function PageBanner({ title, description, avatar, children }: PageBannerProps) {
   return (
-    <div className="mb-6">
+    <div className="mb-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-center gap-4 min-w-0">
           {avatar}
           <div className="min-w-0">
-            <h1 className="text-xl md:text-2xl font-semibold tracking-tight truncate">
+            <h1 className="font-display text-2xl md:text-3xl font-semibold tracking-tight truncate">
               {title}
             </h1>
             {description && (
-              <p className="text-muted-foreground text-sm mt-0.5">{description}</p>
+              <p className="text-muted-foreground text-sm mt-1">{description}</p>
             )}
           </div>
         </div>

@@ -28,7 +28,7 @@ export function DashboardActivityCards({ mode }: { mode: MemberModeFilter }) {
   return (
     <section className="space-y-3" aria-labelledby="dashboard-activity-heading">
       <div>
-        <h2 id="dashboard-activity-heading" className="text-base font-semibold">Today&rsquo;s club activity</h2>
+        <h2 id="dashboard-activity-heading" className="font-display text-base font-semibold">Today&rsquo;s club activity</h2>
         <p className="text-xs text-muted-foreground">
           Guests, memberships, renewals and trials — India time. Tap any card to see who it counts.
         </p>
@@ -49,16 +49,18 @@ export function DashboardActivityCards({ mode }: { mode: MemberModeFilter }) {
               onClick={() => setOpenKey(card.key)}
               className="h-full rounded-lg text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-            <Card className="h-full transition-colors hover:border-primary/50 hover:bg-accent/30">
+            <Card className="h-full transition-all hover:border-primary/50 hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
-                <card.icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div className="rounded-lg bg-primary/10 p-1.5">
+                  <card.icon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                </div>
               </CardHeader>
               <CardContent>
                 {isPending ? (
                   <Skeleton className="h-9 w-16" aria-label="Loading count" />
                 ) : (
-                  <p className="text-3xl font-bold">{data?.[card.key] ?? 0}</p>
+                  <p className="font-display text-3xl font-bold tabular-nums">{data?.[card.key] ?? 0}</p>
                 )}
                 <p className="mt-2 text-xs text-muted-foreground">{card.description}</p>
               </CardContent>

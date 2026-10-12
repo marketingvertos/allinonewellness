@@ -41,7 +41,7 @@ export function ServingTrendChart({ days = 30, memberMode }: { days?: number; me
   return (
     <Card>
       <CardHeader className="space-y-1">
-        <CardTitle className="text-base">Serving consumption (last {days} days)</CardTitle>
+        <CardTitle className="text-base">Serving consumption <span className="font-normal text-sm text-muted-foreground">(last {days} days)</span></CardTitle>
         <p className="text-xs text-muted-foreground">
           {sum.club} club check-ins · {sum.issued} servings issued · {sum.club + sum.issued} total servings
         </p>
@@ -63,7 +63,7 @@ export function ServingTrendChart({ days = 30, memberMode }: { days?: number; me
                 <Tooltip content={<TrendTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.4)" }} />
                 <Bar dataKey="club" name="Club check-ins" stackId="s" fill="hsl(var(--primary))" />
                 <Bar dataKey="issued" name="Servings issued" stackId="s" fill="hsl(var(--chart-issued))"
-                  radius={[3, 3, 0, 0]} label={<TotalLabel rows={rows} />} />
+                  radius={[4, 4, 0, 0]} label={<TotalLabel rows={rows} />} />
               </BarChart>
             </ResponsiveContainer>
           </div>

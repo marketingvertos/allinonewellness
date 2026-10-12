@@ -69,7 +69,7 @@ export function ChangeTrialPlanDialog({ open, onOpenChange, trial, visitsUsed }:
         </DialogHeader>
         <RadioGroup value={key} onValueChange={setKey} className="space-y-2">
           {options.map((o) => (
-            <Label key={o.key} className="flex cursor-pointer items-center gap-3 rounded-md border p-3 font-normal">
+            <Label key={o.key} className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 font-normal transition-colors hover:bg-muted/50 has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5">
               <RadioGroupItem value={o.key} />
               <span className="flex-1">{o.label}</span>
               <span className="text-xs text-muted-foreground">{o.servings} serving{o.servings === 1 ? "" : "s"}</span>

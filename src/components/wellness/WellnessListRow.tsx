@@ -35,8 +35,8 @@ export function WellnessListRow({ title, meta, badges, actions, onClick, classNa
           : undefined
       }
       className={cn(
-        "rounded-lg border bg-card p-3 transition-colors sm:p-4",
-        interactive && "cursor-pointer hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "rounded-xl border bg-card p-3 shadow-sm transition-all sm:p-4",
+        interactive && "cursor-pointer hover:border-primary/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,
       )}
     >

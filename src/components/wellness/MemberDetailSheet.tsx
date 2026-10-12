@@ -192,11 +192,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+      <SheetContent className="flex w-full flex-col gap-0 overflow-hidden border-l-0 p-0 shadow-2xl sm:max-w-3xl sm:border-l">
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
 
         <SheetHeader>
-          <SheetTitle className="flex flex-wrap items-center gap-2">
+          <SheetTitle className="flex flex-wrap items-center gap-2 font-display text-xl">
             {member.full_name}
             <Badge variant={statusVariant(member.status)}>{statusLabel(member.status)}</Badge>
             <MasterTitleBadge level={member.master_level} />
@@ -280,7 +280,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
             />
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-lg border p-4 text-sm">
+              <div className="rounded-xl border p-4 text-sm shadow-sm">
                 <p className="font-medium">Date of birth</p>
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
 
@@ -306,7 +306,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                 <p className="mt-2 text-xs text-muted-foreground">Used for birthday reminders on the overview page.</p>
               </div>
 
-              <div className="rounded-lg border p-4 text-sm">
+              <div className="rounded-xl border p-4 shadow-sm text-sm">
                 <p className="font-medium">Joining date</p>
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
                   <DobInput
@@ -333,7 +333,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                 </p>
               </div>
 
-              <div className="rounded-lg border p-4 text-sm">
+              <div className="rounded-xl border p-4 shadow-sm text-sm">
                 <MemberLoginCard memberId={member.id} mobileNumber={member.mobile_number} />
                 {!member.user_id && (
                   <p className="mt-3 text-xs text-muted-foreground">
@@ -346,7 +346,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               </div>
 
 
-              <div className="rounded-lg border p-4 text-sm sm:col-span-2">
+              <div className="rounded-xl border p-4 shadow-sm text-sm sm:col-span-2">
                 <p className="font-medium">Batch</p>
                 <div className="mt-2">
                   <BatchPicker
@@ -356,7 +356,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                 </div>
               </div>
 
-              <div className="rounded-lg border p-4 text-sm sm:col-span-2">
+              <div className="rounded-xl border p-4 shadow-sm text-sm sm:col-span-2">
                 <p className="font-medium">Tags</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {MEMBER_TAGS.map((tag) => {
@@ -391,7 +391,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                 </p>
               </div>
 
-              <div className="rounded-lg border p-4 text-sm sm:col-span-2">
+              <div className="rounded-xl border p-4 shadow-sm text-sm sm:col-span-2">
                 <p className="font-medium">Referred by / helped by</p>
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
                   <ReferrerPicker
@@ -418,7 +418,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
 
 
             {activeTrial && (
-              <div className="rounded-lg border p-4 text-sm">
+              <div className="rounded-xl border p-4 shadow-sm text-sm">
                 <p className="font-medium">Trial in progress</p>
                 <p className="text-muted-foreground">
                   {formatDate(activeTrial.start_date)} → {formatDate(activeTrial.end_date)}
@@ -430,7 +430,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <TabsContent value="plan" className="space-y-4 pt-4">
             {member.referred_by_member_id && <FrontlineCountFlag memberId={member.id} />}
             {activeMembership ? (
-              <div className="space-y-3 rounded-lg border p-4">
+              <div className="space-y-3 rounded-xl border p-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <p className="font-medium">{activeMembership.wellness_plans?.name ?? "Membership"}</p>
                   <Badge variant={activeMembership.status === "expiring_soon" ? "destructive" : "secondary"}>
@@ -501,7 +501,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                 </div>
               </div>
             ) : (
-              <div className="space-y-3 rounded-lg border p-4">
+              <div className="space-y-3 rounded-xl border p-4 shadow-sm">
                 <p className="text-sm text-muted-foreground">No active membership.</p>
                 <div className="space-y-2">
                   <Label>Choose a plan</Label>

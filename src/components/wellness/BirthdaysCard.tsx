@@ -25,7 +25,7 @@ export function BirthdaysCard({ memberMode }: { memberMode?: MemberModeFilter })
               ? `Happy Birthday ${c.full_name}! Wishing you a healthy and wonderful year ahead from all of us at the wellness centre.`
               : `Happy Anniversary ${c.full_name}! Wishing you and your partner health and happiness — from all of us at the wellness centre.`;
             return (
-              <div key={c.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+              <div key={c.id} className="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-muted/50">
                 <div className="min-w-0">
                   <p className="flex items-center gap-1.5 truncate font-medium">
                     {isBirthday ? <Cake className="h-3.5 w-3.5 text-muted-foreground" /> : <Heart className="h-3.5 w-3.5 text-muted-foreground" />}

@@ -71,11 +71,11 @@ function SalesTile({ label, value, detail, onClick }: { label: string; value: st
   return (
     <button
       onClick={onClick}
-      className="w-full cursor-pointer rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-accent/40"
+      className="w-full cursor-pointer rounded-xl border p-4 text-left transition-all hover:border-primary/50 hover:shadow-md active:scale-[0.98]"
     >
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-xl font-bold">{value}</p>
-      <p className="text-xs text-muted-foreground">{detail}</p>
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-1.5 font-display text-xl font-bold tabular-nums">{value}</p>
+      <p className="mt-0.5 text-xs text-muted-foreground">{detail}</p>
     </button>
   );
 }
@@ -217,13 +217,15 @@ export default function WellnessDashboard() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cards.map((c) => {
             const body = (
-              <Card className={c.to ? "transition-colors hover:border-primary hover:bg-accent/40" : undefined}>
+              <Card className={c.to ? "transition-all hover:border-primary/50 hover:shadow-lg" : undefined}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">{c.title}</CardTitle>
-                  <c.icon className="h-4 w-4 text-muted-foreground" />
+                  <div className="rounded-lg bg-primary/10 p-1.5">
+                    <c.icon className="h-4 w-4 text-primary" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold">{c.value}</p>
+                  <p className="font-display text-3xl font-bold tabular-nums">{c.value}</p>
                 </CardContent>
               </Card>
             );
@@ -298,7 +300,7 @@ export default function WellnessDashboard() {
           <CardContent className="space-y-2">
             {data?.lowBalance?.length ? (
               data.lowBalance.map((m) => (
-                <div key={m.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+                <div key={m.id} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-muted/50">
                   <div>
                     <p className="font-medium">{m.wellness_members?.full_name}</p>
                     <p className="text-xs text-muted-foreground">Ends {formatDate(m.end_date)}</p>
@@ -327,7 +329,7 @@ export default function WellnessDashboard() {
           <CardContent className="space-y-2">
             {renewals.length ? (
               renewals.map((m) => (
-                <div key={m.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+                <div key={m.id} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-muted/50">
                   <div>
                     <p className="font-medium">{m.wellness_members?.full_name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -352,7 +354,7 @@ export default function WellnessDashboard() {
               rankedReferrers.map((r, i) => {
                 const next = getNextMasterLevel(r.total);
                 return (
-                  <div key={r.id} className="space-y-1 rounded-md border px-3 py-2 text-sm">
+                  <div key={r.id} className="space-y-1 rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-muted/50">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-medium">
                         {i + 1}. {r.full_name}
@@ -397,7 +399,7 @@ export default function WellnessDashboard() {
           <CardContent className="space-y-2">
             {coachesAtRisk?.length ? (
               coachesAtRisk.map((c) => (
-                <div key={c.id} className="rounded-md border px-3 py-2 text-sm">
+                <div key={c.id} className="rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-muted/50">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-medium">{c.full_name}</span>
                     <Badge variant="outline">

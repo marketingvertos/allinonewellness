@@ -78,10 +78,13 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
   const creditsNum = Number(credits) || 0;
 
   return (
-    <Card className="border-[hsl(330_70%_55%/0.4)]">
+    <Card className="border-[hsl(330_70%_55%/0.3)] bg-gradient-to-br from-[hsl(330_70%_97%)] to-card dark:from-[hsl(330_30%_14%)] dark:to-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="flex items-center gap-2 text-base text-[hsl(330_70%_45%)]">
-          <HeartHandshake className="h-4 w-4" /> Pink Card
+        <CardTitle className="flex items-center gap-2 text-base text-[hsl(330_70%_45%)] dark:text-[hsl(330_70%_70%)]">
+          <div className="rounded-lg bg-[hsl(330_70%_55%/0.12)] p-1.5">
+            <HeartHandshake className="h-4 w-4" />
+          </div>
+          Pink Card
         </CardTitle>
         {!readOnly && isManager && (
           <div className="flex items-center gap-2">
@@ -107,7 +110,7 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <p className="text-2xl font-bold text-[hsl(330_70%_45%)]">
+          <p className="font-display text-3xl font-bold tabular-nums text-[hsl(330_70%_45%)] dark:text-[hsl(330_70%_70%)]">
             {bal} serving{bal === 1 ? "" : "s"}
           </p>
           <p className="text-sm text-muted-foreground">
@@ -127,7 +130,7 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
         ) : (
           <div className="space-y-2">
             {(ledger ?? []).map((row) => (
-              <div key={row.id} className="flex items-start justify-between gap-3 rounded-md border p-2 text-sm">
+              <div key={row.id} className="flex items-start justify-between gap-3 rounded-lg border border-[hsl(330_70%_55%/0.15)] p-2.5 text-sm transition-colors hover:bg-[hsl(330_70%_55%/0.04)]">
                 <div>
                   <p className="font-medium">{reasonLabel(row.reason, row.referred?.full_name)}</p>
                   <p className="text-xs text-muted-foreground">
@@ -234,14 +237,14 @@ export function PinkCardPanel({ memberId, balance, readOnly, referrerId }: Props
       >
         <div className="space-y-4">
           <RadioGroup value={redeemMode} onValueChange={(v) => setRedeemMode(v as "renewal" | "servings")} className="space-y-2">
-            <Label className="flex cursor-pointer items-center gap-3 rounded-md border p-3 font-normal">
+            <Label className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 font-normal transition-colors hover:bg-muted/50 has-[:checked]:border-[hsl(330_70%_55%/0.5)] has-[:checked]:bg-[hsl(330_70%_55%/0.05)]">
               <RadioGroupItem value="renewal" />
               <div>
                 <p className="font-medium">Renewal discount</p>
                 <p className="text-xs text-muted-foreground">Apply as a discount on the next membership renewal</p>
               </div>
             </Label>
-            <Label className="flex cursor-pointer items-center gap-3 rounded-md border p-3 font-normal">
+            <Label className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 font-normal transition-colors hover:bg-muted/50 has-[:checked]:border-[hsl(330_70%_55%/0.5)] has-[:checked]:bg-[hsl(330_70%_55%/0.05)]">
               <RadioGroupItem value="servings" />
               <div>
                 <p className="font-medium">Extra servings</p>

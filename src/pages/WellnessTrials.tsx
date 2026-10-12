@@ -137,7 +137,7 @@ export default function WellnessTrials() {
               {idx === activeCount && (
                 <h2 className="pt-4 text-sm font-semibold text-muted-foreground">Trial ended — not joined yet</h2>
               )}
-              <Card>
+              <Card className="transition-all hover:shadow-md">
                 <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
                   <button
                     className="text-left"

@@ -176,6 +176,25 @@
     font-family: 'Fraunces', Georgia, serif;
     letter-spacing: -0.01em;
   }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.15);
+    color: hsl(var(--foreground));
+  }
+
+  .dark ::selection {
+    background: hsl(var(--primary) / 0.3);
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.5;
+    cursor: pointer;
+  }
 }
 
 @media print {
