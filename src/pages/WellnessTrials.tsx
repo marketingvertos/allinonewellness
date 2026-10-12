@@ -50,7 +50,7 @@ export default function WellnessTrials() {
   const { toast } = useToast();
   const toPaidTrial = useMutation({
     mutationFn: async (a: { trialId: string; planId: string; mode: string }) => {
-      const { error } = await supabase.rpc("convert_guest_to_paid_trial", { p_trial_id: a.trialId, p_plan_id: a.planId, p_payment_mode: a.mode } as never);
+      const { error } = await supabase.rpc("convert_guest_to_paid_trial", { p_trial_id: a.trialId, p_plan_id: a.planId, p_payment_mode: a.mode });
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["wellness-trials"] }); toast({ title: "Moved to paid trial" }); },

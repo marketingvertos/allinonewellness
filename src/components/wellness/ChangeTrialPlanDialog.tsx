@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,6 +11,8 @@ import { useWellnessPlans } from "@/hooks/useWellness";
 import { PAYMENT_MODES } from "@/hooks/useReports";
 import { useToast } from "@/hooks/use-toast";
 import { isPaid3, trialChangeError, trialPlanOptions } from "@/lib/trialPlanChange";
+
+const istToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
 interface Props {
   open: boolean;
@@ -25,9 +28,11 @@ export function ChangeTrialPlanDialog({ open, onOpenChange, trial, visitsUsed }:
   const current = options.find((o) => o.key === currentKey);
   const [key, setKey] = useState(currentKey);
   const [mode, setMode] = useState("cash");
+  const [startDate, setStartDate] = useState(istToday());
   const choice = options.find((o) => o.key === key);
   const error = choice ? trialChangeError(visitsUsed, choice) : null;
   const losesCredit = isPaid3(current) && !isPaid3(choice);
+  const switchingToPaid = choice && choice.price > 0 && (current ? current.price === 0 : true);
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -36,10 +41,11 @@ export function ChangeTrialPlanDialog({ open, onOpenChange, trial, visitsUsed }:
       if (!choice) return;
       const { error } = await supabase.rpc("change_trial_plan", {
         p_trial_id: trial.id,
-        p_plan_id: choice.planId,
+        p_plan_id: choice.planId ?? undefined,
         p_duration_days: choice.durationDays,
-        p_payment_mode: choice.price > 0 ? mode : null,
-      } as never);
+        p_payment_mode: choice.price > 0 ? mode : undefined,
+        p_start_date: switchingToPaid ? startDate : undefined,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -57,7 +63,8 @@ export function ChangeTrialPlanDialog({ open, onOpenChange, trial, visitsUsed }:
         <DialogHeader>
           <DialogTitle>Change trial plan</DialogTitle>
           <DialogDescription>
-            {trial.name} · now on {current?.label ?? "trial"} · {visitsUsed} visit{visitsUsed === 1 ? "" : "s"} used. Dates are recalculated from the original start date.
+            {trial.name} · now on {current?.label ?? "trial"} · {visitsUsed} visit{visitsUsed === 1 ? "" : "s"} used.
+            {switchingToPaid ? " Pick a start date for the paid trial." : " Dates are recalculated from the original start date."}
           </DialogDescription>
         </DialogHeader>
         <RadioGroup value={key} onValueChange={setKey} className="space-y-2">
@@ -69,6 +76,12 @@ export function ChangeTrialPlanDialog({ open, onOpenChange, trial, visitsUsed }:
             </Label>
           ))}
         </RadioGroup>
+        {switchingToPaid && (
+          <div className="space-y-1">
+            <Label>Trial start date</Label>
+            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          </div>
+        )}
         {choice && choice.price > 0 && (
           <div className="space-y-1">
             <Label>Payment mode</Label>

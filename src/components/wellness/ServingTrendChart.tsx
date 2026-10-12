@@ -1,7 +1,17 @@
 import { MemberModeFilter, useServingTrend } from "@/hooks/useWellness";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+
+function BarLabel({ x, y, width, value }: { x?: number; y?: number; width?: number; value?: number }) {
+  if (!value || value === 0) return null;
+  return (
+    <text x={(x ?? 0) + (width ?? 0) / 2} y={(y ?? 0) - 4} textAnchor="middle" fontSize={10} fontWeight={600}
+      fill="hsl(var(--foreground))">
+      {value}
+    </text>
+  );
+}
 
 export function ServingTrendChart({ days = 30, memberMode }: { days?: number; memberMode?: MemberModeFilter }) {
   const { data, isLoading } = useServingTrend(days, memberMode);
@@ -22,13 +32,7 @@ export function ServingTrendChart({ days = 30, memberMode }: { days?: number; me
         ) : (
           <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={rows} margin={{ top: 5, right: 8, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="servingFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
-                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <BarChart data={rows} margin={{ top: 18, right: 8, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
@@ -40,15 +44,15 @@ export function ServingTrendChart({ days = 30, memberMode }: { days?: number; me
                     fontSize: 12,
                   }}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="servings"
-                  name="Servings used"
-                  stroke="hsl(var(--primary))"
-                  fill="url(#servingFill)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
+                <Bar dataKey="servings" name="Servings used" radius={[3, 3, 0, 0]}
+                  label={<BarLabel />}>
+                  {rows.map((row, i) => (
+                    <Cell key={i} fill={row.servings === 0
+                      ? "hsl(var(--muted))"
+                      : "hsl(var(--primary))"} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         )}
