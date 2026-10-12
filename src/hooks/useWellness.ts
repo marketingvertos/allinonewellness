@@ -1743,32 +1743,44 @@ export function useServingTrend(days = 30, memberMode?: MemberModeFilter) {
         new Date(Date.parse(today + "T00:00:00Z") + n * 86_400_000).toISOString().slice(0, 10);
       const since = shift(-(days - 1));
       const ids = await memberIdsForMode(memberMode);
-      // Paginate: a 30-day window is far above the 1,000-row response cap.
-      const rows: { visit_date: string; serving_deducted: boolean }[] = [];
-      for (let from = 0; ; from += 1000) {
+      const memberFilter = ids ? (ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]) : null;
+      // Club check-ins: every visit at the club (trial, guest or membership), excluding packed days.
+      const att = await readAllPages<{ visit_date: string }>((a, b) => {
         let q = supabase
           .from("wellness_attendance")
-          .select("visit_date, serving_deducted")
+          .select("visit_date")
+          .neq("checkin_method", "serving_issue" as never)
           .gte("visit_date", since)
           .lte("visit_date", today)
           .order("id")
-          .range(from, from + 999);
-        if (ids) q = q.in("member_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
-        const { data, error } = await q;
-        if (error) throw error;
-        rows.push(...((data ?? []) as typeof rows));
-        if (!data || data.length < 1000) break;
-      }
+          .range(a, b);
+        if (memberFilter) q = q.in("member_id", memberFilter);
+        return q;
+      });
+      if (att.error) throw att.error;
+      // Servings issued: packed quantity counted on the day it was handed over.
+      const packs = await readAllPages<{ change: number; created_at: string }>((a, b) => {
+        let q = supabase
+          .from("serving_transactions")
+          .select("change, created_at")
+          .eq("txn_type", "pack_and_issue" as never)
+          .gte("created_at", `${since}T00:00:00+05:30`)
+          .lte("created_at", `${today}T23:59:59.999+05:30`)
+          .order("id")
+          .range(a, b);
+        if (memberFilter) q = q.in("member_id", memberFilter);
+        return q;
+      });
+      if (packs.error) throw packs.error;
 
-      const buckets: Record<string, { visits: number; servings: number }> = {};
-      for (let i = days - 1; i >= 0; i--) buckets[shift(-i)] = { visits: 0, servings: 0 };
-      for (const row of rows) {
-        const key = row.visit_date;
-        if (!buckets[key]) continue;
-        buckets[key].visits += 1;
-        if (row.serving_deducted) buckets[key].servings += 1;
+      const buckets: Record<string, { club: number; issued: number }> = {};
+      for (let i = days - 1; i >= 0; i--) buckets[shift(-i)] = { club: 0, issued: 0 };
+      for (const row of att.data) if (buckets[row.visit_date]) buckets[row.visit_date].club += 1;
+      for (const p of packs.data) {
+        const key = new Date(p.created_at).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+        if (buckets[key]) buckets[key].issued += Math.abs(Number(p.change));
       }
-      return Object.entries(buckets).map(([date, v]) => ({ date, ...v }));
+      return Object.entries(buckets).map(([date, v]) => ({ date, ...v, total: v.club + v.issued }));
     },
   });
 }

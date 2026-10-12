@@ -40,6 +40,7 @@
 
     --accent: 41 90% 73%;
     --accent-foreground: 185 40% 14%;
+    --chart-issued: 32 92% 52%;
 
     --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
@@ -114,6 +115,7 @@
 
     --accent: 186 30% 20%;
     --accent-foreground: 41 90% 78%;
+    --chart-issued: 38 92% 58%;
 
     --destructive: 0 55% 40%;
     --destructive-foreground: 0 0% 100%;
