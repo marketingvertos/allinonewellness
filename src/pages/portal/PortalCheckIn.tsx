@@ -189,9 +189,17 @@ export default function PortalCheckIn() {
                       ? `${result.message} Your request has been sent to the front desk.`
                       : "Your request has been sent to the front desk. This screen updates automatically once it is approved."
                     : duplicate
-                      ? "Your visit for today is already recorded — no extra serving has been deducted."
-                      : approved
-                        ? "Your visit is recorded, your weight is saved and one serving has been deducted."
+                      ? isWlp
+                        ? result?.message ?? "You are already checked in to this WLP session — no extra serving has been deducted."
+                        : "Your visit for today is already recorded — no extra serving has been deducted."
+                      : wlpOk
+                        ? result?.warning === "overdraft"
+                          ? "Your WLP attendance is recorded, but your serving balance is now negative. Please speak with staff about renewal."
+                          : result?.warning === "no_membership"
+                            ? "Your WLP attendance is recorded. No serving was deducted because you don't have an active membership."
+                            : `Your WLP session attendance is recorded and one serving has been deducted.${result?.remaining != null ? ` ${result.remaining} serving${result.remaining === 1 ? "" : "s"} remaining.` : ""}`
+                        : approved
+                          ? "Your visit is recorded, your weight is saved and one serving has been deducted."
                         : rejected
                           ? request?.reject_reason ||
                             (status === "expired"
