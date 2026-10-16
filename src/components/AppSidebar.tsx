@@ -22,6 +22,7 @@ import {
   Calendar,
   FileBarChart,
   Gift,
+  Moon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -55,6 +56,7 @@ const navGroups = [
     items: [
       { title: "Check-in", icon: ScanLine, to: "/checkin", end: false },
       { title: "Attendance", icon: CalendarCheck, to: "/attendance", end: false },
+      { title: "WLP Sessions", icon: Moon, to: "/wlp", end: false },
       { title: "Servings", icon: Package, to: "/servings", end: false },
       { title: "Plans", icon: ClipboardList, to: "/plans", end: false },
       { title: "Batches", icon: Layers, to: "/batches", end: false },

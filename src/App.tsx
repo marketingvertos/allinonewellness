@@ -34,9 +34,11 @@ import PortalHome from "./pages/portal/PortalHome";
 import PortalCheckIn from "./pages/portal/PortalCheckIn";
 import PortalHistory from "./pages/portal/PortalHistory";
 import PortalNetwork from "./pages/portal/PortalNetwork";
+import WlpCheckin from "./pages/portal/WlpCheckin";
 import PublicRegister from "./pages/PublicRegister";
 import DisplayWeightChanges from "./pages/display/DisplayWeightChanges";
 import DisplayMilestones from "./pages/display/DisplayMilestones";
+import WellnessWlp from "./pages/WellnessWlp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -89,6 +91,7 @@ const App = () => (
                 <Route path="/promotions" element={<WellnessPromotions />} />
                 <Route path="/batches" element={<WellnessBatches />} />
                 <Route path="/trials" element={<WellnessTrials />} />
+                <Route path="/wlp" element={<WellnessWlp />} />
                 <Route path="/notifications" element={<WellnessNotifications />} />
                 <Route path="/reports" element={<LegacyReportsRedirect />} />
                 <Route path="/reports/events" element={<WellnessReports />} />
@@ -118,6 +121,7 @@ const App = () => (
                 <Route path="/portal/checkin" element={<PortalCheckIn />} />
                 <Route path="/portal/history" element={<PortalHistory />} />
                 <Route path="/portal/network" element={<PortalNetwork />} />
+                <Route path="/portal/wlp/:sessionId" element={<WlpCheckin />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

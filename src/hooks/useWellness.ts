@@ -2792,6 +2792,132 @@ export function useRedeemPinkCardAsServings() {
   });
 }
 
+// ---------- WLP Sessions ----------
+
+export interface WlpSession {
+  id: string;
+  title: string;
+  session_date: string;
+  notes: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface WlpCheckin {
+  id: string;
+  session_id: string;
+  member_id: string;
+  membership_id: string | null;
+  serving_deducted: boolean;
+  checkin_method: string;
+  checked_in_at: string;
+  wellness_members?: { full_name: string; mobile_number: string } | null;
+}
+
+export function useWlpSessions() {
+  return useQuery({
+    queryKey: ["wlp-sessions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wlp_sessions")
+        .select("*")
+        .order("session_date", { ascending: false });
+      if (error) throw error;
+      return data as unknown as WlpSession[];
+    },
+  });
+}
+
+export function useCreateWlpSession() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: { title: string; sessionDate: string; notes?: string }) => {
+      const { data, error } = await supabase.rpc("create_wlp_session", {
+        p_title: args.title,
+        p_session_date: args.sessionDate,
+        p_notes: args.notes ?? undefined,
+      });
+      if (error) throw error;
+      return data as unknown as WlpSession;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wlp-sessions"] });
+      t.success("WLP session created");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useDeleteWlpSession() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (sessionId: string) => {
+      const { error } = await supabase.rpc("delete_wlp_session", { p_session_id: sessionId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wlp-sessions"] });
+      t.success("Session deleted");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useWlpCheckins(sessionId: string | null) {
+  return useQuery({
+    queryKey: ["wlp-checkins", sessionId],
+    enabled: !!sessionId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wlp_checkins")
+        .select("*, wellness_members(full_name, mobile_number)")
+        .eq("session_id", sessionId!)
+        .order("checked_in_at", { ascending: false });
+      if (error) throw error;
+      return data as unknown as WlpCheckin[];
+    },
+  });
+}
+
+export function useWlpCheckinMember() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: { sessionId: string; memberId: string }) => {
+      const { data, error } = await supabase.rpc("wlp_checkin_member", {
+        p_session_id: args.sessionId,
+        p_member_id: args.memberId,
+      });
+      if (error) throw error;
+      return data as unknown as { status: string; checkin_id?: string; remaining?: number | null; warning?: string | null; member_name?: string; message?: string };
+    },
+    onSuccess: (_data) => {
+      qc.invalidateQueries({ queryKey: ["wlp-checkins"] });
+      qc.invalidateQueries({ queryKey: ["wlp-attendance"] });
+    },
+    onError: t.onError,
+  });
+}
+
+export function useUndoWlpCheckin() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (checkinId: string) => {
+      const { error } = await supabase.rpc("undo_wlp_checkin", { p_checkin_id: checkinId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wlp-checkins"] });
+      qc.invalidateQueries({ queryKey: ["wlp-attendance"] });
+      t.success("Check-in undone");
+    },
+    onError: t.onError,
+  });
+}
+
 // ---------- Attendance Register ----------
 
 export type AttendanceMark = "visit" | "serving";

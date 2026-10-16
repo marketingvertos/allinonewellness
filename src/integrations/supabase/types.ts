@@ -2215,6 +2215,84 @@ export type Database = {
           },
         ]
       }
+      wlp_checkins: {
+        Row: {
+          checked_in_at: string
+          checkin_method: Database["public"]["Enums"]["checkin_method"]
+          created_by: string
+          id: string
+          member_id: string
+          membership_id: string | null
+          serving_deducted: boolean
+          serving_txn_id: string | null
+          session_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          checkin_method?: Database["public"]["Enums"]["checkin_method"]
+          created_by: string
+          id?: string
+          member_id: string
+          membership_id?: string | null
+          serving_deducted?: boolean
+          serving_txn_id?: string | null
+          session_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          checkin_method?: Database["public"]["Enums"]["checkin_method"]
+          created_by?: string
+          id?: string
+          member_id?: string
+          membership_id?: string | null
+          serving_deducted?: boolean
+          serving_txn_id?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wlp_checkins_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "wlp_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wlp_checkins_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wlp_sessions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          session_date: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          session_date: string
+          title?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          session_date?: string
+          title?: string
+        }
+        Relationships: []
+      }
       wellness_wlp_attendance: {
         Row: {
           created_at: string
@@ -2703,6 +2781,30 @@ export type Database = {
         }
         Returns: Json
       }
+      create_wlp_session: {
+        Args: { p_title?: string; p_session_date?: string; p_notes?: string }
+        Returns: Json
+      }
+      delete_wlp_session: {
+        Args: { p_session_id: string }
+        Returns: undefined
+      }
+      wlp_checkin_member: {
+        Args: {
+          p_session_id: string
+          p_member_id: string
+          p_method?: Database["public"]["Enums"]["checkin_method"]
+        }
+        Returns: Json
+      }
+      undo_wlp_checkin: {
+        Args: { p_checkin_id: string }
+        Returns: undefined
+      }
+      wlp_self_checkin: {
+        Args: { p_session_id: string }
+        Returns: Json
+      }
       claim_member_account: {
         Args: { p_code: string; p_mobile: string }
         Returns: Json
@@ -3034,6 +3136,7 @@ export type Database = {
         | "refund_adjustment"
         | "pack_and_issue"
         | "trial_advance_deduction"
+        | "wlp_deduction"
       trial_status:
         | "active"
         | "completed"
@@ -3207,6 +3310,7 @@ export const Constants = {
         "refund_adjustment",
         "pack_and_issue",
         "trial_advance_deduction",
+        "wlp_deduction",
       ],
       trial_status: [
         "active",
