@@ -57,6 +57,8 @@ export default function PortalCheckIn() {
   }, [linkCode]);
 
   const status = request?.status ?? result?.status;
+  const isWlp = result?.mode === "wlp";
+  const wlpOk = isWlp && result?.status === "ok";
   const waiting = status === "pending";
   const duplicate = result?.status === "duplicate";
   const approved = status === "approved" || duplicate;
