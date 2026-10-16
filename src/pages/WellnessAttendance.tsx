@@ -135,7 +135,8 @@ export default function WellnessAttendance() {
 
   const present = rows.filter((r) => r.dayMap[data?.today ?? ""] === "visit");
   const served = rows.filter((r) => r.dayMap[data?.today ?? ""] === "serving");
-  const absent = rows.filter((r) => !r.dayMap[data?.today ?? ""]);
+  const wlpToday = rows.filter((r) => r.wlpByDate[data?.today ?? ""]);
+  const absent = rows.filter((r) => !r.dayMap[data?.today ?? ""] && !r.wlpByDate[data?.today ?? ""]);
 
   return (
     <div className="space-y-4 p-4 md:p-6">
@@ -209,6 +210,7 @@ export default function WellnessAttendance() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <MemberList title="Present at club" tone="present" rows={present} onSelect={setSelected} />
           <MemberList title="Serving issued (not at club)" tone="served" rows={served} onSelect={setSelected} />
+          <MemberList title="WLP evening session" tone="served" rows={wlpToday} onSelect={setSelected} />
           <MemberList title="Absent" tone="absent" rows={absent} onSelect={setSelected} />
         </div>
       ) : (
