@@ -4,3 +4,4 @@
 - WhatsApp broadcasts are queued as rows in whatsapp_broadcast_recipients and sent server-side by the whatsapp-broadcast function in background batches — sending survives the page closing and every send goes through the shared sendWhatsApp logger.
 - Keep approved-template media on the broadcast record and match its header type in the shared WhatsApp sender — queued retries must send the same approved picture while existing document templates stay unchanged.
 - Keep staff-managed member media in `wellness_media_posts` and uploaded images in the private `promotion-media` bucket; signed URLs prevent permanent public exposure while publish state and audience remain database-enforced.
+- WLP evening check-ins live in wlp_sessions/wlp_checkins via staff-guarded RPCs (deducting a wlp_deduction serving, overdraft allowed), separate from club attendance — keeps evening sessions out of club check-in counts.
