@@ -166,9 +166,13 @@ export default function PortalCheckIn() {
                 {waiting
                   ? "Waiting for approval"
                   : duplicate
-                    ? "Already checked in today"
-                    : approved
-                      ? "Checked in"
+                    ? isWlp
+                      ? "Already checked in to this session"
+                      : "Already checked in today"
+                    : wlpOk
+                      ? "WLP session check-in"
+                      : approved
+                        ? "Checked in"
                       : needsRenewal
                         ? result?.status === "trial_ended"
                           ? "Free trial finished"
