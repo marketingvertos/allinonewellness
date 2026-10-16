@@ -1772,15 +1772,32 @@ export function useServingTrend(days = 30, memberMode?: MemberModeFilter) {
         return q;
       });
       if (packs.error) throw packs.error;
+      // WLP evening session check-ins, counted on the session date.
+      const wlp = await readAllPages<{ wlp_sessions: { session_date: string } | null }>((a, b) => {
+        let q = supabase
+          .from("wlp_checkins")
+          .select("wlp_sessions!inner(session_date)")
+          .gte("wlp_sessions.session_date", since)
+          .lte("wlp_sessions.session_date", today)
+          .order("id")
+          .range(a, b);
+        if (memberFilter) q = q.in("member_id", memberFilter);
+        return q as never;
+      });
+      if (wlp.error) throw wlp.error;
 
-      const buckets: Record<string, { club: number; issued: number }> = {};
-      for (let i = days - 1; i >= 0; i--) buckets[shift(-i)] = { club: 0, issued: 0 };
+      const buckets: Record<string, { club: number; issued: number; wlp: number }> = {};
+      for (let i = days - 1; i >= 0; i--) buckets[shift(-i)] = { club: 0, issued: 0, wlp: 0 };
+      for (const w of wlp.data) {
+        const d = w.wlp_sessions?.session_date;
+        if (d && buckets[d]) buckets[d].wlp += 1;
+      }
       for (const row of att.data) if (buckets[row.visit_date]) buckets[row.visit_date].club += 1;
       for (const p of packs.data) {
         const key = new Date(p.created_at).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
         if (buckets[key]) buckets[key].issued += Math.abs(Number(p.change));
       }
-      return Object.entries(buckets).map(([date, v]) => ({ date, ...v, total: v.club + v.issued }));
+      return Object.entries(buckets).map(([date, v]) => ({ date, ...v, total: v.club + v.issued + v.wlp }));
     },
   });
 }
