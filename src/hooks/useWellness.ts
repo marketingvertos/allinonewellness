@@ -2951,6 +2951,8 @@ export interface AttendanceRow {
   presentDays: number;
   visitDays: number;
   servingDays: number;
+  wlpByDate: Record<string, boolean>;
+  wlpDays: number;
   absentDays: number;
   percentage: number;
   initialWeight: number | null;
@@ -2969,6 +2971,7 @@ export interface AttendanceRegisterResult {
   totalMembers: number;
   todayPresent: number;
   todayServed: number;
+  todayWlp: number;
   todayAbsent: number;
   avgAttendance: number;
   bestAttendee: { name: string; percentage: number } | null;
@@ -3040,6 +3043,24 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
         if (!data || data.length < pageSize) break;
       }
 
+      // WLP evening session check-ins (separate from club attendance).
+      const wlpMap: Record<string, Set<string>> = {};
+      for (let page = 0; page < 50; page++) {
+        const { data, error } = await supabase
+          .from("wlp_checkins")
+          .select("member_id, wlp_sessions!inner(session_date)")
+          .gte("wlp_sessions.session_date", from)
+          .lte("wlp_sessions.session_date", to)
+          .order("id")
+          .range(page * pageSize, page * pageSize + pageSize - 1);
+        if (error) throw error;
+        for (const w of (data ?? []) as unknown as { member_id: string; wlp_sessions: { session_date: string } | null }[]) {
+          const d = w.wlp_sessions?.session_date;
+          if (d) (wlpMap[w.member_id] ??= new Set()).add(d);
+        }
+        if (!data || data.length < pageSize) break;
+      }
+
       // Weight readings up to `to`, ordered so later readings overwrite earlier ones.
       const wByDate: Record<string, Record<string, number>> = {};
       const wLatest: Record<string, { w: number; d: string }> = {};
@@ -3065,6 +3086,7 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
       const countedDates = dates.filter((d) => d <= today);
       let todayPresent = 0;
       let todayServed = 0;
+      let todayWlp = 0;
 
       const rows: AttendanceRow[] = (members ?? []).map((m) => {
         const init = m.initial_weight != null ? Number(m.initial_weight) : null;
@@ -3072,9 +3094,15 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
         const visited = attMap[m.id] ?? new Map<string, AttendanceMark>();
         const dayMap: Record<string, AttendanceMark | null> = {};
         for (const d of dates) dayMap[d] = visited.get(d) ?? null;
-        const counted = countedDates.filter((d) => visited.has(d));
+        const wlpSet = wlpMap[m.id] ?? new Set<string>();
+        const wlpByDate: Record<string, boolean> = {};
+        for (const d of dates) if (wlpSet.has(d)) wlpByDate[d] = true;
+        const counted = countedDates.filter((d) => visited.has(d) || wlpSet.has(d));
         const presentDays = counted.length;
         const servingDays = counted.filter((d) => visited.get(d) === "serving").length;
+        const wlpDays = countedDates.filter((d) => wlpSet.has(d)).length;
+        const wlpOnly = counted.filter((d) => !visited.has(d)).length;
+        if (wlpSet.has(today)) todayWlp++;
         const absentDays = countedDates.length - presentDays;
         if (visited.get(today) === "visit") todayPresent++;
         else if (visited.get(today) === "serving") todayServed++;
@@ -3088,8 +3116,10 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
           remainingServings: mship[m.id]?.remaining ?? null,
           dayMap,
           presentDays,
-          visitDays: presentDays - servingDays,
+          visitDays: presentDays - servingDays - wlpOnly,
           servingDays,
+          wlpByDate,
+          wlpDays,
           absentDays,
           percentage: countedDates.length ? Math.round((presentDays / countedDates.length) * 100) : 0,
           initialWeight: init,
@@ -3105,8 +3135,8 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
       const avgAttendance = totalMembers ? Math.round(rows.reduce((s, r) => s + r.percentage, 0) / totalMembers) : 0;
       const best = rows.length ? rows.reduce((a, b) => (b.percentage > a.percentage ? b : a)) : null;
       return {
-        rows, dates, countedDates, today, totalMembers, todayPresent, todayServed,
-        todayAbsent: totalMembers - todayPresent - todayServed, avgAttendance,
+        rows, dates, countedDates, today, totalMembers, todayPresent, todayServed, todayWlp,
+        todayAbsent: Math.max(0, totalMembers - rows.filter((r) => r.dayMap[today] || r.wlpByDate[today]).length), avgAttendance,
         bestAttendee: best && best.presentDays > 0 ? { name: best.name, percentage: best.percentage } : null,
       };
     },
