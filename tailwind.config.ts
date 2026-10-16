@@ -20,6 +20,7 @@ export default {
 
       colors: {
         "chart-issued": "hsl(var(--chart-issued))",
+        "chart-wlp": "hsl(var(--chart-wlp))",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

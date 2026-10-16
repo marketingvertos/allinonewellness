@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-type Row = { date: string; label: string; club: number; issued: number; total: number };
+type Row = { date: string; label: string; club: number; issued: number; wlp: number; total: number };
 
 function TotalLabel({ x, y, width, index, rows }: { x?: number; y?: number; width?: number; index?: number; rows: Row[] }) {
   const total = rows[index ?? 0]?.total ?? 0;
@@ -24,6 +24,7 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: { paylo
       <p className="mb-1 font-semibold">{r.label}</p>
       <p>Club check-ins: {r.club}</p>
       <p>Servings issued: {r.issued}</p>
+      <p>WLP sessions: {r.wlp}</p>
       <p className="font-semibold">Total: {r.total}</p>
     </div>
   );
@@ -36,18 +37,19 @@ export function ServingTrendChart({ days = 30, memberMode }: { days?: number; me
     ...d,
     label: new Date(`${d.date}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
   }));
-  const sum = rows.reduce((a, r) => ({ club: a.club + r.club, issued: a.issued + r.issued }), { club: 0, issued: 0 });
+  const sum = rows.reduce((a, r) => ({ club: a.club + r.club, issued: a.issued + r.issued, wlp: a.wlp + r.wlp }), { club: 0, issued: 0, wlp: 0 });
 
   return (
     <Card>
       <CardHeader className="space-y-1">
         <CardTitle className="text-base">Serving consumption <span className="font-normal text-sm text-muted-foreground">(last {days} days)</span></CardTitle>
         <p className="text-xs text-muted-foreground">
-          {sum.club} club check-ins · {sum.issued} servings issued · {sum.club + sum.issued} total servings
+          {sum.club} club check-ins · {sum.issued} servings issued · {sum.wlp} WLP · {sum.club + sum.issued + sum.wlp} total servings
         </p>
         <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" /> Club check-ins</span>
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-chart-issued" /> Servings issued (packed)</span>
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-chart-wlp" /> WLP sessions</span>
         </div>
       </CardHeader>
       <CardContent>
@@ -62,7 +64,8 @@ export function ServingTrendChart({ days = 30, memberMode }: { days?: number; me
                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                 <Tooltip content={<TrendTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.4)" }} />
                 <Bar dataKey="club" name="Club check-ins" stackId="s" fill="hsl(var(--primary))" />
-                <Bar dataKey="issued" name="Servings issued" stackId="s" fill="hsl(var(--chart-issued))"
+                <Bar dataKey="issued" name="Servings issued" stackId="s" fill="hsl(var(--chart-issued))" />
+                <Bar dataKey="wlp" name="WLP sessions" stackId="s" fill="hsl(var(--chart-wlp))"
                   radius={[4, 4, 0, 0]} label={<TotalLabel rows={rows} />} />
               </BarChart>
             </ResponsiveContainer>

@@ -54,11 +54,12 @@ function KpiCards({ total }: { total: DailyRow }) {
   const items = [
     { label: "Total Shakes", value: String(total.total_shake ?? 0) },
     { label: "New Guests", value: String(total.new_guest ?? 0) },
+    { label: "WLP Check-ins", value: String(total.wlp ?? 0) },
     { label: "30D UMS", value: String(Number(total.ums30_cust_new || 0) + Number(total.ums30_cust_renew || 0) + Number(total.ums30_coach || 0)) },
     { label: "Collected", value: inr(Number(total.total_amount || 0)) },
   ];
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
       {items.map((k) => (
         <Card key={k.label}><CardContent className="p-4">
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{k.label}</p>
@@ -74,6 +75,7 @@ const COLS: Col[] = [
   { key: "total_shake", label: "Total Shake" },
   { key: "new_guest", label: "New Guest" },
   { key: "total_shake", label: "Daily Shake" },
+  { key: "wlp", label: "WLP" },
   { key: "tp_new", label: "3D TP - N" },
   { key: "tp_repeat", label: "3D TP - R" },
   { key: "ums15_new", label: "15 UMS - N" },

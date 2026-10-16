@@ -93,21 +93,22 @@ export default function WellnessAttendance() {
     const dayCount = data.dates.length;
     const head = ["Sr.", "Member",
       ...data.dates.map((d) => fmt(d, { day: "2-digit", month: "short" })),
-      "Total Present", "Total Absent", "Latest Weight (kg)", "Total Change"];
+      "Total Present", "WLP", "Total Absent", "Latest Weight (kg)", "Total Change"];
     // Export always includes ALL members (ignores the search filter).
     const body = (data.rows ?? []).map((r, i) => [
       i + 1, r.name,
       ...data.dates.map((d) => {
         if (d > data.today) return "-";
         const w = r.weightByDate[d];
-        const mark = r.dayMap[d] === "serving" ? "S" : r.dayMap[d] ? "P" : "A";
-        return mark !== "A" && w != null ? `${mark} ${w}` : mark;
+        const base = r.dayMap[d] === "serving" ? "S" : r.dayMap[d] ? "P" : "";
+        const mark = [base, r.wlpByDate[d] ? "W" : ""].filter(Boolean).join("·") || "A";
+        return base && w != null ? `${mark} ${w}` : mark;
       }),
-      r.presentDays, r.absentDays, r.latestWeight ?? "", changeText(r.totalChange),
+      r.presentDays, r.wlpDays, r.absentDays, r.latestWeight ?? "", changeText(r.totalChange),
     ]);
     // Narrow day columns, wide name and total columns.
-    const xlsxWidths = [5, 24, ...Array<number>(dayCount).fill(7), 13, 13, 17, 15];
-    const pdfWidthsMm = [8, 42, ...Array<number>(dayCount).fill(11), 20, 20, 24, 24];
+    const xlsxWidths = [5, 24, ...Array<number>(dayCount).fill(7), 13, 8, 13, 17, 15];
+    const pdfWidthsMm = [8, 42, ...Array<number>(dayCount).fill(11), 20, 12, 20, 24, 24];
     const pageWidthMm = 20 + pdfWidthsMm.reduce((s, w) => s + w, 0);
     return { head, body, xlsxWidths, pdfWidthsMm, pageWidthMm };
   };
@@ -134,7 +135,8 @@ export default function WellnessAttendance() {
 
   const present = rows.filter((r) => r.dayMap[data?.today ?? ""] === "visit");
   const served = rows.filter((r) => r.dayMap[data?.today ?? ""] === "serving");
-  const absent = rows.filter((r) => !r.dayMap[data?.today ?? ""]);
+  const wlpToday = rows.filter((r) => r.wlpByDate[data?.today ?? ""]);
+  const absent = rows.filter((r) => !r.dayMap[data?.today ?? ""] && !r.wlpByDate[data?.today ?? ""]);
 
   return (
     <div className="space-y-4 p-4 md:p-6">
@@ -191,9 +193,10 @@ export default function WellnessAttendance() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
         <Tile icon={<UserCheck className="h-4 w-4 text-primary" />} label="Present today" value={data?.todayPresent ?? 0} />
         <Tile icon={<UserCheck className="h-4 w-4 text-muted-foreground" />} label="Serving issued today" value={data?.todayServed ?? 0} />
+        <Tile icon={<Sparkles className="h-4 w-4 text-chart-wlp" />} label="WLP check-ins today" value={data?.todayWlp ?? 0} />
         <Tile icon={<UserX className="h-4 w-4 text-destructive" />} label="Absent today" value={data?.todayAbsent ?? 0} />
         <Tile icon={<TrendingUp className="h-4 w-4" />} label="Avg attendance" value={`${data?.avgAttendance ?? 0}%`} />
         <Tile icon={<Trophy className="h-4 w-4" />} label="Best attendee" value={data?.bestAttendee?.name ?? "—"}
@@ -207,6 +210,7 @@ export default function WellnessAttendance() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <MemberList title="Present at club" tone="present" rows={present} onSelect={setSelected} />
           <MemberList title="Serving issued (not at club)" tone="served" rows={served} onSelect={setSelected} />
+          <MemberList title="WLP evening session" tone="served" rows={wlpToday} onSelect={setSelected} />
           <MemberList title="Absent" tone="absent" rows={absent} onSelect={setSelected} />
         </div>
       ) : (
@@ -248,13 +252,15 @@ export default function WellnessAttendance() {
                         const future = d > data.today;
                         const on = r.dayMap[d];
                         const serving = on === "serving";
+                        const wlp = !!r.wlpByDate[d];
                         return (
-                          <td key={d} title={serving ? "Serving issued (packed)" : undefined} className={cn("p-1 text-center",
+                          <td key={d} title={[serving ? "Serving issued (packed)" : on ? "Present at club" : "", wlp ? "WLP session" : ""].filter(Boolean).join(" + ") || undefined} className={cn("p-1 text-center",
                             serving ? "bg-accent text-accent-foreground font-bold text-xs"
                               : future ? "bg-muted/40 text-muted-foreground"
-                              : on ? "bg-primary/15 text-primary" : "bg-destructive/10 text-destructive",
+                              : on ? "bg-primary/15 text-primary" : wlp ? "bg-chart-wlp/15 text-chart-wlp font-bold text-xs" : "bg-destructive/10 text-destructive",
                             d === data.today && "ring-1 ring-inset ring-primary")}>
-                            {serving ? "S" : future ? "-" : on ? <Check className="mx-auto h-3.5 w-3.5" /> : <X className="mx-auto h-3.5 w-3.5" />}
+                            {serving ? "S" : on ? <Check className="mx-auto h-3.5 w-3.5" /> : wlp ? null : future ? "-" : <X className="mx-auto h-3.5 w-3.5" />}
+                            {wlp && <div className="text-[10px] font-bold leading-tight text-chart-wlp">W</div>}
                             {on && r.weightByDate[d] != null && <div className="text-[10px] font-normal leading-tight">{r.weightByDate[d]}</div>}
                           </td>
                         );
@@ -278,6 +284,7 @@ export default function WellnessAttendance() {
             <div className="flex flex-wrap gap-4 border-t p-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1"><Check className="h-3.5 w-3.5 text-primary" /> Club visit</span>
               <span><span className="rounded bg-accent px-1 font-bold text-accent-foreground">S</span> Serving issued (packed)</span>
+              <span><span className="rounded bg-chart-wlp/15 px-1 font-bold text-chart-wlp">W</span> WLP evening session</span>
               <span className="flex items-center gap-1"><X className="h-3.5 w-3.5 text-destructive" /> Absent</span>
             </div>
           </CardContent>
