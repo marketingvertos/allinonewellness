@@ -14,6 +14,7 @@ type Result = {
   remaining?: number;
   mode?: string;
   request_id?: string;
+  warning?: string | null;
 };
 
 export default function PortalCheckIn() {
