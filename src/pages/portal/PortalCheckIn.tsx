@@ -61,7 +61,7 @@ export default function PortalCheckIn() {
   const wlpOk = isWlp && result?.status === "ok";
   const waiting = status === "pending";
   const duplicate = result?.status === "duplicate";
-  const approved = status === "approved" || duplicate;
+  const approved = status === "approved" || duplicate || wlpOk;
   const rejected = status === "rejected" || status === "expired";
   const needsRenewal = result?.status === "renew_required" || result?.status === "trial_ended";
   const failed = !waiting && !approved && !rejected && !!result && result.status !== "ok";
