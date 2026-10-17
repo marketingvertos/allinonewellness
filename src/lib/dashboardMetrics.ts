@@ -170,7 +170,7 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
     else if (isPaid3DayTrialPlan(plan)) key = "renewals3DayToday";
     else continue;
     addRenewal(key, member.id, {
-      memberId: member.id, planId: membership.plan_id, date: today,
+      memberId: member.id, planId, date: today,
       amount: Number(payment.amount), label: "Renewal",
     });
   }
