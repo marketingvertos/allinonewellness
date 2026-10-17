@@ -470,6 +470,13 @@
       "when": 1792234975190,
       "tag": "0066_miw_remove_participant_apply",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1792235384803,
+      "tag": "0067_miw_remove_participant_v3",
+      "breakpoints": true
     }
   ]
 }
