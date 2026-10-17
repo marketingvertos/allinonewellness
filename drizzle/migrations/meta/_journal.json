@@ -463,6 +463,13 @@
       "when": 1792234916325,
       "tag": "0065_miw_remove_participant",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1792234975190,
+      "tag": "0066_miw_remove_participant_apply",
+      "breakpoints": true
     }
   ]
 }
