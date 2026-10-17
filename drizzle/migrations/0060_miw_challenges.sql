@@ -19,7 +19,7 @@ CREATE TABLE public.miw_participants (
 GRANT SELECT ON public.miw_participants TO authenticated;
 GRANT ALL ON public.miw_participants TO service_role;
 ALTER TABLE public.miw_participants ENABLE ROW LEVEL SECURITY;
-CREATE POLICY miw_participants_read ON public.miw_participants FOR SELECT TO authenticated USING(public.is_wellness_staff(auth.uid()) OR public.owns_wellness_member(member_id));
+CREATE POLICY miw_participants_read ON public.miw_participants FOR SELECT TO authenticated USING(public.is_wellness_staff(auth.uid()) OR public.owns_wellness_member(auth.uid(),member_id));
 CREATE TABLE public.miw_payments (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), participant_id uuid NOT NULL REFERENCES public.miw_participants(id),
  member_id uuid NOT NULL REFERENCES public.wellness_members(id), amount numeric(10,2) NOT NULL CHECK(amount>0), mode public.payment_mode NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE public.miw_payments (
 GRANT SELECT ON public.miw_payments TO authenticated;
 GRANT ALL ON public.miw_payments TO service_role;
 ALTER TABLE public.miw_payments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY miw_payments_read ON public.miw_payments FOR SELECT TO authenticated USING(public.is_wellness_staff(auth.uid()) OR public.owns_wellness_member(member_id));
+CREATE POLICY miw_payments_read ON public.miw_payments FOR SELECT TO authenticated USING(public.is_wellness_staff(auth.uid()) OR public.owns_wellness_member(auth.uid(),member_id));
 ALTER TABLE public.razorpay_orders ADD COLUMN IF NOT EXISTS miw_challenge_id uuid REFERENCES public.miw_challenges(id);
 CREATE UNIQUE INDEX miw_pending_order ON public.razorpay_orders(member_id,miw_challenge_id) WHERE context='miw' AND status='created';
 CREATE OR REPLACE FUNCTION public.miw_register_member(p_challenge_id uuid,p_member_id uuid,p_payments jsonb DEFAULT '[{"amount":500,"mode":"cash"}]') RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
@@ -71,7 +71,7 @@ BEGIN
  FROM miw_participants p JOIN wellness_members m ON m.id=p.member_id WHERE challenge_id=c.id AND (public.is_wellness_staff(auth.uid()) OR m.user_id=auth.uid())
  ) SELECT COALESCE(jsonb_agg(to_jsonb(people) ORDER BY latest_weight-start_weight NULLS LAST),'[]') INTO rows FROM people;
  RETURN jsonb_build_object('challenge',to_jsonb(c),'participants',rows,'participant_count',jsonb_array_length(rows),
- 'total_paid',(SELECT COALESCE(sum(pay.amount),0) FROM miw_payments pay JOIN miw_participants p ON p.id=pay.participant_id WHERE p.challenge_id=c.id AND (public.is_wellness_staff(auth.uid()) OR public.owns_wellness_member(p.member_id))));
+ 'total_paid',(SELECT COALESCE(sum(pay.amount),0) FROM miw_payments pay JOIN miw_participants p ON p.id=pay.participant_id WHERE p.challenge_id=c.id AND (public.is_wellness_staff(auth.uid()) OR public.owns_wellness_member(auth.uid(),p.member_id))));
 END $$;
 REVOKE ALL ON FUNCTION public.miw_register_member(uuid,uuid,jsonb),public.miw_report(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.miw_register_member(uuid,uuid,jsonb),public.miw_report(uuid) TO authenticated,service_role;
