@@ -148,7 +148,7 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
     if (!member || member.is_guest || membership.start_date !== today) continue;
     const plan = plans.get(membership.plan_id);
     if (!plan) continue;
-    const item = { memberId: member.id, planId, date: today, label: "New" };
+    const item = { memberId: member.id, planId: membership.plan_id, date: today, label: "New" };
     if (isGoldCardPlan(plan)) addUnique("newGoldCardToday", member.id, item);
     else if (isWhiteCardPlan(plan)) addUnique("newWhiteCardToday", member.id, item);
   }
