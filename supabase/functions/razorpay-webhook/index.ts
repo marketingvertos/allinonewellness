@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
-import { corsHeaders, hmacHex, json, timingSafeEqual } from "../_shared/razorpay.ts";
+import { corsHeaders, hmacHex, json, timingSafeEqual, razorpayAuthHeader } from "../_shared/razorpay.ts";
+import { matchesCapturedPayment } from "../_shared/paymentValidation.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -38,6 +39,10 @@ Deno.serve(async (req) => {
       if (order.status === "paid") return json({ ok: true, skipped: "already paid" });
       if (String(payment.order_id) !== razorpayOrderId || payment.status !== "captured") return json({ error: "Payment is not captured" }, 400);
       if (Number(payment.amount) !== order.amount_paise || payment.currency !== "INR") return json({ error: "Payment amount mismatch" }, 400);
+      const paymentId = String(payment.id);
+      const response = await fetch(`https://api.razorpay.com/v1/payments/${encodeURIComponent(paymentId)}`, { headers: { Authorization: razorpayAuthHeader() } });
+      const confirmed = await response.json();
+      if (!response.ok || !matchesCapturedPayment(confirmed, paymentId, razorpayOrderId, order.amount_paise)) return json({ error: "Payment awaiting confirmation" }, 409);
       const { error } = await admin.rpc(order.context === "miw" ? "miw_fulfil_payment" : "fulfil_online_payment", {
         p_order_id: order.id,
         p_payment_id: String(payment.id),
