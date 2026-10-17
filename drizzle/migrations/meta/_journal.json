@@ -449,6 +449,13 @@
       "when": 1792220020905,
       "tag": "0063_miw_confirmed_online_payment",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1792220303907,
+      "tag": "0064_miw_payment_guards_and_club_totals",
+      "breakpoints": true
     }
   ]
 }
