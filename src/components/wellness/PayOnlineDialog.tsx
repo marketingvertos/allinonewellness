@@ -136,6 +136,12 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
           }
         },
       });
+      rzp.on?.("payment.failed", () => {
+        setBusy(false);
+        toast.error("Payment failed — nothing was charged. Try again.", {
+          action: { label: "Try again", onClick: () => { retryPlanId = plan?.id ?? null; onOpenChange(true); } },
+        });
+      });
       // Close our modal first: a locked modal blocks taps on anything outside it (incl. Razorpay's sheet).
       onOpenChange(false);
       await new Promise((r) => setTimeout(r, 320));
