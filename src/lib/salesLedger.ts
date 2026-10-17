@@ -29,7 +29,7 @@ export interface LegacySale {
   plan_type: string | null;
 }
 
-export type SaleKind = "new" | "renewal" | "trial";
+export type SaleKind = "new" | "renewal" | "trial" | "miw";
 
 export interface Sale {
   key: string;
@@ -45,6 +45,7 @@ export interface Sale {
 }
 
 export function kindOf(context: string | null, planType: string | null, renewed: boolean): SaleKind {
+  if (context === "miw") return "miw";
   if (planType === "trial") return "trial";
   if (context === "renewal" || context === "switch" || renewed) return "renewal";
   return "new";

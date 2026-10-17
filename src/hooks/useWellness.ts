@@ -3078,6 +3078,133 @@ export function useWlpMonthlyCheckins(month: string) {
   });
 }
 
+// ---------- MIW Challenges ----------
+
+export interface MiwChallenge {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  fee: number;
+  status: string;
+  created_at: string;
+}
+
+export function useMiwChallenges() {
+  return useQuery({
+    queryKey: ["miw-challenges"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("miw_challenges")
+        .select("*")
+        .order("start_date", { ascending: false });
+      if (error) throw error;
+      return data as MiwChallenge[];
+    },
+  });
+}
+
+export function useCreateMiwChallenge() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: { name: string; startDate: string; endDate: string; fee: number }) => {
+      const { data, error } = await supabase
+        .from("miw_challenges")
+        .insert({ name: args.name, start_date: args.startDate, end_date: args.endDate, fee: args.fee })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as MiwChallenge;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["miw-challenges"] });
+      t.success("Challenge created");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useUpdateMiwChallenge() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: { id: string; name?: string; startDate?: string; endDate?: string; fee?: number; status?: string }) => {
+      const updates: Record<string, unknown> = {};
+      if (args.name !== undefined) updates.name = args.name;
+      if (args.startDate !== undefined) updates.start_date = args.startDate;
+      if (args.endDate !== undefined) updates.end_date = args.endDate;
+      if (args.fee !== undefined) updates.fee = args.fee;
+      if (args.status !== undefined) updates.status = args.status;
+      const { error } = await supabase.from("miw_challenges").update(updates).eq("id", args.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["miw-challenges"] });
+      t.success("Challenge updated");
+    },
+    onError: t.onError,
+  });
+}
+
+export function useMiwRegisterMember() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (args: { challengeId: string; memberId: string; payments: { amount: number; mode: string; reference?: string }[] }) => {
+      const { data, error } = await supabase.rpc("miw_register_member", {
+        p_challenge_id: args.challengeId,
+        p_member_id: args.memberId,
+        p_payments: JSON.stringify(args.payments),
+      } as never);
+      if (error) throw error;
+      return data as { status: string; participant_id?: string; amount_paid?: number; member_name?: string; message?: string };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["miw-"] });
+      qc.invalidateQueries({ queryKey: ["wellness-members"] });
+      if (result.status === "already_registered") {
+        t.error(result.message ?? "Already registered");
+      } else {
+        t.success(`${result.member_name ?? "Member"} registered — ₹${result.amount_paid ?? 0} paid`);
+      }
+    },
+    onError: t.onError,
+  });
+}
+
+export interface MiwReportParticipant {
+  participant_id: string;
+  member_id: string;
+  member_name: string;
+  mobile: string;
+  gender: string | null;
+  source: string;
+  joined_at: string;
+  start_weight: number | null;
+  latest_weight: number | null;
+  visits: number;
+}
+
+export interface MiwReportData {
+  challenge: MiwChallenge;
+  total_paid: number;
+  participant_count: number;
+  participants: MiwReportParticipant[];
+}
+
+export function useMiwReport(challengeId: string | null) {
+  return useQuery({
+    queryKey: ["miw-report", challengeId],
+    enabled: !!challengeId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("miw_report", { p_challenge_id: challengeId! } as never);
+      if (error) throw error;
+      return data as unknown as MiwReportData;
+    },
+  });
+}
+
 // ---------- Attendance Register ----------
 
 export type AttendanceMark = "visit" | "serving";

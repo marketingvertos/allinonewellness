@@ -421,6 +421,13 @@
       "when": 1792300000000,
       "tag": "0059_wlp_auto_wednesday",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1792400000000,
+      "tag": "0060_miw_challenges",
+      "breakpoints": true
     }
   ]
 }
