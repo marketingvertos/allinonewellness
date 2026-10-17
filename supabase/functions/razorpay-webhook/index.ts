@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
 
     if (kind === "payment.captured") {
       if (order.status === "paid") return json({ ok: true, skipped: "already paid" });
+      if (String(payment.order_id) !== razorpayOrderId || payment.status !== "captured") return json({ error: "Payment is not captured" }, 400);
       if (Number(payment.amount) !== order.amount_paise || payment.currency !== "INR") return json({ error: "Payment amount mismatch" }, 400);
       const { error } = await admin.rpc(order.context === "miw" ? "miw_fulfil_payment" : "fulfil_online_payment", {
         p_order_id: order.id,

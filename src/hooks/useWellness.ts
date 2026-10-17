@@ -2634,7 +2634,7 @@ export function useSalesDrillDown(from: string, to: string, memberMode?: MemberM
       return {
         rows,
         totalRevenue: sum.revenue,
-        totalMemberships: rows.length,
+        totalMemberships: rows.filter(r => r.planType !== "miw").length,
         totalServings: rows.reduce((t, r) => t + r.totalServings, 0),
         byCash: sum.byMode.cash ?? 0,
         byUpi: sum.byMode.upi ?? 0,

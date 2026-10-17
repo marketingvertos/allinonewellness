@@ -165,8 +165,8 @@ export default function PortalHome() {
         </CardContent>
       </Card>
 
-      {profile && <PromotionCards memberId={profile.id} memberMode={profile.member_mode} />}
       {profile && <MiwChallengeCard memberId={profile.id} memberName={profile.full_name} />}
+      {profile && <PromotionCards memberId={profile.id} memberMode={profile.member_mode} />}
       {profile && <MediaPostFeed memberMode={profile.member_mode} memberId={identity?.memberId ?? undefined} />}
 
       {profile && (
