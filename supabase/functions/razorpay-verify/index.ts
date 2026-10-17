@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 import {
   RAZORPAY_KEY_SECRET,
+  razorpayAuthHeader,
   corsHeaders,
   hmacHex,
   json,
@@ -42,7 +43,7 @@ Deno.serve(async (req) => {
 
     const { data: order } = await admin
       .from("razorpay_orders")
-      .select("id, member_id, razorpay_order_id, status")
+      .select("id, member_id, razorpay_order_id, status, context, amount_paise")
       .eq("id", orderId)
       .maybeSingle();
     if (!order || order.razorpay_order_id !== razorpayOrderId) {
@@ -57,7 +58,10 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!member || member.id !== order.member_id) return json({ error: "Not authorized" }, 403);
 
-    const { data: result, error } = await admin.rpc("fulfil_online_payment", {
+    const paymentResponse = await fetch(`https://api.razorpay.com/v1/payments/${encodeURIComponent(paymentId)}`, { headers: { Authorization: razorpayAuthHeader() } });
+    const captured = await paymentResponse.json();
+    if (!paymentResponse.ok || captured.status !== "captured" || captured.order_id !== razorpayOrderId || captured.amount !== order.amount_paise || captured.currency !== "INR") return json({ error: "Payment is awaiting confirmation. Registration updates after capture." }, 409);
+    const { data: result, error } = await admin.rpc(order.context === "miw" ? "miw_fulfil_payment" : "fulfil_online_payment", {
       p_order_id: order.id,
       p_payment_id: paymentId,
     });

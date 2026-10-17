@@ -37,7 +37,8 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const planId = String(body?.planId ?? "");
     const usePinkCredits = Math.max(0, Number(body?.pinkCredits ?? 0) | 0);
-    if (!planId) return json({ error: "Choose a plan first." }, 400);
+    const challengeId = String(body?.challengeId ?? "");
+    if (!planId && !challengeId) return json({ error: "Choose a plan or MIW challenge first." }, 400);
 
     // The member is always resolved from the signed-in account, never from the request.
     const { data: member } = await admin
@@ -46,6 +47,29 @@ Deno.serve(async (req) => {
       .eq("user_id", userData.user.id)
       .maybeSingle();
     if (!member) return json({ error: "No member profile found for this account." }, 403);
+
+    if (challengeId) {
+      if (!/^[0-9a-f-]{36}$/i.test(challengeId)) return json({ error: "Invalid challenge." }, 400);
+      const { data: challenge } = await admin.from("miw_challenges").select("*").eq("id", challengeId).maybeSingle();
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      if (!challenge || challenge.status !== "open" || challenge.end_date < today) return json({ error: "MIW registration is closed." }, 400);
+      const { data: registered } = await admin.from("miw_participants").select("id").eq("member_id", member.id).eq("challenge_id", challenge.id).maybeSingle();
+      if (registered) return json({ error: "You are already registered." }, 409);
+      const amountPaise = Math.round(Number(challenge.fee) * 100);
+      const details = { keyId: RAZORPAY_KEY_ID, amountPaise, planName: challenge.name, member: { name: member.full_name, email: member.email ?? "", contact: member.mobile_number } };
+      const { data: pending } = await admin.from("razorpay_orders").select("id, razorpay_order_id, amount_paise").eq("member_id", member.id).eq("miw_challenge_id", challenge.id).eq("status", "created").maybeSingle();
+      if (pending) return json({ ...details, amountPaise: pending.amount_paise, orderId: pending.id, razorpayOrderId: pending.razorpay_order_id });
+      const response = await fetch("https://api.razorpay.com/v1/orders", { method: "POST", headers: { Authorization: razorpayAuthHeader(), "Content-Type": "application/json" }, body: JSON.stringify({ amount: amountPaise, currency: "INR", receipt: `miw_${Date.now().toString(36)}`, notes: { member_id: member.id, challenge_id: challenge.id } }) });
+      const remote = await response.json();
+      if (!response.ok || !remote.id) return json({ error: remote?.error?.description ?? "Could not start payment." }, 502);
+      const { data: order, error } = await admin.from("razorpay_orders").insert({ member_id: member.id, miw_challenge_id: challenge.id, context: "miw", amount_paise: amountPaise, pink_credits: 0, razorpay_order_id: remote.id }).select("id").single();
+      if (error) {
+        const { data: winner } = await admin.from("razorpay_orders").select("id, razorpay_order_id, amount_paise").eq("member_id", member.id).eq("miw_challenge_id", challenge.id).eq("status", "created").maybeSingle();
+        if (winner) return json({ ...details, amountPaise: winner.amount_paise, orderId: winner.id, razorpayOrderId: winner.razorpay_order_id });
+        throw error;
+      }
+      return json({ ...details, orderId: order.id, razorpayOrderId: remote.id });
+    }
 
     const { data: plan } = await admin
       .from("wellness_plans")

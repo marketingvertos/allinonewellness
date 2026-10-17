@@ -2527,6 +2527,13 @@ export async function fetchSales(from: string, to: string, memberMode?: MemberMo
   const legacy: LegacySale[] = (legacyQ.data as any[])
     .filter((m) => !(m.wellness_payments ?? []).length)
     .map((m) => ({ ...m, plan_name: m.wellness_plans?.name ?? null, plan_type: m.wellness_plans?.plan_type ?? null }));
+  const miw = await readAllPages((a, b) => {
+    let q = supabase.from("miw_payments").select("*, miw_participants(miw_challenges(name))").gte("paid_at", start).lte("paid_at", end).order("id").range(a, b);
+    if (ids) q = q.in("member_id", ids);
+    return q;
+  });
+  if (miw.error) throw miw.error;
+  for (const p of miw.data ?? []) payments.push({ id: p.id, membership_id: "", registration_id: p.participant_id, member_id: p.member_id, amount: Number(p.amount), mode: p.mode, reference: p.reference, paid_at: p.paid_at, note: null, context: "miw", plan_name: `MIW registration — ${p.miw_participants?.miw_challenges?.name ?? "MIW"}`, plan_type: "miw" });
   return buildSales(payments, legacy);
 }
 
@@ -2553,7 +2560,7 @@ export function useSalesAnalytics(range: PeriodRange, memberMode?: MemberModeFil
       const planMap = new Map<string, number>();
       for (const r of sales) planMap.set(r.planName, (planMap.get(r.planName) ?? 0) + r.amount);
       return {
-        memberships: sales.length,
+        memberships: sales.filter((r) => r.kind !== "miw").length,
         revenue: s.revenue,
         servings: (servings.data ?? []).filter((r) => (r as { serving_deducted: boolean }).serving_deducted).length,
         newRevenue: s.newRevenue,
@@ -2601,7 +2608,7 @@ export function useSalesDrillDown(from: string, to: string, memberMode?: MemberM
     queryFn: async (): Promise<SalesDrillDownResult> => {
       const sales = await fetchSales(from, to, memberMode);
       const memberIds = [...new Set(sales.map((s) => s.memberId))];
-      const msIds = [...new Set(sales.map((s) => s.membershipId))];
+      const msIds = [...new Set(sales.map((s) => s.membershipId).filter(Boolean))];
       const [mem, ms] = await Promise.all([
         memberIds.length ? supabase.from("wellness_members").select("id, full_name, mobile_number").in("id", memberIds) : Promise.resolve({ data: [], error: null }),
         msIds.length ? supabase.from("wellness_memberships").select("id, total_servings").in("id", msIds) : Promise.resolve({ data: [], error: null }),

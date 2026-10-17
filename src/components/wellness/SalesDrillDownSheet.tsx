@@ -39,7 +39,7 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, range: rangeOv
 
   const allRows = data?.rows ?? [];
   const rows = allRows.filter((r) =>
-    segment === "all" ? true : segment === "trial" ? r.planType === "trial" : segment === "renewal" ? r.isRenewal && r.planType !== "trial" : !r.isRenewal && r.planType !== "trial",
+    segment === "all" ? true : segment === "trial" ? r.planType === "trial" : segment === "renewal" ? r.isRenewal && r.planType !== "trial" : !r.isRenewal && r.planType !== "trial" && r.planType !== "miw",
   );
   const filteredRevenue = rows.reduce((s, r) => s + r.pricePaid, 0);
   const filteredServings = rows.reduce((s, r) => s + r.totalServings, 0);

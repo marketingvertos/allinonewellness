@@ -29,14 +29,15 @@ Deno.serve(async (req) => {
 
     const { data: order } = await admin
       .from("razorpay_orders")
-      .select("id, status")
+      .select("id, status, context, amount_paise")
       .eq("razorpay_order_id", razorpayOrderId)
       .maybeSingle();
     if (!order) return json({ ok: true, skipped: "unknown order" });
 
     if (kind === "payment.captured") {
       if (order.status === "paid") return json({ ok: true, skipped: "already paid" });
-      const { error } = await admin.rpc("fulfil_online_payment", {
+      if (Number(payment.amount) !== order.amount_paise || payment.currency !== "INR") return json({ error: "Payment amount mismatch" }, 400);
+      const { error } = await admin.rpc(order.context === "miw" ? "miw_fulfil_payment" : "fulfil_online_payment", {
         p_order_id: order.id,
         p_payment_id: String(payment.id),
       });
@@ -50,7 +51,8 @@ Deno.serve(async (req) => {
           failure_reason: payment?.error_description ?? null,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", order.id);
+        .eq("id", order.id)
+        .eq("status", "created");
     }
 
     return json({ ok: true });
