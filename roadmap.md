@@ -3,6 +3,7 @@
 - [x] Complete pushed MIW staff setup, payment registration, member checkout, and historical reports.
 - [x] Verify MIW permissions, duplicate protection, revenue and weight calculations.
 - [x] Request publication of verified MIW changes (deployment scheduled).
+- [x] Fix MIW participant removal (bin button) and remove SHRI CHATAP from Nov-2026 challenge.
 
 - [x] Send the approved Family Day invitation with its attached poster through WhatsApp broadcast.
 
