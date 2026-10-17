@@ -414,6 +414,13 @@
       "when": 1792216766850,
       "tag": "0058_record_payment_sum_price",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1792300000000,
+      "tag": "0059_wlp_auto_wednesday",
+      "breakpoints": true
     }
   ]
 }

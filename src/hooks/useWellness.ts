@@ -3017,6 +3017,67 @@ export function useUndoWlpCheckin() {
   });
 }
 
+export interface WlpMonthlyCheckin {
+  member_id: string;
+  member_name: string;
+  member_gender: string | null;
+  wednesday_count: number;
+}
+
+export function useWlpMonthlyCheckins(month: string) {
+  return useQuery({
+    queryKey: ["wlp-monthly-checkins", month],
+    queryFn: async () => {
+      const monthStart = `${month}-01`;
+      const nextMonth = new Date(monthStart + "T00:00:00");
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      const monthEnd = new Date(nextMonth.getTime() - 86400000)
+        .toISOString()
+        .slice(0, 10);
+
+      const { data: sessions, error: sErr } = await supabase
+        .from("wlp_sessions")
+        .select("id, session_date")
+        .gte("session_date", monthStart)
+        .lte("session_date", monthEnd);
+      if (sErr) throw sErr;
+
+      const wedSessions = (sessions ?? []).filter((s) => {
+        const d = new Date(s.session_date + "T12:00:00");
+        return d.getDay() === 3;
+      });
+      if (!wedSessions.length) return [] as WlpMonthlyCheckin[];
+
+      const sessionIds = wedSessions.map((s) => s.id);
+      const { data: checkins, error: cErr } = await supabase
+        .from("wlp_checkins")
+        .select("member_id, session_id, wellness_members(full_name, gender)")
+        .in("session_id", sessionIds);
+      if (cErr) throw cErr;
+
+      const map = new Map<string, { name: string; gender: string | null; dates: Set<string> }>();
+      for (const c of checkins ?? []) {
+        const sess = wedSessions.find((s) => s.id === c.session_id);
+        if (!sess) continue;
+        let entry = map.get(c.member_id);
+        if (!entry) {
+          const mem = c.wellness_members as unknown as { full_name: string; gender: string | null } | null;
+          entry = { name: mem?.full_name ?? "Member", gender: mem?.gender ?? null, dates: new Set() };
+          map.set(c.member_id, entry);
+        }
+        entry.dates.add(sess.session_date);
+      }
+
+      return Array.from(map.entries()).map(([id, e]) => ({
+        member_id: id,
+        member_name: e.name,
+        member_gender: e.gender,
+        wednesday_count: e.dates.size,
+      }));
+    },
+  });
+}
+
 // ---------- Attendance Register ----------
 
 export type AttendanceMark = "visit" | "serving";

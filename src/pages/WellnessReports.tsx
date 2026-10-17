@@ -13,19 +13,15 @@ import {
   useMonthlyRewards,
   useRemoveParticipant,
   useSaveParticipant,
-  useToggleWlpAttendance,
   useWellnessEvents,
-  useWlpAttendance,
 } from "@/hooks/useEvents";
 import { PAYMENT_MODES, paymentModeLabel, useMilestoneHolders, useMonthlyWeightRewards, useRevenueReport, useWeightDataMonths } from "@/hooks/useReports";
-import { useWellnessMembers } from "@/hooks/useWellness";
+import { useWellnessMembers, useWlpMonthlyCheckins } from "@/hooks/useWellness";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatDate, todayIst } from "@/lib/formatters";
 import { CalendarDays, Download, Plus, RefreshCw, Trash2 } from "lucide-react";
@@ -416,23 +412,23 @@ function MiwTab({ month }: { month: string }) {
 /* ------------------------------- WLP tab ------------------------------ */
 
 function WlpTab({ month }: { month: string }) {
-  const { data: attendance } = useWlpAttendance(month);
-  const toggle = useToggleWlpAttendance();
+  const { data: wlpCheckins } = useWlpMonthlyCheckins(month);
   const { data: rewards } = useMonthlyRewards(month);
   const calc = useCalcMonthlyRewards();
-  const { data: members } = useWellnessMembers("", "all");
-  const coaches = (members ?? []).filter((m) => (m.tags ?? []).includes("coach"));
-  const [sessionDate, setSessionDate] = useState(todayIst());
 
-  const sessions = useMemo(() => {
-    const dates = new Set((attendance ?? []).map((a) => a.session_date));
-    return [...dates].sort();
-  }, [attendance]);
+  const monthStart = `${month}-01`;
+  const nextMonth = new Date(monthStart + "T00:00:00");
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  const monthEnd = new Date(nextMonth.getTime() - 86400000);
+  let totalWednesdays = 0;
+  for (let d = new Date(monthStart + "T12:00:00"); d <= monthEnd; d.setDate(d.getDate() + 1)) {
+    if (d.getDay() === 3) totalWednesdays++;
+  }
 
-  const countFor = (memberId: string) =>
-    (attendance ?? []).filter((a) => a.member_id === memberId).length;
-  const rowFor = (memberId: string) =>
-    (attendance ?? []).find((a) => a.member_id === memberId && a.session_date === sessionDate);
+  const sorted = useMemo(
+    () => [...(wlpCheckins ?? [])].sort((a, b) => b.wednesday_count - a.wednesday_count),
+    [wlpCheckins],
+  );
 
   const winners = (rewards ?? []).filter(
     (r) => r.reward_type === "wlp_king" || r.reward_type === "wlp_queen",
@@ -442,51 +438,32 @@ function WlpTab({ month }: { month: string }) {
     <div className="space-y-4">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">WLP sessions — {monthLabel(month)}</CardTitle>
+          <CardTitle className="text-base">WLP attendance — {monthLabel(month)}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="space-y-1">
-              <Label htmlFor="wlp-date">Session date</Label>
-              <Input
-                id="wlp-date"
-                type="date"
-                value={sessionDate}
-                onChange={(e) => setSessionDate(e.target.value)}
-              />
-            </div>
-            <p className="text-sm text-muted-foreground sm:pb-2">
-              {sessions.length} session{sessions.length === 1 ? "" : "s"} recorded this month
-            </p>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            {totalWednesdays} Wednesday{totalWednesdays === 1 ? "" : "s"} in {monthLabel(month)}.
+            Members present on all {totalWednesdays} earn WLP King/Queen.
+          </p>
 
           <div className="space-y-2">
-            {coaches.length ? (
-              coaches.map((c) => {
-                const row = rowFor(c.id);
-                const total = countFor(c.id);
+            {sorted.length ? (
+              sorted.map((m) => {
+                const perfect = m.wednesday_count >= totalWednesdays;
                 return (
-                  <label
-                    key={c.id}
-                    className="flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm"
+                  <div
+                    key={m.member_id}
+                    className="flex items-center justify-between rounded-md border p-3 text-sm"
                   >
-                    <Checkbox
-                      checked={!!row}
-                      onCheckedChange={() =>
-                        toggle.mutate({
-                          memberId: c.id,
-                          sessionDate,
-                          existingId: row?.id ?? null,
-                        })
-                      }
-                    />
-                    <span className="flex-1 font-medium">{c.full_name}</span>
-                    <Badge variant={total >= 4 ? "default" : "outline"}>{total} this month</Badge>
-                  </label>
+                    <span className="flex-1 font-medium">{m.member_name}</span>
+                    <Badge variant={perfect ? "default" : "outline"}>
+                      {m.wednesday_count}/{totalWednesdays} Wednesdays
+                    </Badge>
+                  </div>
                 );
               })
             ) : (
-              <p className="text-sm text-muted-foreground">No members are tagged as coaches yet.</p>
+              <p className="text-sm text-muted-foreground">No WLP check-ins recorded this month.</p>
             )}
           </div>
         </CardContent>
@@ -509,7 +486,7 @@ function WlpTab({ month }: { month: string }) {
             ))
           ) : (
             <p className="text-sm text-muted-foreground">
-              Coaches attending 4 or more sessions this month appear here.
+              Members attending all {totalWednesdays} Wednesday sessions appear here after recalculation.
             </p>
           )}
         </CardContent>
