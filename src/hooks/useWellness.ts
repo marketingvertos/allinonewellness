@@ -3220,12 +3220,14 @@ export function useRemoveMiwParticipant() {
   const t = useToastedMutation();
   return useMutation({
     mutationFn: async (participantId: string) => {
-      const { error } = await supabase.from("miw_participants").delete().eq("id", participantId);
+      const { error } = await supabase.rpc("miw_remove_participant", { p_participant_id: participantId });
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["miw-report"] });
       qc.invalidateQueries({ queryKey: ["miw-challenges"] });
+      qc.invalidateQueries({ queryKey: ["wellness-members"] });
+      qc.invalidateQueries({ queryKey: ["sales"] });
       t.success("Participant removed");
     },
     onError: t.onError,
