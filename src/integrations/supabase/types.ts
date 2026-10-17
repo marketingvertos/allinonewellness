@@ -2023,81 +2023,6 @@ export type Database = {
         }
         Relationships: []
       }
-      miw_challenges: {
-        Row: {
-          id: string
-          name: string
-          start_date: string
-          end_date: string
-          fee: number
-          status: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name?: string
-          start_date: string
-          end_date: string
-          fee?: number
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          start_date?: string
-          end_date?: string
-          fee?: number
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      miw_participants: {
-        Row: {
-          id: string
-          challenge_id: string
-          member_id: string
-          payment_id: string | null
-          source: string
-          joined_at: string
-        }
-        Insert: {
-          id?: string
-          challenge_id: string
-          member_id: string
-          payment_id?: string | null
-          source?: string
-          joined_at?: string
-        }
-        Update: {
-          id?: string
-          challenge_id?: string
-          member_id?: string
-          payment_id?: string | null
-          source?: string
-          joined_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "miw_participants_challenge_id_fkey"
-            columns: ["challenge_id"]
-            isOneToOne: false
-            referencedRelation: "miw_challenges"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "miw_participants_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "wellness_members"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       wellness_payments: {
         Row: {
           amount: number
@@ -2105,8 +2030,7 @@ export type Database = {
           created_at: string
           id: string
           member_id: string
-          membership_id: string | null
-          miw_participant_id: string | null
+          membership_id: string
           mode: Database["public"]["Enums"]["payment_mode"]
           note: string | null
           paid_at: string
@@ -2120,8 +2044,7 @@ export type Database = {
           created_at?: string
           id?: string
           member_id: string
-          membership_id?: string | null
-          miw_participant_id?: string | null
+          membership_id: string
           mode: Database["public"]["Enums"]["payment_mode"]
           note?: string | null
           paid_at?: string
@@ -2135,8 +2058,7 @@ export type Database = {
           created_at?: string
           id?: string
           member_id?: string
-          membership_id?: string | null
-          miw_participant_id?: string | null
+          membership_id?: string
           mode?: Database["public"]["Enums"]["payment_mode"]
           note?: string | null
           paid_at?: string
@@ -3166,18 +3088,6 @@ export type Database = {
       }
       member_self_checkin: {
         Args: { p_code: string; p_weight?: number }
-        Returns: Json
-      }
-      miw_register_member: {
-        Args: {
-          p_challenge_id: string
-          p_member_id: string
-          p_payments?: Json
-        }
-        Returns: Json
-      }
-      miw_report: {
-        Args: { p_challenge_id: string }
         Returns: Json
       }
       membership_expired_on: {
