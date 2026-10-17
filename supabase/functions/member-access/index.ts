@@ -154,7 +154,8 @@ Deno.serve(async (req) => {
 
       const recalcIds = [...referredIds, member.referred_by_member_id].filter(Boolean) as string[];
       for (const id of recalcIds) {
-        await admin.rpc("recalc_network_counts", { p_member_id: id }).catch(() => undefined);
+        const { error: recalcError } = await admin.rpc("recalc_network_counts", { p_member_id: id });
+        if (recalcError) console.error("Network recalculation failed", recalcError.message);
       }
 
       return json({ status: "deleted", full_name: member.full_name });

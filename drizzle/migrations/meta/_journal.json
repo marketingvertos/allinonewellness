@@ -428,6 +428,27 @@
       "when": 1792400000000,
       "tag": "0060_miw_challenges",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1792219843065,
+      "tag": "0061_miw_apply_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1792219883103,
+      "tag": "0062_miw_confirmed_online_payment",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1792220020905,
+      "tag": "0063_miw_confirmed_online_payment",
+      "breakpoints": true
     }
   ]
 }

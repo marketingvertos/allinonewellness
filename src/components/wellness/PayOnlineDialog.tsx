@@ -18,6 +18,7 @@ interface Props {
   pinkBalance: number;
   /** Pre-selected plan, usually the one the member is currently on. */
   defaultPlanId?: string | null;
+  challenge?: { id: string; name: string; fee: number };
 }
 
 interface RazorpayResponse {
@@ -46,7 +47,7 @@ function loadCheckout(): Promise<boolean> {
 
 let retryPlanId: string | null = null;
 
-export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, defaultPlanId }: Props) {
+export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, defaultPlanId, challenge }: Props) {
   const { data: plans } = useWellnessPlans();
   const qc = useQueryClient();
   const payable = (plans ?? []).filter((p) => Number(p.price) > 0);
@@ -66,29 +67,31 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
   }, [open, defaultPlanId, plans]);
 
   const plan = payable.find((p) => p.id === planId);
-  const price = plan ? Number(plan.price) : 0;
+  const price = challenge ? Number(challenge.fee) : plan ? Number(plan.price) : 0;
   const maxCredits = useMemo(
     () => Math.min(pinkBalance, Math.floor(price / PINK_CARD_SERVING_VALUE)),
     [pinkBalance, price],
   );
-  const credits = usePink ? maxCredits : 0;
+  const credits = !challenge && usePink ? maxCredits : 0;
   const discount = credits * PINK_CARD_SERVING_VALUE;
   const amount = Math.max(price - discount, 0);
 
   const pay = async () => {
-    if (!plan) return;
+    if (!plan && !challenge) return;
     setBusy(true);
     try {
       const ready = await loadCheckout();
       if (!ready) throw new Error("Could not open the payment screen. Check your internet and try again.");
 
       const { data, error } = await supabase.functions.invoke("razorpay-create-order", {
-        body: { planId: plan.id, pinkCredits: credits },
+        body: challenge ? { challengeId: challenge.id } : { planId: plan?.id, pinkCredits: credits },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
 
-      const rzp = new window.Razorpay!({
+      const Checkout = window.Razorpay;
+      if (!Checkout) throw new Error("Payment screen is unavailable.");
+      const rzp = new Checkout({
         key: data.keyId,
         order_id: data.razorpayOrderId,
         amount: data.amountPaise,
@@ -105,7 +108,7 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
           ondismiss: () => {
             setBusy(false);
             toast.info("Payment cancelled — nothing was charged.", {
-              action: { label: "Try again", onClick: () => { retryPlanId = plan.id; onOpenChange(true); } },
+              action: { label: "Try again", onClick: () => { retryPlanId = plan?.id ?? null; onOpenChange(true); } },
             });
           },
         },
@@ -121,11 +124,11 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
             });
             if (ve) throw new Error(ve.message);
             if (vd?.error) throw new Error(vd.error);
-            toast.success("Payment successful — your plan is active.");
+            toast.success(challenge ? "Payment confirmed — you’re registered for MIW." : "Payment successful — your plan is active.");
             qc.invalidateQueries();
           } catch (err) {
             toast.error(
-              "Payment went through, but we could not update your plan yet. It will update shortly — please contact the centre if it does not.",
+              "Payment is awaiting confirmation. Your registration or plan will update after confirmation; contact the centre if it does not.",
             );
             console.error(err);
           } finally {
@@ -152,13 +155,13 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
       open={open}
       onOpenChange={onOpenChange}
       title="Pay online"
-      description="Pay for your plan by UPI, card, netbanking or wallet."
+      description={challenge ? challenge.name : "Pay for your plan by UPI, card, netbanking or wallet."}
       footer={
         <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="outline" className="h-11 w-full shrink-0 sm:w-auto" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button className="h-12 w-full text-base sm:w-auto" onClick={pay} disabled={!plan || busy || amount <= 0}>
+          <Button className="h-12 w-full text-base sm:w-auto" onClick={pay} disabled={(!plan && !challenge) || busy || amount <= 0}>
             {busy ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Opening…
@@ -171,7 +174,7 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
       }
     >
       <div className="space-y-5">
-        <div className="space-y-2">
+        {!challenge && <div className="space-y-2">
           <Label>Choose your plan</Label>
           <div className="space-y-2" role="radiogroup" aria-label="Plan">
             {payable.map((p) => {
@@ -208,9 +211,9 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
               );
             })}
           </div>
-        </div>
+        </div>}
 
-        {maxCredits > 0 && (
+        {!challenge && maxCredits > 0 && (
           <div
             role="switch"
             aria-checked={usePink}
@@ -232,7 +235,7 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
 
         <div className="space-y-2 rounded-xl border bg-muted/40 p-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Plan amount</span>
+            <span className="text-muted-foreground">{challenge ? "MIW registration" : "Plan amount"}</span>
             <span>{formatCurrency(price)}</span>
           </div>
           {discount > 0 && (

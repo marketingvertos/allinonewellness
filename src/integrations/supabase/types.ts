@@ -564,6 +564,126 @@ export type Database = {
           },
         ]
       }
+      miw_challenges: {
+        Row: {
+          created_at: string
+          end_date: string
+          fee: number
+          id: string
+          name: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          fee?: number
+          id?: string
+          name?: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          fee?: number
+          id?: string
+          name?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      miw_participants: {
+        Row: {
+          challenge_id: string
+          id: string
+          joined_at: string
+          member_id: string
+          source: string
+        }
+        Insert: {
+          challenge_id: string
+          id?: string
+          joined_at?: string
+          member_id: string
+          source?: string
+        }
+        Update: {
+          challenge_id?: string
+          id?: string
+          joined_at?: string
+          member_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "miw_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "miw_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "miw_participants_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      miw_payments: {
+        Row: {
+          amount: number
+          id: string
+          member_id: string
+          mode: Database["public"]["Enums"]["payment_mode"]
+          paid_at: string
+          participant_id: string
+          recorded_by: string | null
+          reference: string | null
+        }
+        Insert: {
+          amount: number
+          id?: string
+          member_id: string
+          mode: Database["public"]["Enums"]["payment_mode"]
+          paid_at?: string
+          participant_id: string
+          recorded_by?: string | null
+          reference?: string | null
+        }
+        Update: {
+          amount?: number
+          id?: string
+          member_id?: string
+          mode?: Database["public"]["Enums"]["payment_mode"]
+          paid_at?: string
+          participant_id?: string
+          recorded_by?: string | null
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "miw_payments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "miw_payments_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "miw_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monthly_operations_summary: {
         Row: {
           ae_qualify_count: number
@@ -811,6 +931,7 @@ export type Database = {
           id: string
           member_id: string
           membership_id: string | null
+          miw_challenge_id: string | null
           pink_credits: number
           plan_id: string | null
           razorpay_order_id: string
@@ -827,6 +948,7 @@ export type Database = {
           id?: string
           member_id: string
           membership_id?: string | null
+          miw_challenge_id?: string | null
           pink_credits?: number
           plan_id?: string | null
           razorpay_order_id: string
@@ -843,6 +965,7 @@ export type Database = {
           id?: string
           member_id?: string
           membership_id?: string | null
+          miw_challenge_id?: string | null
           pink_credits?: number
           plan_id?: string | null
           razorpay_order_id?: string
@@ -864,6 +987,13 @@ export type Database = {
             columns: ["membership_id"]
             isOneToOne: false
             referencedRelation: "wellness_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "razorpay_orders_miw_challenge_id_fkey"
+            columns: ["miw_challenge_id"]
+            isOneToOne: false
+            referencedRelation: "miw_challenges"
             referencedColumns: ["id"]
           },
           {
@@ -2023,81 +2153,6 @@ export type Database = {
         }
         Relationships: []
       }
-      miw_challenges: {
-        Row: {
-          id: string
-          name: string
-          start_date: string
-          end_date: string
-          fee: number
-          status: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name?: string
-          start_date: string
-          end_date: string
-          fee?: number
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          start_date?: string
-          end_date?: string
-          fee?: number
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      miw_participants: {
-        Row: {
-          id: string
-          challenge_id: string
-          member_id: string
-          payment_id: string | null
-          source: string
-          joined_at: string
-        }
-        Insert: {
-          id?: string
-          challenge_id: string
-          member_id: string
-          payment_id?: string | null
-          source?: string
-          joined_at?: string
-        }
-        Update: {
-          id?: string
-          challenge_id?: string
-          member_id?: string
-          payment_id?: string | null
-          source?: string
-          joined_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "miw_participants_challenge_id_fkey"
-            columns: ["challenge_id"]
-            isOneToOne: false
-            referencedRelation: "miw_challenges"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "miw_participants_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "wellness_members"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       wellness_payments: {
         Row: {
           amount: number
@@ -2105,8 +2160,7 @@ export type Database = {
           created_at: string
           id: string
           member_id: string
-          membership_id: string | null
-          miw_participant_id: string | null
+          membership_id: string
           mode: Database["public"]["Enums"]["payment_mode"]
           note: string | null
           paid_at: string
@@ -2120,8 +2174,7 @@ export type Database = {
           created_at?: string
           id?: string
           member_id: string
-          membership_id?: string | null
-          miw_participant_id?: string | null
+          membership_id: string
           mode: Database["public"]["Enums"]["payment_mode"]
           note?: string | null
           paid_at?: string
@@ -2135,8 +2188,7 @@ export type Database = {
           created_at?: string
           id?: string
           member_id?: string
-          membership_id?: string | null
-          miw_participant_id?: string | null
+          membership_id?: string
           mode?: Database["public"]["Enums"]["payment_mode"]
           note?: string | null
           paid_at?: string
@@ -3168,24 +3220,17 @@ export type Database = {
         Args: { p_code: string; p_weight?: number }
         Returns: Json
       }
-      miw_register_member: {
-        Args: {
-          p_challenge_id: string
-          p_member_id: string
-          p_payments?: Json
-        }
-        Returns: Json
-      }
-      miw_report: {
-        Args: { p_challenge_id: string }
-        Returns: Json
-      }
       membership_expired_on: {
         Args: {
           _ms: Database["public"]["Tables"]["wellness_memberships"]["Row"]
         }
         Returns: string
       }
+      miw_register_member: {
+        Args: { p_challenge_id: string; p_member_id: string; p_payments?: Json }
+        Returns: Json
+      }
+      miw_report: { Args: { p_challenge_id: string }; Returns: Json }
       monthly_coach_title_check: { Args: never; Returns: undefined }
       notify_staff: {
         Args: {

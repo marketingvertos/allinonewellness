@@ -24,6 +24,7 @@ import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
 import { PromotionCards } from "@/components/portal/PromotionCards";
 import { MediaPostFeed } from "@/components/portal/MediaPostFeed";
+import { MiwChallengeCard } from "@/components/portal/MiwChallengeCard";
 import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 export default function PortalHome() {
@@ -165,6 +166,7 @@ export default function PortalHome() {
       </Card>
 
       {profile && <PromotionCards memberId={profile.id} memberMode={profile.member_mode} />}
+      {profile && <MiwChallengeCard memberId={profile.id} memberName={profile.full_name} />}
       {profile && <MediaPostFeed memberMode={profile.member_mode} memberId={identity?.memberId ?? undefined} />}
 
       {profile && (

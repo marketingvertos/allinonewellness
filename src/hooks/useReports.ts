@@ -81,7 +81,7 @@ export function useRevenueReport(from: string, to: string) {
       // One row per payment collected in the period (renewals of existing plans included).
       const sales = await fetchSales(from, to);
       const memberIds = [...new Set(sales.map((s) => s.memberId))];
-      const msIds = [...new Set(sales.map((s) => s.membershipId))];
+      const msIds = [...new Set(sales.map((s) => s.membershipId).filter(Boolean))];
       const [mem, ms] = await Promise.all([
         memberIds.length ? supabase.from("wellness_members").select("id, full_name, mobile_number").in("id", memberIds) : Promise.resolve({ data: [], error: null }),
         msIds.length ? supabase.from("wellness_memberships").select("id, membership_code, start_date").in("id", msIds) : Promise.resolve({ data: [], error: null }),

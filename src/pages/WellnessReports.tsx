@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { MiwReport } from "@/components/wellness/MiwReport";
 import { PageBanner } from "@/components/PageBanner";
 import { ScheduleEventDialog } from "@/components/wellness/ScheduleEventDialog";
 import {
@@ -259,156 +260,6 @@ function WeightRewardsCard({ month }: { month: string }) {
 
 /* ------------------------------- MIW tab ------------------------------ */
 
-function MiwTab({ month }: { month: string }) {
-  const { data: events } = useWellnessEvents(month, "miw_challenge");
-  const event = events?.[0] ?? null;
-  const [open, setOpen] = useState(false);
-  const { data: participants } = useEventParticipants(event?.id);
-  const saveParticipant = useSaveParticipant();
-  const removeParticipant = useRemoveParticipant();
-  const { data: members } = useWellnessMembers("", "all");
-  const [memberId, setMemberId] = useState("");
-  const [startWeight, setStartWeight] = useState("");
-
-  const ranked = useMemo(() => {
-    const rows = (participants ?? []).map((p) => ({
-      p,
-      change:
-        p.start_weight != null && p.end_weight != null
-          ? Number(p.end_weight) - Number(p.start_weight)
-          : null,
-    }));
-    return rows.sort((a, b) => (a.change ?? Infinity) - (b.change ?? Infinity));
-  }, [participants]);
-
-  const add = async () => {
-    if (!event || !memberId) return;
-    await saveParticipant.mutateAsync({
-      event_id: event.id,
-      member_id: memberId,
-      start_weight: startWeight ? Number(startWeight) : null,
-    });
-    setMemberId("");
-    setStartWeight("");
-  };
-
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 pb-3">
-          <CardTitle className="text-base">MIW Challenge (21 days) — {monthLabel(month)}</CardTitle>
-          <Button size="sm" onClick={() => setOpen(true)}>{event ? "Edit" : "Start challenge"}</Button>
-        </CardHeader>
-        <CardContent className="text-sm">
-          {event ? (
-            <p>
-              {formatDate(event.event_date)}
-              {event.end_date ? ` — ${formatDate(event.end_date)}` : ""}
-            </p>
-          ) : (
-            <p className="text-muted-foreground">No challenge running this month.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {event && (
-        <Card>
-          <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 pb-3">
-            <CardTitle className="text-base">Participants</CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!participants?.length}
-              onClick={() =>
-                downloadCsv(
-                  "miw-challenge",
-                  ["Rank", "Name", "Mobile", "Start weight", "Current weight", "Change"],
-                  ranked.map((r, i) => [
-                    i + 1,
-                    r.p.wellness_members?.full_name ?? "",
-                    r.p.wellness_members?.mobile_number ?? "",
-                    r.p.start_weight ?? "",
-                    r.p.end_weight ?? "",
-                    r.change != null ? r.change.toFixed(1) : "",
-                  ]),
-                )
-              }
-            >
-              <Download className="mr-2 h-4 w-4" /> Export
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2 sm:grid-cols-[1fr_10rem_auto]">
-              <Select value={memberId} onValueChange={setMemberId}>
-                <SelectTrigger><SelectValue placeholder="Select member" /></SelectTrigger>
-                <SelectContent>
-                  {(members ?? []).map((m) => (
-                    <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                placeholder="Start weight"
-                inputMode="decimal"
-                value={startWeight}
-                onChange={(e) => setStartWeight(e.target.value)}
-              />
-              <Button onClick={add} disabled={!memberId || saveParticipant.isPending}>Add</Button>
-            </div>
-
-            <div className="space-y-2">
-              {ranked.map(({ p, change }, i) => (
-                <div
-                  key={p.id}
-                  className={`flex flex-wrap items-center gap-3 rounded-md border p-3 text-sm ${
-                    i === 0 && change != null ? "border-emerald-500 bg-emerald-500/5" : ""
-                  }`}
-                >
-                  <Badge variant={i === 0 && change != null ? "default" : "outline"}>#{i + 1}</Badge>
-                  <span className="flex-1 font-medium">{p.wellness_members?.full_name}</span>
-                  <span className="text-muted-foreground">Start {p.start_weight ?? "—"} kg</span>
-                  <Input
-                    className="w-28"
-                    inputMode="decimal"
-                    placeholder="Current"
-                    defaultValue={p.end_weight ?? ""}
-                    onBlur={(e) =>
-                      saveParticipant.mutate({
-                        id: p.id,
-                        event_id: p.event_id,
-                        member_id: p.member_id,
-                        start_weight: p.start_weight,
-                        end_weight: e.target.value ? Number(e.target.value) : null,
-                      })
-                    }
-                  />
-                  <span className={change != null && change < 0 ? "font-semibold text-emerald-600" : "text-muted-foreground"}>
-                    {change != null ? `${change > 0 ? "+" : ""}${change.toFixed(1)} kg` : "—"}
-                  </span>
-                  <Button size="icon" variant="ghost" onClick={() => removeParticipant.mutate(p.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              ))}
-              {!participants?.length && (
-                <p className="text-sm text-muted-foreground">No participants added yet.</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <ScheduleEventDialog
-        eventType="miw_challenge"
-        month={month}
-        existing={event}
-        open={open}
-        onOpenChange={setOpen}
-      />
-    </div>
-  );
-}
-
 /* ------------------------------- WLP tab ------------------------------ */
 
 function WlpTab({ month }: { month: string }) {
@@ -657,7 +508,7 @@ export default function WellnessReports() {
           <EventTab eventType="lifestyle_day" month={month} />
         </TabsContent>
         <TabsContent value="miw" className="mt-4">
-          <MiwTab month={month} />
+          <MiwReport month={month} />
         </TabsContent>
         <TabsContent value="wlp" className="mt-4">
           <WlpTab month={month} />

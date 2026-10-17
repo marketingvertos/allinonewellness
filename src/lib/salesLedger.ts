@@ -7,6 +7,7 @@
 export interface LedgerPayment {
   id: string;
   membership_id: string;
+  registration_id?: string;
   member_id: string;
   amount: number;
   mode: string;
@@ -55,7 +56,7 @@ export function buildSales(payments: LedgerPayment[], legacy: LegacySale[]): Sal
   const groups = new Map<string, Sale>();
   for (const p of payments) {
     // Online payments are each their own sale; counter split lines are grouped.
-    const key = [p.membership_id, p.paid_at, p.plan_name ?? "", p.context, p.mode === "online" ? p.reference ?? p.id : ""].join("|");
+    const key = [p.context === "miw" ? p.registration_id ?? p.id : p.membership_id, p.paid_at, p.plan_name ?? "", p.context, p.mode === "online" ? p.reference ?? p.id : ""].join("|");
     const amt = Number(p.amount ?? 0);
     const line = { amount: amt, mode: p.mode, paidAt: p.paid_at, note: p.note, reference: p.reference };
     const g = groups.get(key);
@@ -97,10 +98,11 @@ export function buildSales(payments: LedgerPayment[], legacy: LegacySale[]): Sal
 }
 
 export function summarise(sales: Sale[]) {
-  const s = { revenue: 0, newRevenue: 0, renewalRevenue: 0, trialRevenue: 0, byMode: {} as Record<string, number> };
+  const s = { revenue: 0, newRevenue: 0, renewalRevenue: 0, trialRevenue: 0, miwRevenue: 0, byMode: {} as Record<string, number> };
   for (const x of sales) {
     s.revenue += x.amount;
-    if (x.kind === "trial") s.trialRevenue += x.amount;
+    if (x.kind === "miw") s.miwRevenue += x.amount;
+    else if (x.kind === "trial") s.trialRevenue += x.amount;
     else if (x.kind === "renewal") s.renewalRevenue += x.amount;
     else s.newRevenue += x.amount;
     if (x.lines.length) for (const l of x.lines) s.byMode[l.mode] = (s.byMode[l.mode] ?? 0) + l.amount;
