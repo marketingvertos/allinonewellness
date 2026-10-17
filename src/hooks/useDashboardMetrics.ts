@@ -69,7 +69,7 @@ export function useDashboardMetrics(mode: MemberModeFilter) {
           .order("id").range(from, to)),
         readAllMetricRows<DashboardPayment>((from, to) => supabase
           .from("wellness_payments")
-          .select("member_id, membership_id, amount, context, paid_at")
+          .select("member_id, membership_id, amount, context, paid_at, plan_id")
           .eq("context", "renewal").gt("amount", 0)
           .gte("paid_at", today + "T00:00:00+05:30")
           .lt("paid_at", tomorrow + "T00:00:00+05:30")

@@ -571,7 +571,7 @@ export function RevenueTab() {
                 r.wellness_members?.mobile_number ?? "",
                 r.wellness_plans?.name ?? "",
                 r.membership_code,
-                paymentModeLabel(r.payment_mode),
+                (r.payment_mode ?? "").split("+").map(paymentModeLabel).join(" + "),
                 Number(r.price_paid ?? 0),
               ]),
             )
@@ -630,7 +630,7 @@ export function RevenueTab() {
               <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm">
                 <span className="flex-1 font-medium">{r.wellness_members?.full_name}</span>
                 <span className="text-muted-foreground">{r.wellness_plans?.name}</span>
-                <Badge variant="outline">{paymentModeLabel(r.payment_mode)}</Badge>
+                <Badge variant="outline">{(r.payment_mode ?? "").split("+").map(paymentModeLabel).join(" + ")}</Badge>
                 <span className="text-muted-foreground">{formatDate(r.payment_date ?? r.start_date)}</span>
                 <span className="font-semibold">{formatCurrency(Number(r.price_paid ?? 0))}</span>
               </div>

@@ -1,3 +1,4 @@
+import { buildSales, summarise, type LedgerPayment, type LegacySale, type Sale } from "@/lib/salesLedger";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -2489,17 +2490,52 @@ export interface SalesSummary {
   byPlan: { name: string; revenue: number }[];
 }
 
+/** Payment-ledger sales in an IST date range (plus legacy memberships with no ledger lines). */
+export async function fetchSales(from: string, to: string, memberMode?: MemberModeFilter): Promise<Sale[]> {
+  const ids = await memberIdsForMode(memberMode);
+  const start = `${from}T00:00:00+05:30`;
+  const end = `${to}T23:59:59.999+05:30`;
+  const pays = await readAllPages((a, b) => {
+    let q = supabase
+      .from("wellness_payments")
+      .select("id, membership_id, member_id, amount, mode, reference, context, paid_at, note, wellness_plans(name, plan_type), wellness_memberships(wellness_plans(name, plan_type))")
+      .gte("paid_at", start)
+      .lte("paid_at", end)
+      .order("id")
+      .range(a, b);
+    if (ids) q = q.in("member_id", ids);
+    return q;
+  });
+  if (pays.error) throw pays.error;
+  const legacyQ = await readAllPages((a, b) => {
+    let q = supabase
+      .from("wellness_memberships")
+      .select("id, member_id, price_paid, payment_mode, renewed_from, created_at, wellness_plans(name, plan_type), wellness_payments(id)")
+      .gte("created_at", start)
+      .lte("created_at", end)
+      .order("id")
+      .range(a, b);
+    if (ids) q = q.in("member_id", ids);
+    return q;
+  });
+  if (legacyQ.error) throw legacyQ.error;
+  type P = { name: string; plan_type: string } | null;
+  const payments: LedgerPayment[] = (pays.data as any[]).map((p) => {
+    const plan: P = p.wellness_plans ?? p.wellness_memberships?.wellness_plans ?? null;
+    return { ...p, amount: Number(p.amount), plan_name: plan?.name ?? null, plan_type: plan?.plan_type ?? null };
+  });
+  const legacy: LegacySale[] = (legacyQ.data as any[])
+    .filter((m) => !(m.wellness_payments ?? []).length)
+    .map((m) => ({ ...m, plan_name: m.wellness_plans?.name ?? null, plan_type: m.wellness_plans?.plan_type ?? null }));
+  return buildSales(payments, legacy);
+}
+
 /** Memberships sold, revenue and servings used inside a date range. */
 export function useSalesAnalytics(range: PeriodRange, memberMode?: MemberModeFilter) {
   return useQuery({
     queryKey: ["wellness-sales-analytics", range.from, range.to, memberMode ?? "all"],
     queryFn: async (): Promise<SalesSummary> => {
       const ids = await memberIdsForMode(memberMode);
-      let salesQ = supabase
-        .from("wellness_memberships")
-        .select("price_paid, created_at, member_id, renewed_from, wellness_plans(name, plan_type)")
-        .gte("created_at", `${range.from}T00:00:00+05:30`)
-        .lte("created_at", `${range.to}T23:59:59+05:30`);
       const servingsPage = (from: number, to: number) => {
         let q = supabase
           .from("wellness_attendance")
@@ -2511,37 +2547,19 @@ export function useSalesAnalytics(range: PeriodRange, memberMode?: MemberModeFil
         if (ids) q = q.in("member_id", ids);
         return q;
       };
-      if (ids) salesQ = salesQ.in("member_id", ids);
-      const [sales, servings] = await Promise.all([salesQ, readAllPages(servingsPage)]);
-      if (sales.error) throw sales.error;
+      const [sales, servings] = await Promise.all([fetchSales(range.from, range.to, memberMode), readAllPages(servingsPage)]);
       if (servings.error) throw servings.error;
-      const rows = (sales.data ?? []) as unknown as {
-        price_paid: number;
-        renewed_from: string | null;
-        wellness_plans: { name: string; plan_type: string } | null;
-      }[];
-      let newRevenue = 0,
-        renewalRevenue = 0,
-        trialRevenue = 0;
+      const s = summarise(sales);
       const planMap = new Map<string, number>();
-      for (const r of rows) {
-        const amt = Number(r.price_paid ?? 0);
-        if (r.wellness_plans?.plan_type === "trial") trialRevenue += amt;
-        else if (r.renewed_from) renewalRevenue += amt;
-        else newRevenue += amt;
-        const name = r.wellness_plans?.name ?? "Plan";
-        planMap.set(name, (planMap.get(name) ?? 0) + amt);
-      }
+      for (const r of sales) planMap.set(r.planName, (planMap.get(r.planName) ?? 0) + r.amount);
       return {
-        memberships: rows.length,
-        revenue: rows.reduce((sum, r) => sum + Number(r.price_paid ?? 0), 0),
+        memberships: sales.length,
+        revenue: s.revenue,
         servings: (servings.data ?? []).filter((r) => (r as { serving_deducted: boolean }).serving_deducted).length,
-        newRevenue,
-        renewalRevenue,
-        trialRevenue,
-        byPlan: [...planMap.entries()]
-          .map(([name, revenue]) => ({ name, revenue }))
-          .sort((a, b) => b.revenue - a.revenue),
+        newRevenue: s.newRevenue,
+        renewalRevenue: s.renewalRevenue,
+        trialRevenue: s.trialRevenue,
+        byPlan: [...planMap.entries()].map(([name, revenue]) => ({ name, revenue })).sort((a, b) => b.revenue - a.revenue),
       };
     },
   });
@@ -2575,97 +2593,47 @@ export interface SalesDrillDownResult {
   byCard: number;
 }
 
-/** Memberships sold in an IST date range, with split-payment detail. */
+/** Sales (payments collected) in an IST date range, with split-payment detail. */
 export function useSalesDrillDown(from: string, to: string, memberMode?: MemberModeFilter, enabled = true) {
   return useQuery({
     queryKey: ["sales-drilldown", from, to, memberMode ?? "all"],
     enabled,
     queryFn: async (): Promise<SalesDrillDownResult> => {
-      const ids = await memberIdsForMode(memberMode);
-      let msQ = supabase
-        .from("wellness_memberships")
-        .select(
-          "id, member_id, plan_id, price_paid, payment_mode, total_servings, renewed_from, created_at, " +
-            "wellness_members(full_name, mobile_number, member_mode), wellness_plans(name, price, plan_type)",
-        )
-        .gte("created_at", `${from}T00:00:00+05:30`)
-        .lte("created_at", `${to}T23:59:59+05:30`)
-        .order("created_at", { ascending: false });
-      if (ids) msQ = msQ.in("member_id", ids);
-      const { data: memberships, error: msErr } = await msQ;
-      if (msErr) throw msErr;
-
-      const msRows = (memberships ?? []) as unknown as {
-        id: string;
-        member_id: string;
-        plan_id: string;
-        price_paid: number;
-        payment_mode: string;
-        total_servings: number;
-        renewed_from: string | null;
-        created_at: string;
-        wellness_members: { full_name: string; mobile_number: string; member_mode: string } | null;
-        wellness_plans: { name: string; price: number; plan_type: string } | null;
-      }[];
-
-      const msIds = msRows.map((m) => m.id);
-      let payments: { membership_id: string; amount: number; mode: string; paid_at: string; note: string | null }[] = [];
-      if (msIds.length > 0) {
-        const { data: payRows, error: pErr } = await supabase
-          .from("wellness_payments")
-          .select("membership_id, amount, mode, paid_at, note")
-          .in("membership_id", msIds)
-          .order("paid_at", { ascending: true });
-        if (pErr) throw pErr;
-        payments = (payRows ?? []) as typeof payments;
-      }
-
-      const paymentsByMs: Record<string, typeof payments> = {};
-      for (const p of payments) (paymentsByMs[p.membership_id] ??= []).push(p);
-
-      let byCash = 0,
-        byUpi = 0,
-        byOnline = 0,
-        byCard = 0;
-      const tally = (mode: string, amt: number) => {
-        if (mode === "cash") byCash += amt;
-        else if (mode === "upi") byUpi += amt;
-        else if (mode === "online") byOnline += amt;
-        else if (mode === "card") byCard += amt;
-      };
-
-      const rows: SalesDrillDownRow[] = msRows.map((m) => {
-        const legs = paymentsByMs[m.id] ?? [];
-        if (legs.length > 0) {
-          for (const p of legs) tally(p.mode, Number(p.amount));
-        } else {
-          tally(m.payment_mode, Number(m.price_paid));
-        }
-        return {
-          id: m.id,
-          memberId: m.member_id,
-          memberName: m.wellness_members?.full_name ?? "Member",
-          mobile: m.wellness_members?.mobile_number ?? "",
-          planName: m.wellness_plans?.name ?? "Plan",
-          planType: m.wellness_plans?.plan_type ?? null,
-          pricePaid: Number(m.price_paid),
-          paymentMode: m.payment_mode,
-          totalServings: m.total_servings,
-          isRenewal: m.renewed_from != null,
-          createdAt: m.created_at,
-          payments: legs.map((p) => ({ amount: Number(p.amount), mode: p.mode, paidAt: p.paid_at, note: p.note })),
-        };
-      });
-
+      const sales = await fetchSales(from, to, memberMode);
+      const memberIds = [...new Set(sales.map((s) => s.memberId))];
+      const msIds = [...new Set(sales.map((s) => s.membershipId))];
+      const [mem, ms] = await Promise.all([
+        memberIds.length ? supabase.from("wellness_members").select("id, full_name, mobile_number").in("id", memberIds) : Promise.resolve({ data: [], error: null }),
+        msIds.length ? supabase.from("wellness_memberships").select("id, total_servings").in("id", msIds) : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (mem.error) throw mem.error;
+      if (ms.error) throw ms.error;
+      const M = new Map((mem.data as any[]).map((m) => [m.id, m]));
+      const S = new Map((ms.data as any[]).map((m) => [m.id, m.total_servings as number]));
+      const sum = summarise(sales);
+      const rows: SalesDrillDownRow[] = sales.map((s) => ({
+        id: s.key,
+        memberId: s.memberId,
+        memberName: M.get(s.memberId)?.full_name ?? "Member",
+        mobile: M.get(s.memberId)?.mobile_number ?? "",
+        planName: s.planName,
+        planType: s.planType,
+        pricePaid: s.amount,
+        paymentMode: s.mode,
+        totalServings: S.get(s.membershipId) ?? 0,
+        isRenewal: s.kind === "renewal",
+        createdAt: s.paidAt,
+        payments: s.lines.map((l) => ({ amount: l.amount, mode: l.mode, paidAt: l.paidAt, note: l.note })),
+      }));
       return {
         rows,
-        totalRevenue: rows.reduce((s, r) => s + r.pricePaid, 0),
+        totalRevenue: sum.revenue,
         totalMemberships: rows.length,
-        totalServings: rows.reduce((s, r) => s + r.totalServings, 0),
-        byCash,
-        byUpi,
-        byOnline,
-        byCard,
+        totalServings: rows.reduce((t, r) => t + r.totalServings, 0),
+        byCash: sum.byMode.cash ?? 0,
+        byUpi: sum.byMode.upi ?? 0,
+        byOnline: sum.byMode.online ?? 0,
+        byCard: sum.byMode.card ?? 0,
       };
     },
   });

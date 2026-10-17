@@ -51,6 +51,8 @@ export interface DashboardPayment {
   amount: number;
   context: string;
   paid_at: string;
+  /** Plan actually paid for (online renewals can differ from the membership's plan). */
+  plan_id?: string | null;
 }
 
 export interface DashboardAttendance {
@@ -159,7 +161,8 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
     const membership = memberships.get(payment.membership_id);
     if (!member || member.is_guest || !membership || membership.status === "cancelled" ||
         membership.member_id !== member.id) continue;
-    const plan = plans.get(membership.plan_id);
+    const planId = payment.plan_id ?? membership.plan_id;
+    const plan = plans.get(planId);
     if (!plan) continue;
     let key: DashboardCardKey | null = null;
     if (isGoldCardPlan(plan)) key = "goldCardRenewalsToday";
@@ -167,7 +170,7 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
     else if (isPaid3DayTrialPlan(plan)) key = "renewals3DayToday";
     else continue;
     addRenewal(key, member.id, {
-      memberId: member.id, planId: membership.plan_id, date: today,
+      memberId: member.id, planId, date: today,
       amount: Number(payment.amount), label: "Renewal",
     });
   }
