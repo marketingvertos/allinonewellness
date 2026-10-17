@@ -36,6 +36,7 @@ import PortalHistory from "./pages/portal/PortalHistory";
 import PortalNetwork from "./pages/portal/PortalNetwork";
 import WlpCheckin from "./pages/portal/WlpCheckin";
 import PublicRegister from "./pages/PublicRegister";
+import PublicTrial from "./pages/PublicTrial";
 import DisplayWeightChanges from "./pages/display/DisplayWeightChanges";
 import DisplayMilestones from "./pages/display/DisplayMilestones";
 import WellnessWlp from "./pages/WellnessWlp";
@@ -75,6 +76,8 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               {/* Public registration form — no login required */}
               <Route path="/join" element={<PublicRegister />} />
+              {/* Public trial registration — no login required */}
+              <Route path="/trial" element={<PublicTrial />} />
               {/* Public display screens — no login required */}
               <Route path="/display/weight-changes" element={<DisplayWeightChanges />} />
               <Route path="/display/milestones" element={<DisplayMilestones />} />

@@ -12,10 +12,12 @@ import { Check, Copy, ExternalLink, UserPlus } from "lucide-react";
 export function PublicRegistrationCard() {
   const qc = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const [copiedTrial, setCopiedTrial] = useState(false);
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const url = `${origin}/join`;
+  const trialUrl = `${origin}/trial`;
 
   const { data: saved } = useQuery({
     queryKey: ["lead-alert-phone"],
@@ -38,6 +40,12 @@ export function PublicRegistrationCard() {
     await navigator.clipboard.writeText(url);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyTrial = async () => {
+    await navigator.clipboard.writeText(trialUrl);
+    setCopiedTrial(true);
+    window.setTimeout(() => setCopiedTrial(false), 2000);
   };
 
   const save = async () => {
@@ -79,6 +87,21 @@ export function PublicRegistrationCard() {
             </Button>
             <Button size="sm" variant="outline" asChild>
               <a href="/join" target="_blank" rel="noreferrer">
+                <ExternalLink className="mr-2 h-4 w-4" /> Open
+              </a>
+            </Button>
+          </div>
+        </div>
+        <div className="rounded-md border p-3">
+          <p className="text-sm font-medium">Free trial registration</p>
+          <p className="mt-0.5 break-all text-xs text-muted-foreground">{trialUrl}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" onClick={copyTrial}>
+              {copiedTrial ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+              {copiedTrial ? "Copied" : "Copy link"}
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <a href="/trial" target="_blank" rel="noreferrer">
                 <ExternalLink className="mr-2 h-4 w-4" /> Open
               </a>
             </Button>

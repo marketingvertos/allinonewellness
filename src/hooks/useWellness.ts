@@ -2809,6 +2809,92 @@ export function useRedeemPinkCardAsServings() {
   });
 }
 
+// ---------- Lead Management ----------
+
+export interface WellnessLead {
+  id: string;
+  full_name: string;
+  mobile_number: string;
+  gender: string | null;
+  date_of_birth: string | null;
+  city: string | null;
+  area: string | null;
+  goal: string | null;
+  height: string | null;
+  joining_weight: string | null;
+  health_issues: string | null;
+  source: string;
+  source_detail: string | null;
+  tags: string[];
+  status: "new" | "contacted" | "approved" | "rejected" | "converted";
+  notes: string | null;
+  assigned_to: string | null;
+  converted_member_id: string | null;
+  converted_trial_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useLeads(statusFilter?: string[]) {
+  return useQuery({
+    queryKey: ["wellness-leads", statusFilter],
+    queryFn: async () => {
+      let q = supabase
+        .from("wellness_leads")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (statusFilter && statusFilter.length > 0) {
+        q = q.in("status", statusFilter);
+      }
+      const { data, error } = await q;
+      if (error) throw error;
+      return data as unknown as WellnessLead[];
+    },
+  });
+}
+
+export function useUpdateLeadStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      leadId,
+      status,
+      notes,
+    }: {
+      leadId: string;
+      status: string;
+      notes?: string;
+    }) => {
+      const update: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
+      if (notes !== undefined) update.notes = notes;
+      const { error } = await supabase
+        .from("wellness_leads")
+        .update(update)
+        .eq("id", leadId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["wellness-leads"] }),
+  });
+}
+
+export function useApproveLead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ leadId, planId }: { leadId: string; planId?: string }) => {
+      const { data, error } = await supabase.rpc("approve_lead", {
+        p_lead_id: leadId,
+        p_plan_id: planId,
+      });
+      if (error) throw error;
+      return data as { status: string; member_id?: string; trial_id?: string; member_name?: string; message?: string };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wellness-leads"] });
+      qc.invalidateQueries({ queryKey: ["active-trials"] });
+    },
+  });
+}
+
 // ---------- WLP Sessions ----------
 
 export interface WlpSession {
