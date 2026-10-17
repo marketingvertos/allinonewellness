@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useCreateMiwChallenge, useMiwChallenges, useMiwReport, useUpdateMiwChallenge, useWellnessMembers } from "@/hooks/useWellness";
-import { useMemberIdentity } from "@/hooks/useMemberIdentity";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,8 +18,13 @@ import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 
 export function MiwReport({ month }: { month: string }) {
   const { data: challenges, error: listError } = useMiwChallenges();
-  const { data: identity } = useMemberIdentity();
-  const manager = identity?.isAdmin || identity?.isManager;
+  const { user } = useAuth();
+  const { data: manager } = useQuery({ queryKey: ["miw-manager", user?.id], enabled: !!user, queryFn: async () => {
+    if (!user) return false;
+    const { data, error } = await supabase.rpc("is_wellness_manager", { _user_id: user.id });
+    if (error) throw error;
+    return data;
+  } });
   const [id, setId] = useState("");
   const filtered = (challenges ?? []).filter(c => c.start_date.slice(0, 7) === month);
   useEffect(() => { if (!filtered.some(c => c.id === id)) setId(filtered[0]?.id ?? ""); }, [challenges, month, id]);
