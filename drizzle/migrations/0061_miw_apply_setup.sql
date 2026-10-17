@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.wellness_members IS 'Wellness member profiles; MIW registration is stored separately from memberships.';
