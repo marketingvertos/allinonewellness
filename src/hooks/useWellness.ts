@@ -3155,16 +3155,15 @@ export function useMiwRegisterMember() {
       const { data, error } = await supabase.rpc("miw_register_member", {
         p_challenge_id: args.challengeId,
         p_member_id: args.memberId,
-        p_payments: JSON.stringify(args.payments),
+        p_payments: args.payments,
       } as never);
       if (error) throw error;
       return data as { status: string; participant_id?: string; amount_paid?: number; member_name?: string; message?: string };
     },
     onSuccess: (result) => {
-      qc.invalidateQueries({ queryKey: ["miw-"] });
-      qc.invalidateQueries({ queryKey: ["wellness-members"] });
+      qc.invalidateQueries();
       if (result.status === "already_registered") {
-        t.error(result.message ?? "Already registered");
+        t.onError(new Error(result.message ?? "Already registered"));
       } else {
         t.success(`${result.member_name ?? "Member"} registered — ₹${result.amount_paid ?? 0} paid`);
       }
@@ -3198,7 +3197,8 @@ export function useMiwReport(challengeId: string | null) {
     queryKey: ["miw-report", challengeId],
     enabled: !!challengeId,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("miw_report", { p_challenge_id: challengeId! } as never);
+      if (!challengeId) throw new Error("Choose a challenge");
+      const { data, error } = await supabase.rpc("miw_report", { p_challenge_id: challengeId } as never);
       if (error) throw error;
       return data as unknown as MiwReportData;
     },
