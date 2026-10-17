@@ -23,6 +23,7 @@ import {
   FileBarChart,
   Gift,
   Moon,
+  ContactRound,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -41,7 +42,10 @@ import { NavLink } from "react-router-dom";
 import { BrandLogo } from "@/components/BrandLogo";
 
 const navGroups = [
-  { label: "", items: [{ title: "Dashboard", icon: LayoutDashboard, to: "/dashboard", end: true }] },
+  { label: "", items: [
+    { title: "Dashboard", icon: LayoutDashboard, to: "/dashboard", end: true },
+    { title: "Leads", icon: ContactRound, to: "/leads", end: false },
+  ] },
   {
     label: "Members",
     items: [

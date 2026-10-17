@@ -40,6 +40,7 @@ import PublicTrial from "./pages/PublicTrial";
 import DisplayWeightChanges from "./pages/display/DisplayWeightChanges";
 import DisplayMilestones from "./pages/display/DisplayMilestones";
 import WellnessWlp from "./pages/WellnessWlp";
+import WellnessLeads from "./pages/WellnessLeads";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -83,6 +84,7 @@ const App = () => (
               <Route path="/display/milestones" element={<DisplayMilestones />} />
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<WellnessDashboard />} />
+                <Route path="/leads" element={<WellnessLeads />} />
                 <Route path="/members" element={<WellnessMembers />} />
                 <Route path="/checkin" element={<WellnessCheckIn />} />
                 <Route path="/attendance" element={<WellnessAttendance />} />

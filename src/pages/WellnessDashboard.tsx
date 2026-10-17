@@ -1,8 +1,6 @@
 import { DashboardActivityCards } from "@/components/wellness/DashboardActivityCards";
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LeadsPanel } from "@/components/wellness/LeadsPanel";
 import { MasterTitleBadge } from "@/components/wellness/MasterTitleBadge";
 import {
   MemberModeFilter,
@@ -195,18 +193,6 @@ export default function WellnessDashboard() {
           </Button>
         </div>
       </PageBanner>
-
-      <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList>
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="leads">New Leads</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="leads" className="mt-4">
-          <LeadsPanel />
-        </TabsContent>
-
-        <TabsContent value="dashboard" className="mt-4 space-y-6">
 
       <MissingLoginsBanner />
 
@@ -438,9 +424,6 @@ export default function WellnessDashboard() {
 
         <PublicRegistrationCard />
       </div>
-
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }

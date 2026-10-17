@@ -2895,6 +2895,34 @@ export function useApproveLead() {
   });
 }
 
+export function useDeleteLead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (leadId: string) => {
+      const { error } = await supabase
+        .from("wellness_leads")
+        .delete()
+        .eq("id", leadId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["wellness-leads"] }),
+  });
+}
+
+export function useBulkDeleteLeads() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (leadIds: string[]) => {
+      const { error } = await supabase
+        .from("wellness_leads")
+        .delete()
+        .in("id", leadIds);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["wellness-leads"] }),
+  });
+}
+
 // ---------- WLP Sessions ----------
 
 export interface WlpSession {
