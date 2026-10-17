@@ -3220,8 +3220,19 @@ export function useRemoveMiwParticipant() {
   const t = useToastedMutation();
   return useMutation({
     mutationFn: async (participantId: string) => {
-      const { error } = await supabase.rpc("miw_remove_participant" as never, { p_participant_id: participantId } as never);
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("member-access", {
+        body: { action: "miw_remove_participant", participantId },
+      });
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as { context?: Response }).context;
+          const j = ctx ? await ctx.json() : null;
+          if (j?.error) msg = j.error;
+        } catch { /* keep default message */ }
+        throw new Error(msg);
+      }
+      if (!data?.ok) throw new Error(data?.error ?? "Participant could not be removed");
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["miw-report"] });
