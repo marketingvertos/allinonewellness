@@ -17,7 +17,7 @@ import {
   useWellnessEvents,
 } from "@/hooks/useEvents";
 import { PAYMENT_MODES, paymentModeLabel, useMilestoneHolders, useMonthlyWeightRewards, useRevenueReport, useWeightDataMonths } from "@/hooks/useReports";
-import { useWellnessMembers, useWlpMonthlyCheckins } from "@/hooks/useWellness";
+import { useWellnessMembers, useWlpMonthlyCheckins, useMiwChallenges } from "@/hooks/useWellness";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,11 +28,13 @@ import { formatCurrency, formatDate, todayIst } from "@/lib/formatters";
 import { CalendarDays, Download, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 function MonthPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { data: challenges } = useMiwChallenges();
+  const months = [...new Set([...recentMonths(12), ...(challenges ?? []).map(c => c.start_date.slice(0, 7))])].sort().reverse();
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full sm:w-56"><SelectValue /></SelectTrigger>
       <SelectContent>
-        {recentMonths(12).map((m) => (
+        {months.map((m) => (
           <SelectItem key={m} value={m}>{monthLabel(m)}</SelectItem>
         ))}
       </SelectContent>

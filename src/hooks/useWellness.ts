@@ -903,11 +903,8 @@ export function useWellnessStats(memberMode?: MemberModeFilter) {
         return acc;
       }, {});
 
-      const since = new Date();
-      since.setDate(since.getDate() - 30);
-      const revenueLast30Days = (memberships.data ?? [])
-        .filter((m) => new Date(m.start_date as string) >= since)
-        .reduce((sum, m) => sum + Number(m.price_paid ?? 0), 0);
+      const since = new Date(Date.parse(`${today}T00:00:00Z`) - 29 * 86400000).toISOString().slice(0, 10);
+      const revenueLast30Days = summarise(await fetchSales(since, today, memberMode)).revenue;
 
       return {
         totalMembers: members.data?.length ?? 0,
@@ -2486,6 +2483,7 @@ export interface SalesSummary {
   newRevenue: number;
   renewalRevenue: number;
   trialRevenue: number;
+  miwRevenue: number;
   /** Revenue per plan name, sorted highest first. */
   byPlan: { name: string; revenue: number }[];
 }
@@ -2566,6 +2564,7 @@ export function useSalesAnalytics(range: PeriodRange, memberMode?: MemberModeFil
         newRevenue: s.newRevenue,
         renewalRevenue: s.renewalRevenue,
         trialRevenue: s.trialRevenue,
+        miwRevenue: s.miwRevenue,
         byPlan: [...planMap.entries()].map(([name, revenue]) => ({ name, revenue })).sort((a, b) => b.revenue - a.revenue),
       };
     },
@@ -2635,7 +2634,7 @@ export function useSalesDrillDown(from: string, to: string, memberMode?: MemberM
       return {
         rows,
         totalRevenue: sum.revenue,
-        totalMemberships: rows.length,
+        totalMemberships: rows.filter(r => r.planType !== "miw").length,
         totalServings: rows.reduce((t, r) => t + r.totalServings, 0),
         byCash: sum.byMode.cash ?? 0,
         byUpi: sum.byMode.upi ?? 0,

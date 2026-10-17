@@ -112,10 +112,11 @@ export function RevenueCard({ mode, revealed, canReveal, onToggle, onSelectMembe
                   </span>
                 )}
               </p>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
                 <div><p className="text-xs text-muted-foreground">New</p><p className="font-semibold">{show(data?.newRevenue ?? 0)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Renewals</p><p className="font-semibold">{show(data?.renewalRevenue ?? 0)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Trials</p><p className="font-semibold">{show(data?.trialRevenue ?? 0)}</p></div>
+                <div><p className="text-xs text-muted-foreground">MIW</p><p className="font-semibold">{show(data?.miwRevenue ?? 0)}</p></div>
               </div>
             </>
           )}

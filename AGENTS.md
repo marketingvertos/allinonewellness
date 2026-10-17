@@ -7,3 +7,4 @@
 - WLP evening check-ins live in wlp_sessions/wlp_checkins via staff-guarded RPCs (deducting a wlp_deduction serving, overdraft allowed), separate from club attendance — keeps evening sessions out of club check-in counts.
 - Sales and revenue figures come from wellness_payments.paid_at via src/lib/salesLedger.ts (memberships with no payment lines fall back to price_paid); renewals extend memberships in place, so membership created_at must never be used for revenue.
 - MIW registration uses miw_participants and miw_payments with staff-guarded registration and service-only online fulfilment; combine its dated receipts in the sales ledger without counting them as membership sales or granting servings.
+- Razorpay verification and capture webhooks share captured-payment validation and confirm payment details with Razorpay before fulfilment, preventing unpaid or mismatched orders from activating services.

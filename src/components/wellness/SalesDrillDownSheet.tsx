@@ -55,7 +55,7 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, range: rangeOv
       r.payments.length > 0
         ? r.payments.map((p) => `${MODE_LABELS[p.mode] ?? p.mode} ₹${p.amount}`).join(" + ")
         : (MODE_LABELS[r.paymentMode] ?? r.paymentMode),
-      r.planType === "trial" ? "Trial" : r.isRenewal ? "Renewal" : "New",
+      r.planType === "miw" ? "MIW registration" : r.planType === "trial" ? "Trial" : r.isRenewal ? "Renewal" : "New",
       new Date(r.createdAt).toLocaleDateString("en-IN", {
         day: "2-digit",
         month: "short",
@@ -168,7 +168,7 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, range: rangeOv
                             {r.totalServings} servings
                           </Badge>
                           <Badge variant={r.isRenewal ? "default" : "secondary"} className="gap-1 text-[10px]">
-                            {r.planType === "trial" ? (
+                            {r.planType === "miw" ? "MIW registration" : r.planType === "trial" ? (
                               "Trial"
                             ) : r.isRenewal ? (
                               <>
