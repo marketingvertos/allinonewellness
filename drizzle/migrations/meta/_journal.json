@@ -400,6 +400,13 @@
       "when": 1792215447510,
       "tag": "0056_wellness_leads",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1792216732906,
+      "tag": "0057_payments_plan_and_price_sum",
+      "breakpoints": true
     }
   ]
 }

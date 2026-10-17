@@ -2034,6 +2034,7 @@ export type Database = {
           mode: Database["public"]["Enums"]["payment_mode"]
           note: string | null
           paid_at: string
+          plan_id: string | null
           recorded_by: string | null
           reference: string | null
         }
@@ -2047,6 +2048,7 @@ export type Database = {
           mode: Database["public"]["Enums"]["payment_mode"]
           note?: string | null
           paid_at?: string
+          plan_id?: string | null
           recorded_by?: string | null
           reference?: string | null
         }
@@ -2060,6 +2062,7 @@ export type Database = {
           mode?: Database["public"]["Enums"]["payment_mode"]
           note?: string | null
           paid_at?: string
+          plan_id?: string | null
           recorded_by?: string | null
           reference?: string | null
         }
@@ -2076,6 +2079,13 @@ export type Database = {
             columns: ["membership_id"]
             isOneToOne: false
             referencedRelation: "wellness_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_payments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_plans"
             referencedColumns: ["id"]
           },
         ]
