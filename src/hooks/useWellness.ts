@@ -3220,7 +3220,7 @@ export function useRemoveMiwParticipant() {
   const t = useToastedMutation();
   return useMutation({
     mutationFn: async (participantId: string) => {
-      const { error } = await supabase.rpc("miw_remove_participant", { p_participant_id: participantId });
+      const { error } = await supabase.rpc("miw_remove_participant" as never, { p_participant_id: participantId } as never);
       if (error) throw error;
     },
     onSuccess: () => {
