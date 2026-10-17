@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchSales } from "@/hooks/useWellness";
 
 export interface MilestoneHolder {
   milestone: string;
@@ -77,32 +78,29 @@ export function useRevenueReport(from: string, to: string) {
   return useQuery({
     queryKey: ["revenue-report", from, to],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("wellness_memberships")
-        .select(
-          "id, membership_code, price_paid, payment_mode, payment_date, start_date, wellness_members(full_name, mobile_number), wellness_plans(name)",
-        )
-        .gte("payment_date", from)
-        .lte("payment_date", to)
-        .order("payment_date", { ascending: false });
-      if (error) throw error;
-      const rows = data as unknown as RevenueRow[];
-      const total = rows.reduce((sum, r) => sum + Number(r.price_paid ?? 0), 0);
-
-      // Split payments are recorded as individual lines; memberships sold before
-      // that feature only carry a single mode on the membership row.
-      const ids = rows.map((r) => r.id);
-      let lines: { membership_id: string; amount: number; mode: string }[] = [];
-      if (ids.length) {
-        const { data: payData, error: payErr } = await supabase
-          .from("wellness_payments")
-          .select("membership_id, amount, mode")
-          .in("membership_id", ids);
-        if (payErr) throw payErr;
-        lines = (payData ?? []) as unknown as typeof lines;
-      }
-      const withLines = new Set(lines.map((l) => l.membership_id));
-
+      // One row per payment collected in the period (renewals of existing plans included).
+      const sales = await fetchSales(from, to);
+      const memberIds = [...new Set(sales.map((s) => s.memberId))];
+      const msIds = [...new Set(sales.map((s) => s.membershipId))];
+      const [mem, ms] = await Promise.all([
+        memberIds.length ? supabase.from("wellness_members").select("id, full_name, mobile_number").in("id", memberIds) : Promise.resolve({ data: [], error: null }),
+        msIds.length ? supabase.from("wellness_memberships").select("id, membership_code, start_date").in("id", msIds) : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (mem.error) throw mem.error;
+      if (ms.error) throw ms.error;
+      const M = new Map((mem.data as { id: string; full_name: string; mobile_number: string }[]).map((m) => [m.id, m]));
+      const S = new Map((ms.data as { id: string; membership_code: string; start_date: string }[]).map((m) => [m.id, m]));
+      const rows: RevenueRow[] = sales.map((s) => ({
+        id: s.key,
+        membership_code: S.get(s.membershipId)?.membership_code ?? "",
+        price_paid: s.amount,
+        payment_mode: s.lines.length > 1 ? s.lines.map((l) => l.mode).join("+") : s.mode,
+        payment_date: new Date(s.paidAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }),
+        start_date: S.get(s.membershipId)?.start_date ?? "",
+        wellness_members: M.get(s.memberId) ?? null,
+        wellness_plans: { name: s.planName },
+      }));
+      const total = rows.reduce((sum, r) => sum + r.price_paid, 0);
       const byMode = new Map<string, { total: number; count: number }>();
       const add = (key: string, amount: number) => {
         const cur = byMode.get(key) ?? { total: 0, count: 0 };
@@ -110,10 +108,9 @@ export function useRevenueReport(from: string, to: string) {
         cur.count += 1;
         byMode.set(key, cur);
       };
-      for (const l of lines) add(l.mode, Number(l.amount ?? 0));
-      for (const r of rows) {
-        if (withLines.has(r.id)) continue;
-        add(r.payment_mode ?? "cash", Number(r.price_paid ?? 0));
+      for (const s of sales) {
+        if (s.lines.length) for (const l of s.lines) add(l.mode, l.amount);
+        else add(s.mode, s.amount);
       }
       return { rows, total, count: rows.length, byMode: [...byMode.entries()] };
     },
