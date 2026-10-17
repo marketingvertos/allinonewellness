@@ -76,6 +76,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { statusLabel, statusVariant } from "./status";
 import { MEMBER_TAGS, ModeBadge, TagBadges } from "./memberMeta";
+import { TagPicker } from "./TagPicker";
 import { MasterTitleBadge } from "@/components/wellness/MasterTitleBadge";
 import { AmbassadorHeaderBadge, FrontlineCountFlag } from "@/components/wellness/AmbassadorStatus";
 import { NetworkPanel } from "@/components/wellness/NetworkPanel";
@@ -359,32 +360,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               <div className="rounded-xl border p-4 shadow-sm text-sm sm:col-span-2">
                 <p className="font-medium">Tags</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {MEMBER_TAGS.map((tag) => {
-                    const active = (member.tags ?? []).includes(tag.value);
-                    return (
-                      <button
-                        key={tag.value}
-                        type="button"
-                        disabled={updateMember.isPending}
-                        onClick={() => {
-                          const current = member.tags ?? [];
-                          const next = active
-                            ? current.filter((t) => t !== tag.value)
-                            : [...current, tag.value];
-                          updateMember.mutate({ id: member.id, tags: next });
-                        }}
-                        className={cn(
-                          "rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-60",
-                          active
-                            ? "border-primary bg-primary/10 font-medium text-primary"
-                            : "border-border text-muted-foreground hover:border-primary/50",
-                        )}
-                      >
-                        {active ? "✓ " : ""}
-                        {tag.label}
-                      </button>
-                    );
-                  })}
+                  <TagPicker memberId={member.id} value={member.tags ?? []} onChange={tags => updateMember.mutate({ id: member.id, tags })} idPrefix="profile-tag" />
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Tap a tag to turn it on or off. Changes save immediately.

@@ -3190,6 +3190,8 @@ export interface MiwReportParticipant {
   start_weight: number | null;
   latest_weight: number | null;
   visits: number;
+  days_attended: number;
+  journey: { recorded_date: string; weight: number }[];
 }
 
 export interface MiwReportData {
