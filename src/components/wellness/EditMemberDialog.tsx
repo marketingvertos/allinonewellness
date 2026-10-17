@@ -220,7 +220,7 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
 
         <div className="sm:col-span-2 space-y-2">
           <Label>Tags</Label>
-          <TagPicker value={tags} onChange={setTags} idPrefix="em-tag" />
+          <TagPicker value={tags} onChange={setTags} idPrefix="em-tag" memberId={member.id} />
         </div>
 
         <div className="sm:col-span-2 space-y-2">
