@@ -2844,7 +2844,7 @@ export function useLeads(statusFilter?: string[]) {
         .select("*")
         .order("created_at", { ascending: false });
       if (statusFilter && statusFilter.length > 0) {
-        q = q.in("status", statusFilter);
+        q = q.in("status", statusFilter as Database["public"]["Enums"]["lead_status"][]);
       }
       const { data, error } = await q;
       if (error) throw error;
