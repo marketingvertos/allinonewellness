@@ -1,5 +1,8 @@
 # Current work
 
+- [ ] Complete pushed MIW staff setup, payment registration, member checkout, and historical reports.
+- [ ] Verify MIW permissions, duplicate protection, revenue and weight calculations, then publish.
+
 - [x] Send the approved Family Day invitation with its attached poster through WhatsApp broadcast.
 
 - [x] Expand member Progress chart and monthly weight figures.
