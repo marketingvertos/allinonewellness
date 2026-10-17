@@ -1409,6 +1409,93 @@ export type Database = {
         }
         Relationships: []
       }
+      wellness_leads: {
+        Row: {
+          area: string | null
+          assigned_to: string | null
+          city: string | null
+          converted_member_id: string | null
+          converted_trial_id: string | null
+          created_at: string
+          date_of_birth: string | null
+          full_name: string
+          gender: string | null
+          goal: string | null
+          health_issues: string | null
+          height: string | null
+          id: string
+          joining_weight: string | null
+          mobile_number: string
+          notes: string | null
+          source: Database["public"]["Enums"]["lead_source"]
+          source_detail: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          assigned_to?: string | null
+          city?: string | null
+          converted_member_id?: string | null
+          converted_trial_id?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          full_name: string
+          gender?: string | null
+          goal?: string | null
+          health_issues?: string | null
+          height?: string | null
+          id?: string
+          joining_weight?: string | null
+          mobile_number: string
+          notes?: string | null
+          source?: Database["public"]["Enums"]["lead_source"]
+          source_detail?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          assigned_to?: string | null
+          city?: string | null
+          converted_member_id?: string | null
+          converted_trial_id?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          full_name?: string
+          gender?: string | null
+          goal?: string | null
+          health_issues?: string | null
+          height?: string | null
+          id?: string
+          joining_weight?: string | null
+          mobile_number?: string
+          notes?: string | null
+          source?: Database["public"]["Enums"]["lead_source"]
+          source_detail?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_leads_converted_member_id_fkey"
+            columns: ["converted_member_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_leads_converted_trial_id_fkey"
+            columns: ["converted_trial_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_trials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wellness_media_post_likes: {
         Row: {
           created_at: string
@@ -2760,6 +2847,10 @@ export type Database = {
         Args: { p_request_id: string; p_weight?: number }
         Returns: Json
       }
+      approve_lead: {
+        Args: { p_lead_id: string; p_plan_id?: string }
+        Returns: Json
+      }
       award_pink_card: {
         Args: {
           p_change: number
@@ -3084,6 +3175,23 @@ export type Database = {
       }
       rotate_checkin_code: { Args: never; Returns: string }
       seed_default_pipeline: { Args: { p_user_id: string }; Returns: string }
+      submit_trial_lead: {
+        Args: {
+          p_area?: string
+          p_city?: string
+          p_date_of_birth?: string
+          p_full_name: string
+          p_gender?: string
+          p_goal?: string
+          p_health_issues?: string
+          p_height?: string
+          p_joining_weight?: string
+          p_mobile_number: string
+          p_source?: string
+          p_source_detail?: string
+        }
+        Returns: Json
+      }
       supervisor_new_frontline: {
         Args: { p_member_id: string; p_month: string }
         Returns: number
@@ -3126,6 +3234,15 @@ export type Database = {
         | "admin_manual"
         | "staff_entry"
         | "serving_issue"
+      lead_source:
+        | "public_form"
+        | "meta_ads"
+        | "website"
+        | "landing_page"
+        | "manual"
+        | "referral"
+        | "other"
+      lead_status: "new" | "contacted" | "approved" | "rejected" | "converted"
       membership_status:
         | "active"
         | "expiring_soon"
@@ -3299,6 +3416,16 @@ export const Constants = {
         "staff_entry",
         "serving_issue",
       ],
+      lead_source: [
+        "public_form",
+        "meta_ads",
+        "website",
+        "landing_page",
+        "manual",
+        "referral",
+        "other",
+      ],
+      lead_status: ["new", "contacted", "approved", "rejected", "converted"],
       membership_status: [
         "active",
         "expiring_soon",
