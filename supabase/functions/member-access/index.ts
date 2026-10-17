@@ -53,9 +53,58 @@ Deno.serve(async (req) => {
     const action = String(body?.action ?? "");
     const memberId = String(body?.memberId ?? "");
     if (
-      !["status", "create", "ensure", "reset", "unlink", "missing_logins", "create_missing", "delete"].includes(action)
+      !["status", "create", "ensure", "reset", "unlink", "missing_logins", "create_missing", "delete", "miw_remove_participant"].includes(action)
     )
       return json({ error: "Invalid action" }, 400);
+
+    // Staff-only: remove a member from an MIW challenge, with an audit note on the profile.
+    if (action === "miw_remove_participant") {
+      const participantId = String(body?.participantId ?? "");
+      const reason = String(body?.reason ?? "").trim().slice(0, 500);
+      if (!/^[0-9a-f-]{36}$/i.test(participantId)) return json({ error: "Invalid participant id" }, 400);
+
+      const { data: part, error: partErr } = await admin
+        .from("miw_participants")
+        .select("id, member_id, challenge_id, miw_challenges(name)")
+        .eq("id", participantId)
+        .maybeSingle();
+      if (partErr) return json({ error: partErr.message }, 400);
+      if (!part) return json({ error: "Participant not found or already removed" }, 404);
+
+      const { data: pays } = await admin.from("miw_payments").select("amount, mode").eq("participant_id", participantId);
+      const total = (pays ?? []).reduce((s, p) => s + Number(p.amount || 0), 0);
+
+      const { error: payDelErr } = await admin.from("miw_payments").delete().eq("participant_id", participantId);
+      if (payDelErr) return json({ error: payDelErr.message }, 400);
+      const { data: removed, error: partDelErr } = await admin
+        .from("miw_participants")
+        .delete()
+        .eq("id", participantId)
+        .select("id");
+      if (partDelErr) return json({ error: partDelErr.message }, 400);
+      if (!removed?.length) return json({ error: "Participant could not be removed" }, 400);
+
+      const { count: remaining } = await admin
+        .from("miw_participants")
+        .select("id", { count: "exact", head: true })
+        .eq("member_id", part.member_id);
+      if (!remaining) {
+        const { data: m } = await admin.from("wellness_members").select("tags").eq("id", part.member_id).maybeSingle();
+        const tags = ((m?.tags as string[] | null) ?? []).filter((t) => t !== "miw");
+        await admin.from("wellness_members").update({ tags }).eq("id", part.member_id);
+      }
+
+      // deno-lint-ignore no-explicit-any
+      const challengeName = (part as any).miw_challenges?.name ?? "MIW challenge";
+      const modes = (pays ?? []).map((p) => `₹${p.amount} ${p.mode}`).join(", ");
+      await admin.from("member_notes").insert({
+        member_id: part.member_id,
+        created_by: userData.user.id,
+        note: `Removed from MIW challenge "${challengeName}".${total ? ` Registration payment of ₹${total} (${modes}) removed from MIW revenue.` : ""}${reason ? ` Reason: ${reason}` : ""}`,
+      });
+
+      return json({ ok: true, removedPayments: total });
+    }
 
     // Bulk helpers: every non-lead member that has no portal login yet.
     if (action === "missing_logins" || action === "create_missing") {
