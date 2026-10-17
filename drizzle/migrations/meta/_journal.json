@@ -435,6 +435,13 @@
       "when": 1792219843065,
       "tag": "0061_miw_apply_setup",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1792219883103,
+      "tag": "0062_miw_confirmed_online_payment",
+      "breakpoints": true
     }
   ]
 }
