@@ -29,7 +29,7 @@ interface RazorpayResponse {
 
 declare global {
   interface Window {
-    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void; on?: (event: string, cb: () => void) => void };
   }
 }
 
@@ -135,6 +135,12 @@ export function PayOnlineDialog({ open, onOpenChange, memberName, pinkBalance, d
             setBusy(false);
           }
         },
+      });
+      rzp.on?.("payment.failed", () => {
+        setBusy(false);
+        toast.error("Payment failed — nothing was charged. Try again.", {
+          action: { label: "Try again", onClick: () => { retryPlanId = plan?.id ?? null; onOpenChange(true); } },
+        });
       });
       // Close our modal first: a locked modal blocks taps on anything outside it (incl. Razorpay's sheet).
       onOpenChange(false);

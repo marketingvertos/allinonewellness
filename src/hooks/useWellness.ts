@@ -3158,6 +3158,21 @@ export function useMiwRegisterMember() {
   const t = useToastedMutation();
   return useMutation({
     mutationFn: async (args: { challengeId: string; memberId: string; payments: { amount: number; mode: string; reference?: string }[] }) => {
+      const { data: cleared, error: clearErr } = await supabase.functions.invoke("member-access", {
+        body: { action: "miw_clear_pending", challengeId: args.challengeId, memberId: args.memberId },
+      });
+      if (clearErr || !cleared?.ok) {
+        let msg = clearErr?.message ?? cleared?.error ?? "Could not check online payment";
+        try {
+          const ctx = (clearErr as { context?: Response } | null)?.context;
+          const j = ctx ? await ctx.json() : null;
+          if (j?.error) msg = j.error;
+        } catch { /* keep default */ }
+        throw new Error(msg);
+      }
+      if (cleared.paidOnline) {
+        return { status: "paid_online", message: "Already paid online — registered" } as { status: string; participant_id?: string; amount_paid?: number; member_name?: string; message?: string };
+      }
       const { data, error } = await supabase.rpc("miw_register_member", {
         p_challenge_id: args.challengeId,
         p_member_id: args.memberId,
@@ -3170,7 +3185,9 @@ export function useMiwRegisterMember() {
       qc.invalidateQueries({ queryKey: ["miw-report"] });
       qc.invalidateQueries({ queryKey: ["miw-challenges"] });
       qc.invalidateQueries({ queryKey: ["wellness-members"] });
-      if (result.status === "already_registered") {
+      if (result.status === "paid_online") {
+        t.success(result.message ?? "Already paid online — registered");
+      } else if (result.status === "already_registered") {
         t.onError(new Error(result.message ?? "Already registered"));
       } else {
         t.success(`${result.member_name ?? "Member"} registered — ₹${result.amount_paid ?? 0} paid`);

@@ -53,9 +53,45 @@ Deno.serve(async (req) => {
     const action = String(body?.action ?? "");
     const memberId = String(body?.memberId ?? "");
     if (
-      !["status", "create", "ensure", "reset", "unlink", "missing_logins", "create_missing", "delete", "miw_remove_participant"].includes(action)
+      !["status", "create", "ensure", "reset", "unlink", "missing_logins", "create_missing", "delete", "miw_remove_participant", "miw_clear_pending"].includes(action)
     )
       return json({ error: "Invalid action" }, 400);
+
+    // Staff-only: settle unfinished online MIW payments before a desk registration.
+    if (action === "miw_clear_pending") {
+      const challengeId = String(body?.challengeId ?? "");
+      if (!/^[0-9a-f-]{36}$/i.test(challengeId) || !/^[0-9a-f-]{36}$/i.test(memberId))
+        return json({ error: "Invalid request" }, 400);
+      const { data: orders } = await admin
+        .from("razorpay_orders")
+        .select("id, razorpay_order_id, amount_paise")
+        .eq("member_id", memberId)
+        .eq("miw_challenge_id", challengeId)
+        .eq("status", "created");
+      const keyId = Deno.env.get("RAZORPAY_KEY_ID") ?? "";
+      const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET") ?? "";
+      for (const o of orders ?? []) {
+        const res = await fetch(`https://api.razorpay.com/v1/orders/${o.razorpay_order_id}/payments`, {
+          headers: { Authorization: "Basic " + btoa(`${keyId}:${keySecret}`) },
+        });
+        if (!res.ok) return json({ error: "Could not check the online payment with Razorpay. Try again." }, 502);
+        const list = await res.json();
+        // deno-lint-ignore no-explicit-any
+        const paid = (list?.items ?? []).find((p: any) => p.status === "captured" && p.amount === o.amount_paise);
+        if (paid) {
+          const { error } = await admin.rpc("miw_fulfil_payment", { p_order_id: o.id, p_payment_id: String(paid.id) });
+          if (error) return json({ error: error.message }, 400);
+          return json({ ok: true, paidOnline: true });
+        }
+        // deno-lint-ignore no-explicit-any
+        if ((list?.items ?? []).some((p: any) => p.status === "authorized"))
+          return json({ error: "An online payment is still being processed by the bank. Try again in a few minutes." }, 409);
+        await admin.from("razorpay_orders")
+          .update({ status: "cancelled", failure_reason: "Not paid; cleared at desk registration", updated_at: new Date().toISOString() })
+          .eq("id", o.id).eq("status", "created");
+      }
+      return json({ ok: true, paidOnline: false });
+    }
 
     // Staff-only: remove a member from an MIW challenge, with an audit note on the profile.
     if (action === "miw_remove_participant") {
