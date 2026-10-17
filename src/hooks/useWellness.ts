@@ -3167,7 +3167,9 @@ export function useMiwRegisterMember() {
       return data as { status: string; participant_id?: string; amount_paid?: number; member_name?: string; message?: string };
     },
     onSuccess: (result) => {
-      qc.invalidateQueries();
+      qc.invalidateQueries({ queryKey: ["miw-report"] });
+      qc.invalidateQueries({ queryKey: ["miw-challenges"] });
+      qc.invalidateQueries({ queryKey: ["wellness-members"] });
       if (result.status === "already_registered") {
         t.onError(new Error(result.message ?? "Already registered"));
       } else {
@@ -3210,6 +3212,23 @@ export function useMiwReport(challengeId: string | null) {
       if (error) throw error;
       return data as unknown as MiwReportData;
     },
+  });
+}
+
+export function useRemoveMiwParticipant() {
+  const qc = useQueryClient();
+  const t = useToastedMutation();
+  return useMutation({
+    mutationFn: async (participantId: string) => {
+      const { error } = await supabase.from("miw_participants").delete().eq("id", participantId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["miw-report"] });
+      qc.invalidateQueries({ queryKey: ["miw-challenges"] });
+      t.success("Participant removed");
+    },
+    onError: t.onError,
   });
 }
 
