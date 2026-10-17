@@ -51,6 +51,8 @@ export interface DashboardPayment {
   amount: number;
   context: string;
   paid_at: string;
+  /** Plan actually paid for (online renewals can differ from the membership's plan). */
+  plan_id?: string | null;
 }
 
 export interface DashboardAttendance {
@@ -146,7 +148,7 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
     if (!member || member.is_guest || membership.start_date !== today) continue;
     const plan = plans.get(membership.plan_id);
     if (!plan) continue;
-    const item = { memberId: member.id, planId: membership.plan_id, date: today, label: "New" };
+    const item = { memberId: member.id, planId, date: today, label: "New" };
     if (isGoldCardPlan(plan)) addUnique("newGoldCardToday", member.id, item);
     else if (isWhiteCardPlan(plan)) addUnique("newWhiteCardToday", member.id, item);
   }
@@ -159,7 +161,8 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
     const membership = memberships.get(payment.membership_id);
     if (!member || member.is_guest || !membership || membership.status === "cancelled" ||
         membership.member_id !== member.id) continue;
-    const plan = plans.get(membership.plan_id);
+    const planId = payment.plan_id ?? membership.plan_id;
+    const plan = plans.get(planId);
     if (!plan) continue;
     let key: DashboardCardKey | null = null;
     if (isGoldCardPlan(plan)) key = "goldCardRenewalsToday";
