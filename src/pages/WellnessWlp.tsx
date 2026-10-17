@@ -34,7 +34,7 @@ export default function WellnessWlp() {
     : todaySession;
 
   const pastSessions = useMemo(
-    () => (sessions ?? []).filter((s) => s.id !== activeSession?.id),
+    () => (sessions ?? []).filter((s) => s.id !== activeSession?.id && isWednesday(s.session_date)),
     [sessions, activeSession],
   );
 
