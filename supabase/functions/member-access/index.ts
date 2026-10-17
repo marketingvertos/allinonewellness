@@ -132,6 +132,10 @@ Deno.serve(async (req) => {
       const referredIds = (referred ?? []).map((r) => r.id);
 
       // FK guards that do not cascade.
+      for (const t of ["miw_payments", "miw_participants"]) {
+        const { error } = await admin.from(t).delete().eq("member_id", memberId);
+        if (error) return json({ error: error.message }, 400);
+      }
       const { error: payErr } = await admin.from("wellness_payments").delete().eq("member_id", memberId);
       if (payErr) return json({ error: payErr.message }, 400);
 

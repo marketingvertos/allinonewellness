@@ -456,6 +456,20 @@
       "when": 1792220303907,
       "tag": "0064_miw_payment_guards_and_club_totals",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1792234916325,
+      "tag": "0065_miw_remove_participant",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1792234975190,
+      "tag": "0066_miw_remove_participant_apply",
+      "breakpoints": true
     }
   ]
 }
