@@ -110,3 +110,10 @@ export function summarise(sales: Sale[]) {
   }
   return s;
 }
+
+/** A renewal payment must never show a "NEW" plan: fall back to the membership's own plan. */
+export function pickPaymentPlan<T extends { name: string } | null>(context: string | null, paymentPlan: T, membershipPlan: T): T {
+  if (!paymentPlan) return membershipPlan;
+  if (context === "renewal" && membershipPlan && /\bnew\b/i.test(paymentPlan.name) && !/\bnew\b/i.test(membershipPlan.name)) return membershipPlan;
+  return paymentPlan;
+}
