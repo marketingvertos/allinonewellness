@@ -50,8 +50,15 @@ export default function WellnessTrials() {
   const { toast } = useToast();
   const toPaidTrial = useMutation({
     mutationFn: async (a: { trialId: string; planId: string; mode: string }) => {
-      const { error } = await supabase.rpc("convert_guest_to_paid_trial", { p_trial_id: a.trialId, p_plan_id: a.planId, p_payment_mode: a.mode });
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("member-access", {
+        body: { action: "convert_to_paid_trial", trialId: a.trialId, planId: a.planId, mode: a.mode },
+      });
+      if (error) {
+        const ctx = (error as { context?: Response }).context;
+        const msg = ctx ? (await ctx.json().catch(() => null))?.error : null;
+        throw new Error(msg ?? error.message);
+      }
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["wellness-trials"] }); toast({ title: "Moved to paid trial" }); },
     onError: (e: Error) => toast({ title: "Could not convert", description: e.message, variant: "destructive" }),
@@ -177,7 +184,7 @@ export default function WellnessTrials() {
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                           ))}
                         </SelectGroup>
-                        {paidTrialPlans.length > 0 && (
+                        {paidTrialPlans.length > 0 && !paidTrialPlans.some((p) => p.id === (t as { plan_id?: string | null }).plan_id) && (
                           <SelectGroup>
                             <SelectLabel>Paid trials</SelectLabel>
                             {paidTrialPlans.map((p) => (

@@ -53,9 +53,44 @@ Deno.serve(async (req) => {
     const action = String(body?.action ?? "");
     const memberId = String(body?.memberId ?? "");
     if (
-      !["status", "create", "ensure", "reset", "unlink", "missing_logins", "create_missing", "delete", "miw_remove_participant", "miw_clear_pending"].includes(action)
+      !["status", "create", "ensure", "reset", "unlink", "missing_logins", "create_missing", "delete", "miw_remove_participant", "miw_clear_pending", "convert_to_paid_trial"].includes(action)
     )
       return json({ error: "Invalid action" }, 400);
+
+    // Staff-only: move a free/guest trial onto a paid trial plan (end date is computed by the database).
+    if (action === "convert_to_paid_trial") {
+      const trialId = String(body?.trialId ?? "");
+      const planId = String(body?.planId ?? "");
+      const mode = ["cash", "upi", "online", "card"].includes(String(body?.mode)) ? String(body.mode) : "cash";
+      if (!/^[0-9a-f-]{36}$/i.test(trialId) || !/^[0-9a-f-]{36}$/i.test(planId)) return json({ error: "Invalid request" }, 400);
+      const { data: t } = await admin.from("wellness_trials").select("id, member_id, plan_id, status, weight_at_start").eq("id", trialId).maybeSingle();
+      if (!t) return json({ error: "Trial not found." }, 404);
+      if (t.status === "converted" || t.status === "cancelled") return json({ error: "This trial has already been converted." }, 400);
+      if (t.plan_id) {
+        const { data: cur } = await admin.from("wellness_plans").select("plan_type, price").eq("id", t.plan_id).maybeSingle();
+        if (cur?.plan_type === "trial" && Number(cur.price) > 0)
+          return json({ error: "This member is already on a paid trial. Convert to a membership, or use Change trial." }, 400);
+      }
+      const { data: plan } = await admin.from("wellness_plans").select("id, name, price, duration_days, plan_type").eq("id", planId).maybeSingle();
+      if (!plan || plan.plan_type !== "trial" || Number(plan.price) <= 0) return json({ error: "Paid trial plan not found." }, 400);
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      const { data: closed } = await admin.from("wellness_trials").update({ status: "converted" }).eq("id", trialId).not("status", "in", "(converted,cancelled)").select("id");
+      if (!closed?.length) return json({ error: "This trial has already been converted." }, 400);
+      const { data: created, error: insErr } = await admin.from("wellness_trials").insert({
+        member_id: t.member_id, plan_id: planId, start_date: today, duration_days: plan.duration_days,
+        weight_at_start: t.weight_at_start, status: "active", created_by: userData.user.id,
+      }).select("id").single();
+      if (insErr) {
+        await admin.from("wellness_trials").update({ status: t.status }).eq("id", trialId);
+        return json({ error: insErr.message }, 400);
+      }
+      await admin.from("wellness_members").update({ status: "trial" }).eq("id", t.member_id);
+      await admin.from("member_notes").insert({
+        member_id: t.member_id, created_by: userData.user.id,
+        note: `Guest trial converted to ${plan.name} (₹${Math.round(Number(plan.price))}, ${mode})`,
+      });
+      return json({ ok: true, trialId: created.id });
+    }
 
     // Staff-only: settle unfinished online MIW payments before a desk registration.
     if (action === "miw_clear_pending") {
