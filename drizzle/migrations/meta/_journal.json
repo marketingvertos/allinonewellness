@@ -484,6 +484,13 @@
       "when": 1792377906087,
       "tag": "0068_checkin_servings_only",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1792378723871,
+      "tag": "0069_sync_renewal_payment_plan",
+      "breakpoints": true
     }
   ]
 }
