@@ -660,10 +660,7 @@ export function useCheckIn() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async (args: { memberId: string; method?: string }) => {
-      const { data, error } = await supabase.rpc("checkin_member", {
-        p_member_id: args.memberId,
-        p_method: args.method ?? "staff_entry",
-      } as never);
+      const { data, error } = await supabase.functions.invoke("servings-checkin", { body: { action: "staff_checkin", member_id: args.memberId, method: args.method ?? "staff_entry" } });
       if (error) throw error;
       return data as unknown as { status: string; message?: string; remaining?: number; mode?: string };
     },
@@ -961,10 +958,7 @@ export function useSelfCheckIn() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (args: { code: string; weight?: number | null }) => {
-      const { data, error } = await supabase.rpc("member_self_checkin", {
-        p_code: args.code,
-        p_weight: args.weight ?? null,
-      } as never);
+      const { data, error } = await supabase.functions.invoke("servings-checkin", { body: { action: "self_request", code: args.code, weight: args.weight ?? null } });
       if (error) throw error;
       return data as unknown as { status: string; message?: string; remaining?: number; mode?: string };
     },
@@ -1023,10 +1017,7 @@ export function useApproveCheckIn() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async (args: { requestId: string; weight?: number | null }) => {
-      const { data, error } = await supabase.rpc("approve_checkin_request", {
-        p_request_id: args.requestId,
-        p_weight: args.weight ?? null,
-      } as never);
+      const { data, error } = await supabase.functions.invoke("servings-checkin", { body: { action: "approve", request_id: args.requestId, weight: args.weight ?? null } });
       if (error) throw error;
       return data as unknown as { status: string; message?: string; remaining?: number; mode?: string };
     },
@@ -1419,10 +1410,7 @@ export function useCheckInWithWeight() {
       let result: { status: string; message?: string; remaining?: number; mode?: string } | null = null;
 
       if (!args.skipCheckIn) {
-        const { data, error } = await supabase.rpc("checkin_member", {
-          p_member_id: args.memberId,
-          p_method: args.method ?? "staff_entry",
-        } as never);
+        const { data, error } = await supabase.functions.invoke("servings-checkin", { body: { action: "staff_checkin", member_id: args.memberId, method: args.method ?? "staff_entry" } });
         if (error) throw error;
         result = data as never;
       }
