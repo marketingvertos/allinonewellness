@@ -1,4 +1,4 @@
-import { buildSales, summarise, type LedgerPayment, type LegacySale, type Sale } from "@/lib/salesLedger";
+import { buildSales, summarise, pickPaymentPlan, type LedgerPayment, type LegacySale, type Sale } from "@/lib/salesLedger";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -2507,7 +2507,7 @@ export async function fetchSales(from: string, to: string, memberMode?: MemberMo
   if (legacyQ.error) throw legacyQ.error;
   type P = { name: string; plan_type: string } | null;
   const payments: LedgerPayment[] = (pays.data as any[]).map((p) => {
-    const plan: P = p.wellness_plans ?? p.wellness_memberships?.wellness_plans ?? null;
+    const plan: P = pickPaymentPlan(p.context, p.wellness_plans ?? null, p.wellness_memberships?.wellness_plans ?? null);
     return { ...p, amount: Number(p.amount), plan_name: plan?.name ?? null, plan_type: plan?.plan_type ?? null };
   });
   const legacy: LegacySale[] = (legacyQ.data as any[])

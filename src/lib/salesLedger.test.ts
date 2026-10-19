@@ -38,3 +38,13 @@ describe("sales ledger", () => {
     expect(s.newRevenue).toBe(3750);
   });
 });
+
+import { pickPaymentPlan } from "./salesLedger";
+describe("pickPaymentPlan", () => {
+  it("renewal payment tagged NEW shows the membership's renewal plan", () => {
+    expect(pickPaymentPlan("renewal", { name: "NEW Gold Card UMS-7500" }, { name: "RENEWAL -7500-GOLD CARD UMS" })!.name).toBe("RENEWAL -7500-GOLD CARD UMS");
+  });
+  it("new payment keeps its NEW plan", () => {
+    expect(pickPaymentPlan("activation", { name: "NEW Gold Card UMS-7500" }, { name: "RENEWAL -7500-GOLD CARD UMS" })!.name).toBe("NEW Gold Card UMS-7500");
+  });
+});
