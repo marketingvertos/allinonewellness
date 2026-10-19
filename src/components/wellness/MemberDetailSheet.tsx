@@ -60,7 +60,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, formatDate, formatDateTime, todayIst , planGetsBonus } from "@/lib/formatters";
 
 import { Package, Pencil, Trash2 } from "lucide-react";
@@ -484,11 +485,24 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   <Select value={planId} onValueChange={setPlanId}>
                     <SelectTrigger><SelectValue placeholder="Select plan" /></SelectTrigger>
                     <SelectContent>
-                      {plans?.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings{planGetsBonus(p) ? " + 2 bonus" : ""}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        <SelectLabel>Memberships</SelectLabel>
+                        {plans?.filter((p) => p.plan_type === "membership").map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings{planGetsBonus(p) ? " + 2 bonus" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      {activeTrial && (
+                        <SelectGroup>
+                          <SelectLabel>Paid trials</SelectLabel>
+                          {plans?.filter((p) => p.plan_type === "trial" && Number(p.price) > 0 && p.id !== (activeTrial as { plan_id?: string | null }).plan_id).map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -518,6 +532,17 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   disabled={!planId || createMembership.isPending}
                   onClick={async () => {
                     const lines = paymentsPayload(activationPayments);
+                    if (activeTrial && selectedNewPlan?.plan_type === "trial") {
+                      const { data, error } = await supabase.functions.invoke("member-access", {
+                        body: { action: "convert_to_paid_trial", trialId: activeTrial.id, planId, mode: lines[0]?.mode ?? "cash" },
+                      });
+                      if (error || data?.error) {
+                        window.alert(data?.error ?? "Could not move to paid trial");
+                        return;
+                      }
+                      window.location.reload();
+                      return;
+                    }
                     const membershipId = await createMembership.mutateAsync({
                       memberId: member.id,
                       planId,
