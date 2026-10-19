@@ -55,25 +55,31 @@ export function daysLeftIst(endDate: string | null | undefined): number {
   return Math.max(0, Math.round((end - today) / 86400000));
 }
 
-export function formatRelativeDate(date: string | Date): string {
-  return formatDistanceToNow(new Date(date), { addSuffix: true });
+export function formatRelativeDate(date: string | Date | null | undefined): string {
+  if (!date) return "—";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "—";
+  return formatDistanceToNow(d, { addSuffix: true });
 }
 
 /** e.g. 18 Aug 2026 (IST) */
 export function formatDate(date: string | Date | null | undefined): string {
-  if (!date || isNaN(new Date(date).getTime())) return "—";
+  if (!date) return "—";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "—";
   return new Intl.DateTimeFormat(APP_LOCALE, {
     day: "2-digit",
     month: "short",
     year: "numeric",
     timeZone: APP_TIME_ZONE,
-  }).format(new Date(date));
+  }).format(d);
 }
 
 /** e.g. 18 Aug 2026 at 4:30 pm (IST) */
 export function formatDateTime(date: string | Date | null | undefined): string {
-  if (!date || isNaN(new Date(date).getTime())) return "—";
+  if (!date) return "—";
   const d = new Date(date);
+  if (isNaN(d.getTime())) return "—";
   const day = formatDate(d);
   const time = new Intl.DateTimeFormat(APP_LOCALE, {
     hour: "numeric",

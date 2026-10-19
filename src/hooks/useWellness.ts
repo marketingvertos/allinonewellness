@@ -2514,7 +2514,7 @@ export async function fetchSales(from: string, to: string, memberMode?: MemberMo
     .filter((m) => !(m.wellness_payments ?? []).length)
     .map((m) => ({ ...m, plan_name: m.wellness_plans?.name ?? null, plan_type: m.wellness_plans?.plan_type ?? null }));
   const miw = await readAllPages((a, b) => {
-    let q = supabase.from("miw_payments").select("*, miw_participants(miw_challenges(name))").gte("paid_at", start).lte("paid_at", end).order("id").range(a, b);
+    let q = supabase.from("miw_payments").select("*, miw_participants(miw_challenges(name))").gte("paid_at", start).lte("paid_at", end).is("voided_at", null).order("id").range(a, b);
     if (ids) q = q.in("member_id", ids);
     return q;
   });
@@ -2850,7 +2850,10 @@ export function useApproveLead() {
       if (error) throw error;
       return data as { status: string; member_id?: string; trial_id?: string; member_name?: string; message?: string };
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      if (data?.member_id) {
+        try { await ensureMemberLogin(data.member_id); } catch {}
+      }
       qc.invalidateQueries({ queryKey: ["wellness-leads"] });
       qc.invalidateQueries({ queryKey: ["active-trials"] });
     },

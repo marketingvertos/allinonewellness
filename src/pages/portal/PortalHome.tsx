@@ -28,9 +28,9 @@ import { MiwChallengeCard } from "@/components/portal/MiwChallengeCard";
 import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 export default function PortalHome() {
-  const { data: identity } = useMemberIdentity();
+  const { data: identity, isLoading: idLoading } = useMemberIdentity();
   const { user } = useAuth();
-  const { data: profile } = useMyMemberProfile();
+  const { data: profile, isLoading: profileLoading } = useMyMemberProfile();
   const { data: memberships } = useMemberships(identity?.memberId ?? undefined);
   const { data: attendance } = useMemberAttendance(identity?.memberId ?? undefined);
   const { data: weights } = useWeightHistory(identity?.memberId ?? undefined);
@@ -126,6 +126,14 @@ export default function PortalHome() {
     setNewWeight("");
     setWeighOpen(false);
   };
+
+  if (idLoading || profileLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

@@ -56,12 +56,12 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, range: rangeOv
         ? r.payments.map((p) => `${MODE_LABELS[p.mode] ?? p.mode} ₹${p.amount}`).join(" + ")
         : (MODE_LABELS[r.paymentMode] ?? r.paymentMode),
       r.planType === "miw" ? "MIW registration" : r.planType === "trial" ? "Trial" : r.isRenewal ? "Renewal" : "New",
-      new Date(r.createdAt).toLocaleDateString("en-IN", {
+      r.createdAt ? new Date(r.createdAt).toLocaleDateString("en-IN", {
         day: "2-digit",
         month: "short",
         year: "numeric",
         timeZone: "Asia/Kolkata",
-      }),
+      }) : "—",
     ]);
     const csv = [header.join(","), ...csvRows.map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n");
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
@@ -199,13 +199,13 @@ export function SalesDrillDownSheet({ open, onOpenChange, period, range: rangeOv
                             </span>
                           )}
                           <span className="ml-auto">
-                            {new Date(r.createdAt).toLocaleDateString("en-IN", {
+                            {r.createdAt ? new Date(r.createdAt).toLocaleDateString("en-IN", {
                               day: "2-digit",
                               month: "short",
                               hour: "2-digit",
                               minute: "2-digit",
                               timeZone: "Asia/Kolkata",
-                            })}
+                            }) : "—"}
                           </span>
                         </div>
                       </button>

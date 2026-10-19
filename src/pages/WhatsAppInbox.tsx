@@ -422,7 +422,7 @@ export default function WhatsAppInbox() {
                   <div className="flex justify-between gap-2">
                     <dt className="text-muted-foreground">Joined</dt>
                     <dd className="text-right">
-                      {new Date(memberContext.joining_date).toLocaleDateString("en-IN")}
+                      {memberContext.joining_date ? new Date(memberContext.joining_date).toLocaleDateString("en-IN") : "—"}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-2">
