@@ -184,10 +184,10 @@ export default function WellnessTrials() {
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                           ))}
                         </SelectGroup>
-                        {paidTrialPlans.length > 0 && !paidTrialPlans.some((p) => p.id === (t as { plan_id?: string | null }).plan_id) && (
+                        {paidTrialPlans.some((p) => p.id !== (t as { plan_id?: string | null }).plan_id) && (
                           <SelectGroup>
                             <SelectLabel>Paid trials</SelectLabel>
-                            {paidTrialPlans.map((p) => (
+                            {paidTrialPlans.filter((p) => p.id !== (t as { plan_id?: string | null }).plan_id).map((p) => (
                               <SelectItem key={p.id} value={p.id}>{p.name} ₹{Number(p.price)}</SelectItem>
                             ))}
                           </SelectGroup>

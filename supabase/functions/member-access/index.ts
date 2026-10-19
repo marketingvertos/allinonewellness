@@ -66,11 +66,8 @@ Deno.serve(async (req) => {
       const { data: t } = await admin.from("wellness_trials").select("id, member_id, plan_id, status, weight_at_start").eq("id", trialId).maybeSingle();
       if (!t) return json({ error: "Trial not found." }, 404);
       if (t.status === "converted" || t.status === "cancelled") return json({ error: "This trial has already been converted." }, 400);
-      if (t.plan_id) {
-        const { data: cur } = await admin.from("wellness_plans").select("plan_type, price").eq("id", t.plan_id).maybeSingle();
-        if (cur?.plan_type === "trial" && Number(cur.price) > 0)
-          return json({ error: "This member is already on a paid trial. Convert to a membership, or use Change trial." }, 400);
-      }
+      if (t.plan_id && t.plan_id === planId)
+        return json({ error: "This member is already on this paid trial. Pick another plan or a membership." }, 400);
       const { data: plan } = await admin.from("wellness_plans").select("id, name, price, duration_days, plan_type").eq("id", planId).maybeSingle();
       if (!plan || plan.plan_type !== "trial" || Number(plan.price) <= 0) return json({ error: "Paid trial plan not found." }, 400);
       const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
