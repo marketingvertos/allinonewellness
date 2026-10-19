@@ -60,7 +60,8 @@ export function formatRelativeDate(date: string | Date): string {
 }
 
 /** e.g. 18 Aug 2026 (IST) */
-export function formatDate(date: string | Date): string {
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date || isNaN(new Date(date).getTime())) return "—";
   return new Intl.DateTimeFormat(APP_LOCALE, {
     day: "2-digit",
     month: "short",
@@ -70,7 +71,8 @@ export function formatDate(date: string | Date): string {
 }
 
 /** e.g. 18 Aug 2026 at 4:30 pm (IST) */
-export function formatDateTime(date: string | Date): string {
+export function formatDateTime(date: string | Date | null | undefined): string {
+  if (!date || isNaN(new Date(date).getTime())) return "—";
   const d = new Date(date);
   const day = formatDate(d);
   const time = new Intl.DateTimeFormat(APP_LOCALE, {

@@ -1674,7 +1674,7 @@ export function useActiveTrials(memberMode?: MemberModeFilter) {
       let q = supabase
         .from("wellness_trials")
         .select(
-          "*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight, is_guest)",
+          "*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight, is_guest, joining_date, tags, member_mode)",
         )
         .eq("status", "active")
         .order("end_date");
@@ -1699,7 +1699,7 @@ export function useRecentEndedTrials() {
       const since = new Date(Date.now() - 30 * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       const { data, error } = await supabase
         .from("wellness_trials")
-        .select("*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight, is_guest)")
+        .select("*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight, is_guest, joining_date, tags, member_mode)")
         .in("status", ["expired", "completed"])
         .gte("end_date", since)
         .order("end_date", { ascending: false });
