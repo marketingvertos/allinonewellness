@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useWlpSessions,
   useWlpCheckins,
@@ -69,6 +71,12 @@ export default function WellnessWlp() {
                     : " — session will start when the first member scans the QR after 4 PM."
                   : " — no WLP today."}
               </p>
+              {!todaySession && !isLoading && (
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  <span className="font-medium text-amber-700 dark:text-amber-400">No session for today yet — WLP check-ins can't be marked.</span>
+                  <CreateTodayButton />
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -93,6 +101,27 @@ export default function WellnessWlp() {
         <p className="py-16 text-center text-muted-foreground">No WLP sessions yet. Sessions are created automatically on Wednesdays after 4 PM.</p>
       )}
     </div>
+  );
+}
+
+function CreateTodayButton() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const create = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("create_wlp_session" as never, { p_session_date: istToday() } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Today's WLP session created" });
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).includes("wlp") });
+    },
+    onError: (e: Error) => toast({ title: "Could not create session", description: e.message, variant: "destructive" }),
+  });
+  return (
+    <Button size="sm" disabled={create.isPending} onClick={() => create.mutate()}>
+      {create.isPending ? "Creating…" : "Create today's session"}
+    </Button>
   );
 }
 
