@@ -11,6 +11,10 @@ import { sendWhatsApp } from "../_shared/whatsappService.ts";
 
 type Mapping = { source: "first_name" | "full_name" | "fixed"; value?: string };
 const FAMILY_TEMPLATE = "family_day_4_oct";
+const POSTERS: Record<string, string> = {
+  family_day_4_oct: "https://club.weightlossmentorshri.com/__l5e/assets-v1/daa86d8f-9564-4140-8c00-5d92711a1495/family-day-4-oct-2026.jpg",
+  wlp_wellness_program_invitation: "https://club.weightlossmentorshri.com/__l5e/assets-v1/b8ea855c-b726-4f5d-b5c9-f918b42a5fd6/wlp-poster.jpg",
+};
 const FAMILY_POSTER = "https://club.weightlossmentorshri.com/__l5e/assets-v1/daa86d8f-9564-4140-8c00-5d92711a1495/family-day-4-oct-2026.jpg";
 const FAMILY_LANGUAGE = "hi";
 
@@ -161,8 +165,8 @@ Deno.serve(async (req) => {
       const vars = resolveVars(mapping, String(body.sample_name || "Test"));
       const res = await sendWhatsApp(sb, cfg, {
         to, templateName: body.template_name, templateLanguage: body.template_language, vars, varNames: varNames(mapping),
-        mediaUrl: body.template_name === FAMILY_TEMPLATE ? FAMILY_POSTER : undefined,
-        mediaType: body.template_name === FAMILY_TEMPLATE ? "image" : undefined,
+        mediaUrl: POSTERS[body.template_name] ?? undefined,
+        mediaType: POSTERS[body.template_name] ? "image" : undefined,
       }, { functionName: "whatsapp-broadcast", sourceModule: "manual", sentBy: userId, logContent: `[${body.template_name}] test` });
       return json({ success: res.ok, error: res.error, provider_message_id: res.providerMessageId });
     }
@@ -212,8 +216,8 @@ Deno.serve(async (req) => {
         template_name: body.template_name,
         template_language: body.template_language || "en_US",
         variable_mapping: mapping,
-        header_media_url: body.template_name === FAMILY_TEMPLATE ? FAMILY_POSTER : null,
-        header_media_type: body.template_name === FAMILY_TEMPLATE ? "image" : null,
+        header_media_url: POSTERS[body.template_name] ?? null,
+        header_media_type: POSTERS[body.template_name] ? "image" : null,
         filters: body.filters || {},
         total_count: rows.length,
         created_by: userId,
