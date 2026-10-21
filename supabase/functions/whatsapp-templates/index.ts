@@ -141,6 +141,45 @@ Deno.serve(async (req) => {
         return json({ success: false, error: "The message body is required" }, 200);
       }
 
+      // Optional image header: upload the sample picture to Meta for a header_handle.
+      const headerImageUrl = String(payload.header_image_url || "").trim();
+      if (headerImageUrl) {
+        if (!/^https:\/\//i.test(headerImageUrl)) {
+          return json({ success: false, error: "Header image must be an https link" }, 200);
+        }
+        const img = await fetch(headerImageUrl);
+        if (!img.ok) return json({ success: false, error: `Could not read header image (${img.status})` }, 200);
+        const bytes = new Uint8Array(await img.arrayBuffer());
+        const fileType = img.headers.get("content-type")?.split(";")[0] || "image/jpeg";
+        const appRes = await fetch(`${cfg.apiUrl}/app`, { headers: authHeaders });
+        const appRaw = await appRes.text();
+        const appId = appRes.ok ? JSON.parse(appRaw)?.id : null;
+        if (!appId) return json({ success: false, error: metaError(appRaw, appRes.status) }, 200);
+        const sessRes = await fetch(
+          `${cfg.apiUrl}/${appId}/uploads?file_length=${bytes.length}&file_type=${encodeURIComponent(fileType)}`,
+          { method: "POST", headers: authHeaders },
+        );
+        const sessRaw = await sessRes.text();
+        const sessId = sessRes.ok ? JSON.parse(sessRaw)?.id : null;
+        if (!sessId) return json({ success: false, error: metaError(sessRaw, sessRes.status) }, 200);
+        const upRes = await fetch(`${cfg.apiUrl}/${sessId}`, {
+          method: "POST",
+          headers: { Authorization: `OAuth ${cfg.apiKey}`, file_offset: "0" },
+          body: bytes,
+        });
+        const upRaw = await upRes.text();
+        const handle = upRes.ok ? JSON.parse(upRaw)?.h : null;
+        if (!handle) return json({ success: false, error: metaError(upRaw, upRes.status) }, 200);
+        const withoutHeader = components.filter(
+          (c: { type?: string }) => String(c?.type).toUpperCase() !== "HEADER",
+        );
+        components.length = 0;
+        components.push(
+          { type: "HEADER", format: "IMAGE", example: { header_handle: [handle] } },
+          ...withoutHeader,
+        );
+      }
+
       const res = await fetch(base, {
         method: "POST",
         headers: { ...authHeaders, "Content-Type": "application/json" },
