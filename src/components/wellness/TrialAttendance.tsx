@@ -22,6 +22,14 @@ export function useTrialAttendance(trialIds: string[]) {
       if (error) throw error;
       const map: Record<string, { date: string; extra: boolean }[]> = {};
       for (const r of data ?? []) if (r.trial_id) (map[r.trial_id] ??= []).push({ date: r.visit_date, extra: !!r.is_trial_advance });
+      // WLP evening visits by trial guests also use a trial visit.
+      const { data: wlp } = await supabase
+        .from("wlp_checkins")
+        .select("trial_id, wlp_sessions(session_date)")
+        .in("trial_id", trialIds);
+      for (const w of (wlp ?? []) as unknown as { trial_id: string | null; wlp_sessions: { session_date: string } | null }[])
+        if (w.trial_id && w.wlp_sessions) (map[w.trial_id] ??= []).push({ date: w.wlp_sessions.session_date, extra: false });
+      for (const k in map) map[k].sort((a, b) => a.date.localeCompare(b.date));
       return map;
     },
   });
