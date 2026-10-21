@@ -2867,6 +2867,7 @@ export type Database = {
           serving_deducted: boolean
           serving_txn_id: string | null
           session_id: string
+          trial_id: string | null
         }
         Insert: {
           checked_in_at?: string
@@ -2878,6 +2879,7 @@ export type Database = {
           serving_deducted?: boolean
           serving_txn_id?: string | null
           session_id: string
+          trial_id?: string | null
         }
         Update: {
           checked_in_at?: string
@@ -2889,6 +2891,7 @@ export type Database = {
           serving_deducted?: boolean
           serving_txn_id?: string | null
           session_id?: string
+          trial_id?: string | null
         }
         Relationships: [
           {
@@ -2917,6 +2920,13 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "wlp_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wlp_checkins_trial_id_fkey"
+            columns: ["trial_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_trials"
             referencedColumns: ["id"]
           },
         ]
