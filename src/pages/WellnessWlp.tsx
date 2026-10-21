@@ -196,7 +196,7 @@ function ActiveSessionPanel({ session }: { session: WlpSession }) {
               return (
                 <div key={m.id} className="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm">
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{m.full_name}</p>
+                    <p className="truncate font-medium">{m.full_name} {m.is_guest && <Badge variant="outline" className="ml-1">Trial</Badge>}</p>
                     <p className="text-xs text-muted-foreground">{m.mobile_number}</p>
                   </div>
                   {alreadyIn ? (
