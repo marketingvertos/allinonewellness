@@ -179,6 +179,7 @@ export function useWellnessMembers(
   categoryId?: string | "all",
   memberMode?: MemberModeFilter,
   tag?: string | "all",
+  includeGuests = false,
 ) {
   return useQuery({
     queryKey: [
@@ -188,12 +189,15 @@ export function useWellnessMembers(
       categoryId ?? "all",
       memberMode ?? "all",
       tag ?? "all",
+      includeGuests,
     ],
     queryFn: async () => {
       let q = supabase
         .from("wellness_members")
         .select("*, wellness_batches(id, name), member_categories(id, name, direction)")
-        .eq("is_guest", false)
+        .order("created_at", { ascending: false });
+      if (!includeGuests) q = q.eq("is_guest", false);
+      q = q
         .order("created_at", { ascending: false });
       if (status && status !== "all") q = q.eq("status", status);
       if (categoryId && categoryId !== "all") q = q.eq("category_id", categoryId);
