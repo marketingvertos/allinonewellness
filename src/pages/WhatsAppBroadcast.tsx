@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import * as XLSX from "xlsx";
 import { useAllWhatsAppTemplates } from "@/hooks/useWhatsApp";
 import { fillTemplate } from "@/components/whatsapp/TemplatePicker";
+const friendlyError = (e?: string | null) => !e ? "" : /ecosystem|131049/i.test(e) ? "Meta marketing limit for this person, Retry works after 24 hours" : /132012|IMAGE/i.test(e) ? "Picture missing (fixed, can retry)" : e;
 import familyPoster from "@/assets/family-day-4-oct-2026.jpg.asset.json";
 
 type Mapping = { source: "first_name" | "full_name" | "fixed"; value?: string };
@@ -415,7 +416,7 @@ export default function WhatsAppBroadcast() {
                     <div key={i} className="flex gap-2 border-b px-2 py-1 text-xs">
                       <span className="w-40 truncate">{r.full_name}</span>
                       <span className="w-28">{r.phone}</span>
-                      <span className="flex-1 text-destructive">{r.status}: {r.error}</span>
+                      <span className="flex-1 text-destructive">{r.status}: {friendlyError(r.error)}</span>
                     </div>
                   ))}
                 </div>

@@ -236,7 +236,9 @@ Deno.serve(async (req) => {
       const id = String(body.id || "");
       if (action === "retry_failed") {
         await sb.from("whatsapp_broadcast_recipients").update({ status: "pending", error: null })
-          .eq("broadcast_id", id).eq("status", "failed");
+          .eq("broadcast_id", id).eq("status", "failed")
+          // Meta marketing-limit (131049) failures are held for 24h; resending early is blocked again.
+          .or(`error.is.null,and(error.not.ilike.*ecosystem*,error.not.ilike.*131049*),sent_at.lt.${new Date(Date.now() - 864e5).toISOString()}`);
       }
       // Reset rows stuck mid-send for over 2 minutes
       await refreshCounts(sb, id);
