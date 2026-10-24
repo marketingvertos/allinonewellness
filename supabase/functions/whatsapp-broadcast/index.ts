@@ -14,6 +14,7 @@ const FAMILY_TEMPLATE = "family_day_4_oct";
 const POSTERS: Record<string, string> = {
   family_day_4_oct: "https://club.weightlossmentorshri.com/__l5e/assets-v1/daa86d8f-9564-4140-8c00-5d92711a1495/family-day-4-oct-2026.jpg",
   wlp_wellness_program_invitation: "https://club.weightlossmentorshri.com/__l5e/assets-v1/b8ea855c-b726-4f5d-b5c9-f918b42a5fd6/wlp-poster.jpg",
+  lifestyle_day_25_oct_2026: "https://club.weightlossmentorshri.com/__l5e/assets-v1/1ded0824-fe75-4110-a155-9b56aa1335c8/lifestyle-day-25-oct-2026.jpg",
 };
 const FAMILY_POSTER = "https://club.weightlossmentorshri.com/__l5e/assets-v1/daa86d8f-9564-4140-8c00-5d92711a1495/family-day-4-oct-2026.jpg";
 const FAMILY_LANGUAGE = "hi";
