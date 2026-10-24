@@ -69,7 +69,12 @@ async function callBroadcast(body: Record<string, unknown>) {
 
 export default function WhatsAppBroadcast() {
   const qc = useQueryClient();
-  const { data: templates = [], isLoading: tLoading, refetch: refetchT, isFetching: tFetching } = useAllWhatsAppTemplates();
+  const { data: rawTemplates = [], isLoading: tLoading, refetch: refetchT, isFetching: tFetching } = useAllWhatsAppTemplates();
+  const [tSearch, setTSearch] = useState("");
+  const allSorted = [...rawTemplates].sort((a, b) =>
+    Number(b.status === "APPROVED") - Number(a.status === "APPROVED") ||
+    String(b.id || "").localeCompare(String(a.id || ""), undefined, { numeric: true }));
+  const templates = allSorted.filter((t) => !tSearch || t.name.toLowerCase().includes(tSearch.toLowerCase()));
   const [tKey, setTKey] = useState("");
   const tpl = templates.find((t) => `${t.name}|${t.language}` === tKey) || null;
   const [mapping, setMapping] = useState<Mapping[]>([]);
@@ -266,6 +271,7 @@ export default function WhatsAppBroadcast() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Input placeholder="Search templates…" value={tSearch} onChange={(e) => setTSearch(e.target.value)} />
             <Select value={tKey} onValueChange={setTKey}>
               <SelectTrigger><SelectValue placeholder={tLoading ? "Loading…" : "Choose a template"} /></SelectTrigger>
               <SelectContent>
