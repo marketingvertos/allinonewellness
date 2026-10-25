@@ -211,3 +211,21 @@ describe("today's plan-specific activity counts", () => {
     expect(Object.values(lists).every((l) => l.length === 0)).toBe(true);
   });
 });
+
+describe("monthly range", () => {
+  it("counts a September new Gold Card and renewal, excluding October", async () => {
+    const { calculateDashboardMetrics: calc } = await import("./dashboardMetrics");
+    const plans = [{ id: "g", name: "Gold", plan_type: "membership", duration_days: 30, total_servings: 30, price: 7500 }];
+    const members = [{ id: "a", is_guest: false, member_mode: "physical", joining_date: "2026-09-01" },
+      { id: "b", is_guest: false, member_mode: "physical", joining_date: "2026-09-01" }];
+    const memberships = [
+      { id: "m1", member_id: "a", plan_id: "g", start_date: "2026-09-10", created_at: "", renewed_from: null, status: "active" },
+      { id: "m2", member_id: "b", plan_id: "g", start_date: "2026-10-01", created_at: "", renewed_from: null, status: "active" },
+    ];
+    const payments = [{ member_id: "a", membership_id: "m1", amount: 7500, context: "renewal", paid_at: "2026-09-30T18:00:00Z", plan_id: "g" }];
+    const r = calc({ members, plans, memberships, trials: [], payments, attendance: [], today: "2026-10-25", from: "2026-09-01", to: "2026-09-30", mode: "all" });
+    expect(r.newGoldCardToday).toBe(1);
+    // 30 Sep 18:00 UTC is 1 Oct in India, so it is not a September renewal.
+    expect(r.goldCardRenewalsToday).toBe(0);
+  });
+});
