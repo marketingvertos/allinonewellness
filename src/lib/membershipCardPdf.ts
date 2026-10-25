@@ -62,18 +62,18 @@ function buildHistory(data: MembershipCardData): HistoryEntry[] {
   const entries: HistoryEntry[] = [];
   for (const t of data.trials) {
     if (t.status === "cancelled") continue;
-    const plan = t.plan_id ? planMap.get(t.plan_id) : null;
+    const tp = (t as any).plan_id as string | undefined; const plan = tp ? planMap.get(tp) : null;
     entries.push({ sortKey: t.start_date, date: formatDate(t.start_date), details: plan?.name ?? `${t.duration_days}-Day Trial`, amount: rupees(Number(plan?.price ?? 0)) });
   }
   for (const m of data.memberships) {
-    if (m.status === "cancelled" || m.renewed_from) continue;
+    if (m.status === "cancelled" || (m as any).renewed_from) continue;
     const plan = planMap.get(m.plan_id) ?? m.wellness_plans;
     entries.push({ sortKey: m.start_date, date: formatDate(m.start_date), details: plan?.name ?? "Membership", amount: rupees(Number(m.price_paid ?? 0)) });
   }
   for (const p of data.payments) {
     if (p.context !== "renewal" || Number(p.amount) <= 0) continue;
     const ms = p.membership_id ? msMap.get(p.membership_id) : null;
-    const planId = p.plan_id ?? ms?.plan_id;
+    const planId = (p as any).plan_id ?? ms?.plan_id;
     const plan = planId ? planMap.get(planId) : null;
     entries.push({ sortKey: p.paid_at, date: formatDate(p.paid_at), details: `Renewal — ${plan?.name ?? ms?.wellness_plans?.name ?? "Membership"}`, amount: rupees(Number(p.amount)) });
   }
