@@ -139,17 +139,24 @@ Deno.serve(async (req) => {
     const { data: memberRows } = await supabase
       .from("wellness_members")
       .select(
-        "id, full_name, mobile_number, initial_weight, current_weight, joining_date, activation_code",
+        "id, full_name, mobile_number, initial_weight, current_weight, joining_date, activation_code, referred_by_member_id",
       )
       .in("id", memberIds);
     const members = new Map(
       (memberRows || []).map((m) => [m.id, m]),
     );
+    const coachIds = [...new Set((memberRows || []).map((m) => m.referred_by_member_id).filter(Boolean))];
+    const coaches = new Map<string, string>();
+    if (coachIds.length) {
+      const { data: coachRows } = await supabase
+        .from("wellness_members").select("id, full_name").in("id", coachIds as string[]);
+      for (const c of coachRows || []) coaches.set(c.id, c.full_name);
+    }
 
     const { data: membershipRows } = await supabase
       .from("wellness_memberships")
       .select(
-        "member_id, membership_code, end_date, remaining_servings, total_servings, used_servings, price_paid, servings_exhausted_on, status, wellness_plans(name)",
+        "member_id, id, start_date, membership_code, end_date, remaining_servings, total_servings, used_servings, price_paid, servings_exhausted_on, status, wellness_plans(name)",
       )
       .in("member_id", memberIds)
       .in("status", ["active", "expiring_soon"]);
@@ -187,10 +194,10 @@ Deno.serve(async (req) => {
     // active trials
     const { data: trialRows } = await supabase
       .from("wellness_trials")
-      .select("member_id, end_date, status")
+      .select("member_id, end_date, status, wellness_plans(name)")
       .in("member_id", memberIds)
       .eq("status", "active");
-    const trials = new Map<string, { end_date: string | null }>();
+    const trials = new Map<string, { end_date: string | null; wellness_plans?: { name?: string } | null }>();
     for (const t of trialRows || []) {
       if (!trials.has(t.member_id)) trials.set(t.member_id, t);
     }
@@ -226,7 +233,7 @@ Deno.serve(async (req) => {
     // most recent packed-and-issued servings
     const { data: issuedRows } = await supabase
       .from("serving_transactions")
-      .select("member_id, change, note, created_at")
+      .select("member_id, change, note, created_at, attendance_id")
       .in("member_id", memberIds)
       .eq("txn_type", "pack_and_issue")
       .order("created_at", { ascending: false })
@@ -386,7 +393,17 @@ Deno.serve(async (req) => {
         renewal_window_days: "10",
         last_plan_name: expiredInfo.get(item.member_id)?.plan || planName,
         expired_on: expiredInfo.get(item.member_id)?.on || "",
+        trial_plan_name: trial?.wellness_plans?.name || "Trial",
+        coach_name: (member.referred_by_member_id && coaches.get(member.referred_by_member_id)) || "Shri Chatap",
+        covered_dates: issuedPack?.note || fmtDate(new Date().toISOString()),
+        weight_change_abs: latestWeight !== null && startWeight !== null
+          ? Math.abs(latestWeight - startWeight).toFixed(1) : "",
+        start_date: fmtDate((membership as { start_date?: string } | undefined)?.start_date),
+        wlp_remaining: String(membership?.remaining_servings ?? ""),
       };
+      for (const [k, v] of Object.entries((item.payload || {}) as Record<string, unknown>)) {
+        if (v !== null && v !== undefined && String(v).trim()) vars[k] = String(v);
+      }
 
 
       const text = item.message?.trim() ||
