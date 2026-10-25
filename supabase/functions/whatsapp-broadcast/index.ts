@@ -135,11 +135,13 @@ async function processBatch(sb: Sb, id: string, userId: string | null, size = 20
         status: res.ok ? "sent" : "failed",
         error: res.ok ? null : res.error,
         whatsapp_message_id: res.messageId,
+        provider_message_id: res.providerMessageId ?? null,
+        failed_reason_code: res.ok ? null : (String(res.error || "").match(/\b(1\d{5}|\d{3,6})\b/)?.[1] ?? null),
         sent_at: new Date().toISOString(),
       }).eq("id", r.id);
     } catch (e) {
       await sb.from("whatsapp_broadcast_recipients").update({
-        status: "failed", error: e instanceof Error ? e.message : String(e),
+        status: "failed", error: e instanceof Error ? e.message : String(e), sent_at: new Date().toISOString(),
       }).eq("id", r.id);
     }
     await new Promise((res) => setTimeout(res, 150));
@@ -158,6 +160,27 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const sb = serviceClient();
   try {
+    const peek = await req.clone().json().catch(() => ({}));
+    if (peek?.action === "run_scheduled") {
+      // Called by the scheduler: only starts broadcasts staff already created and timed.
+      const { data: due } = await sb.from("whatsapp_broadcasts").select("id, created_by")
+        .eq("status", "scheduled").lte("scheduled_at", new Date().toISOString()).limit(5);
+      for (const b of due || []) {
+        await sb.from("whatsapp_broadcasts").update({ status: "sending", started_at: new Date().toISOString() }).eq("id", b.id).eq("status", "scheduled");
+        await refreshCounts(sb, b.id);
+        // @ts-ignore EdgeRuntime
+        EdgeRuntime.waitUntil(runToEnd(sb, b.id, b.created_by));
+      }
+      // Also keep any half-finished broadcasts moving.
+      const { data: live } = await sb.from("whatsapp_broadcasts").select("id, created_by, updated_at").eq("status", "sending")
+        .lt("updated_at", new Date(Date.now() - 300000).toISOString()).limit(3);
+      for (const b of live || []) {
+        await releaseStuck(sb, b.id);
+        // @ts-ignore EdgeRuntime
+        EdgeRuntime.waitUntil(runToEnd(sb, b.id, b.created_by));
+      }
+      return json({ success: true, started: (due || []).length, resumed: (live || []).length });
+    }
     const auth = req.headers.get("Authorization") || "";
     if (!auth.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
     const authClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
@@ -233,7 +256,12 @@ Deno.serve(async (req) => {
           error: bad ? "Missing or invalid mobile number" : dup ? "Duplicate number" : null,
         };
       });
+      const scheduledAt = body.scheduled_at ? new Date(String(body.scheduled_at)) : null;
+      const isScheduled = !!scheduledAt && !isNaN(scheduledAt.getTime()) && scheduledAt.getTime() > Date.now() + 60000;
       const { data: b, error } = await sb.from("whatsapp_broadcasts").insert({
+        status: isScheduled ? "scheduled" : "sending",
+        scheduled_at: isScheduled ? scheduledAt!.toISOString() : null,
+        parent_broadcast_id: body.parent_broadcast_id ? String(body.parent_broadcast_id) : null,
         template_name: body.template_name,
         template_language: body.template_language || "en_US",
         variable_mapping: mapping,
@@ -248,9 +276,8 @@ Deno.serve(async (req) => {
         await sb.from("whatsapp_broadcast_recipients").insert(rows.slice(i, i + 500).map((r) => ({ ...r, broadcast_id: b.id })));
       }
       await refreshCounts(sb, b.id);
-      // @ts-ignore EdgeRuntime is available in the Supabase runtime
-      EdgeRuntime.waitUntil(runToEnd(sb, b.id, userId));
-      return json({ success: true, id: b.id });
+      if (!isScheduled) await startRun(sb, b.id, userId);
+      return json({ success: true, id: b.id, scheduled: isScheduled });
     }
 
     if (action === "process" || action === "retry_failed") {
@@ -261,11 +288,44 @@ Deno.serve(async (req) => {
           // Meta marketing-limit (131049) failures are held for 24h; resending early is blocked again.
           .or(`error.is.null,and(error.not.ilike.*ecosystem*,error.not.ilike.*131049*),sent_at.lt.${new Date(Date.now() - 864e5).toISOString()}`);
       }
-      // Reset rows stuck mid-send for over 2 minutes
+      await releaseStuck(sb, id);
       await refreshCounts(sb, id);
       // @ts-ignore EdgeRuntime
       EdgeRuntime.waitUntil(runToEnd(sb, id, userId));
       return json({ success: true });
+    }
+
+    if (action === "cancel_schedule") {
+      const id = String(body.id || "");
+      await sb.from("whatsapp_broadcast_recipients").update({ status: "skipped", error: "Cancelled before sending" }).eq("broadcast_id", id).eq("status", "pending");
+      await sb.from("whatsapp_broadcasts").update({ status: "cancelled", sent_count: 0, completed_at: new Date().toISOString() }).eq("id", id).eq("status", "scheduled");
+      return json({ success: true });
+    }
+
+    if (action === "resend_unread") {
+      // New follow-up broadcast to people who got the message but have not read it.
+      const id = String(body.id || "");
+      const { data: src } = await sb.from("whatsapp_broadcasts").select("*").eq("id", id).maybeSingle();
+      if (!src) return json({ success: false, error: "Broadcast not found" });
+      const people: { member_id: string | null; full_name: string | null; phone: string }[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data } = await sb.from("whatsapp_broadcast_recipients").select("member_id, full_name, phone")
+          .eq("broadcast_id", id).eq("status", "sent").is("read_at", null).is("replied_at", null).range(from, from + 999);
+        people.push(...(data || []));
+        if (!data || data.length < 1000) break;
+      }
+      if (!people.length) return json({ success: false, error: "Everyone who received it has already read it" });
+      const { data: nb, error } = await sb.from("whatsapp_broadcasts").insert({
+        status: "sending", template_name: src.template_name, template_language: src.template_language,
+        variable_mapping: src.variable_mapping, header_media_url: src.header_media_url, header_media_type: src.header_media_type,
+        filters: { ...(src.filters || {}), resend_unread_of: id }, total_count: people.length, created_by: userId, parent_broadcast_id: id,
+      }).select("id").single();
+      if (error) throw error;
+      for (let i = 0; i < people.length; i += 500) {
+        await sb.from("whatsapp_broadcast_recipients").insert(people.slice(i, i + 500).map((p) => ({ ...p, broadcast_id: nb.id, status: "pending" })));
+      }
+      await startRun(sb, nb.id, userId);
+      return json({ success: true, id: nb.id, count: people.length });
     }
 
     return json({ error: "Unknown action" }, 400);
