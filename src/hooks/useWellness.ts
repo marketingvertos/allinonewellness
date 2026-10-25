@@ -179,6 +179,7 @@ export function useWellnessMembers(
   categoryId?: string | "all",
   memberMode?: MemberModeFilter,
   tag?: string | "all",
+  includeGuests = false,
 ) {
   return useQuery({
     queryKey: [
@@ -188,13 +189,14 @@ export function useWellnessMembers(
       categoryId ?? "all",
       memberMode ?? "all",
       tag ?? "all",
+      includeGuests,
     ],
     queryFn: async () => {
       let q = supabase
         .from("wellness_members")
         .select("*, wellness_batches(id, name), member_categories(id, name, direction)")
-        .eq("is_guest", false)
         .order("created_at", { ascending: false });
+      if (!includeGuests) q = q.eq("is_guest", false);
       if (status && status !== "all") q = q.eq("status", status);
       if (categoryId && categoryId !== "all") q = q.eq("category_id", categoryId);
       if (memberMode && memberMode !== "all") q = q.eq("member_mode", memberMode);
@@ -2514,12 +2516,12 @@ export async function fetchSales(from: string, to: string, memberMode?: MemberMo
     .filter((m) => !(m.wellness_payments ?? []).length)
     .map((m) => ({ ...m, plan_name: m.wellness_plans?.name ?? null, plan_type: m.wellness_plans?.plan_type ?? null }));
   const miw = await readAllPages((a, b) => {
-    let q = supabase.from("miw_payments").select("*, miw_participants(miw_challenges(name))").gte("paid_at", start).lte("paid_at", end).is("voided_at", null).order("id").range(a, b);
+    let q = supabase.from("miw_payments").select("*, miw_participants(miw_challenges(name))").gte("paid_at", start).lte("paid_at", end).order("id").range(a, b);
     if (ids) q = q.in("member_id", ids);
     return q;
   });
-  if (miw.error) throw miw.error;
-  for (const p of miw.data ?? []) payments.push({ id: p.id, membership_id: "", registration_id: p.participant_id, member_id: p.member_id, amount: Number(p.amount), mode: p.mode, reference: p.reference, paid_at: p.paid_at, note: null, context: "miw", plan_name: `MIW registration — ${p.miw_participants?.miw_challenges?.name ?? "MIW"}`, plan_type: "miw" });
+  if (miw.error) console.error("MIW payments unavailable for sales", miw.error);
+  for (const p of (miw.error ? [] : miw.data ?? [])) payments.push({ id: p.id, membership_id: "", registration_id: p.participant_id, member_id: p.member_id, amount: Number(p.amount), mode: p.mode, reference: p.reference, paid_at: p.paid_at, note: null, context: "miw", plan_name: `MIW registration — ${p.miw_participants?.miw_challenges?.name ?? "MIW"}`, plan_type: "miw" });
   return buildSales(payments, legacy);
 }
 

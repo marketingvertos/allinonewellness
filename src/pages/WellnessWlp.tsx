@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useWlpSessions,
   useWlpCheckins,
@@ -69,6 +71,12 @@ export default function WellnessWlp() {
                     : " — session will start when the first member scans the QR after 4 PM."
                   : " — no WLP today."}
               </p>
+              {!todaySession && !isLoading && (
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  <span className="font-medium text-amber-700 dark:text-amber-400">No session for today yet — WLP check-ins can't be marked.</span>
+                  <CreateTodayButton />
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -96,6 +104,27 @@ export default function WellnessWlp() {
   );
 }
 
+function CreateTodayButton() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const create = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("create_wlp_session" as never, { p_session_date: istToday() } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Today's WLP session created" });
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).includes("wlp") });
+    },
+    onError: (e: Error) => toast({ title: "Could not create session", description: e.message, variant: "destructive" }),
+  });
+  return (
+    <Button size="sm" disabled={create.isPending} onClick={() => create.mutate()}>
+      {create.isPending ? "Creating…" : "Create today's session"}
+    </Button>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 
 function ActiveSessionPanel({ session }: { session: WlpSession }) {
@@ -105,7 +134,7 @@ function ActiveSessionPanel({ session }: { session: WlpSession }) {
   const { toast } = useToast();
 
   const [query, setQuery] = useState("");
-  const { data: members } = useWellnessMembers(query);
+  const { data: members } = useWellnessMembers(query, "all", "all", "all", "all", true);
   const results = (members ?? []).slice(0, 6);
 
   const checkedInIds = useMemo(() => new Set((checkins ?? []).map((c) => c.member_id)), [checkins]);
@@ -122,6 +151,8 @@ function ActiveSessionPanel({ session }: { session: WlpSession }) {
           const msg = result.member_name ? `${result.member_name} checked in` : "Checked in";
           if (result.warning === "overdraft") {
             toast({ title: msg, description: `Warning: servings went to ${result.remaining}. Membership overdrafted.`, variant: "destructive" });
+          } else if (result.warning === "trial") {
+            toast({ title: msg, description: "Trial guest — counted as one trial visit." });
           } else if (result.warning === "no_membership") {
             toast({ title: msg, description: "No active membership — serving not deducted.", variant: "destructive" });
           } else {
@@ -165,7 +196,7 @@ function ActiveSessionPanel({ session }: { session: WlpSession }) {
               return (
                 <div key={m.id} className="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm">
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{m.full_name}</p>
+                    <p className="truncate font-medium">{m.full_name} {m.is_guest && <Badge variant="outline" className="ml-1">Trial</Badge>}</p>
                     <p className="text-xs text-muted-foreground">{m.mobile_number}</p>
                   </div>
                   {alreadyIn ? (

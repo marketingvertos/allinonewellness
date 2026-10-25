@@ -505,6 +505,20 @@
       "when": 1729296000000,
       "tag": "0071_gap_audit_fixes",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1792568305641,
+      "tag": "0072_clear_guest_on_paid_plan",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1792590164013,
+      "tag": "0073_wlp_trial_checkins",
+      "breakpoints": true
     }
   ]
 }

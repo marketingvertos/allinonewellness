@@ -4,6 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { ModeBadge } from "@/components/wellness/memberMeta";
 import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { formatDate } from "@/lib/formatters";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { downloadXlsx } from "@/lib/reportExport";
 import type { ActivityListItem, DashboardMember, DashboardPlan } from "@/lib/dashboardMetrics";
 
 interface Props {
@@ -14,9 +17,20 @@ interface Props {
   items: ActivityListItem[];
   memberById: Record<string, DashboardMember>;
   planById: Record<string, DashboardPlan>;
+  exportName?: string;
 }
 
-export function ActivityMembersSheet({ open, onOpenChange, title, description, items, memberById, planById }: Props) {
+export function ActivityMembersSheet({ open, onOpenChange, title, description, items, memberById, planById, exportName }: Props) {
+  const exportExcel = () => {
+    const rows: (string | number)[][] = [["Name", "Mobile", "Mode", "Type", "Plan", "Date", "End date", "Amount (₹)"]];
+    for (const it of items) {
+      const m = memberById[it.memberId];
+      rows.push([m?.full_name ?? "", m?.mobile_number ?? "", m?.member_mode === "virtual" ? "Virtual" : "Physical", it.label,
+        it.planId ? planById[it.planId]?.name ?? "" : "", formatDate(it.date), it.endDate ? formatDate(it.endDate) : "", it.amount ?? ""]);
+    }
+    const name = (exportName ?? title).replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-");
+    downloadXlsx(`${name}.xlsx`, "Members", rows, [24, 14, 10, 14, 26, 14, 14, 12]);
+  };
   const [selectedId, setSelectedId] = useState<string | null>(null);
   return (
     <>
@@ -25,6 +39,9 @@ export function ActivityMembersSheet({ open, onOpenChange, title, description, i
           <SheetHeader className="border-b p-4 text-left">
             <SheetTitle>{title} ({items.length})</SheetTitle>
             <SheetDescription>{description}. Tap a person to see the full profile.</SheetDescription>
+            <Button variant="outline" size="sm" className="mt-2 w-fit" onClick={exportExcel} disabled={!items.length}>
+              <Download className="mr-2 h-4 w-4" /> Download Excel
+            </Button>
           </SheetHeader>
           <div className="flex-1 space-y-2 overflow-y-auto p-4">
             {items.length ? (

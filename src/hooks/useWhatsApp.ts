@@ -371,7 +371,7 @@ export function useAllWhatsAppTemplates() {
       if (!result.success) throw new Error(result.error || "Could not read templates");
       return result.templates || [];
     },
-    staleTime: 60 * 1000,
+    staleTime: 0, refetchOnMount: "always", refetchOnWindowFocus: true,
   });
 }
 
