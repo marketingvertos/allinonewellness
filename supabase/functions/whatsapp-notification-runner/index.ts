@@ -94,20 +94,19 @@ Deno.serve(async (req) => {
       return json({ skipped: "automation_disabled", sent: 0, failed: 0 });
     }
 
+    // Sync Meta approval status; promote approved replacement templates.
+    const metaStatus = await syncTemplateStatuses(supabase, cfg);
+
     const evening = inEveningWindow();
     const { data: rawQueue, error: queueError } = await supabase
       .from("wellness_notification_log")
-      .select("id, member_id, trigger_key, channel, message, attempts")
+      .select("id, member_id, trigger_key, channel, message, attempts, payload, created_at")
       .eq("status", "queued")
       .eq("channel", "whatsapp")
       .lt("attempts", MAX_ATTEMPTS)
       .order("created_at", { ascending: true })
       .limit(500);
     if (queueError) throw queueError;
-    const queue = (rawQueue || [])
-      .filter((q) => evening || !isEveningTrigger(q.trigger_key))
-      .slice(0, evening ? EVENING_BATCH_SIZE : BATCH_SIZE);
-    if (!queue.length) return json({ sent: 0, failed: 0, processed: 0 });
 
     const { data: templateRows } = await supabase
       .from("wellness_notification_templates")
@@ -117,6 +116,24 @@ Deno.serve(async (req) => {
       .eq("channel", "whatsapp")
       .eq("active", true);
     const templates = (templateRows || []) as TemplateRow[];
+
+    // Hold messages whose template Meta hasn't approved; drop them after 24 hours.
+    const ready: typeof rawQueue = [];
+    for (const q of rawQueue || []) {
+      const t = pickTemplate(templates, q.trigger_key);
+      const st = t?.template_name && !q.message ? metaStatus.get(t.template_name) : "APPROVED";
+      if (!metaStatus.size || st === "APPROVED") { ready.push(q); continue; }
+      if (Date.now() - new Date(q.created_at).getTime() > 86400000) {
+        await supabase.from("wellness_notification_log").update({
+          status: "skipped",
+          error_message: `Template "${t?.template_name}" was not approved within 24 hours`,
+        }).eq("id", q.id);
+      }
+    }
+    const queue = ready
+      .filter((q) => evening || !isEveningTrigger(q.trigger_key))
+      .slice(0, evening ? EVENING_BATCH_SIZE : BATCH_SIZE);
+    if (!queue.length) return json({ sent: 0, failed: 0, processed: 0 });
 
     const memberIds = [...new Set(queue.map((q) => q.member_id))];
     const { data: memberRows } = await supabase
