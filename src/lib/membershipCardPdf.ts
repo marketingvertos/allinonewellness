@@ -7,10 +7,12 @@ import { statusLabel } from "@/components/wellness/status";
 import { modeLabel } from "@/components/wellness/memberMeta";
 
 const TEAL: [number, number, number] = [1, 78, 78];
-const YELLOW: [number, number, number] = [249, 214, 123];
-const YELLOW_LIGHT: [number, number, number] = [253, 243, 210];
-const DARK: [number, number, number] = [40, 40, 40];
-const BORDER: [number, number, number] = [80, 80, 60];
+const BG: [number, number, number] = [255, 249, 230];
+const BG_ALT: [number, number, number] = [255, 244, 214];
+const GOLD: [number, number, number] = [218, 175, 80];
+const DARK: [number, number, number] = [30, 30, 30];
+const MID: [number, number, number] = [90, 90, 80];
+const GOLD_BORDER: [number, number, number] = [200, 165, 70];
 
 async function loadLogo(): Promise<string | null> {
   try {
@@ -106,217 +108,219 @@ export async function downloadMembershipCard(data: MembershipCardData) {
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const img = await loadLogo();
-  const MX = 15;
+  const MX = 10;
   const CW = W - 2 * MX;
   const m = data.member;
 
-  const drawBackground = () => {
-    doc.setFillColor(...YELLOW);
-    doc.rect(MX, 8, CW, H - 16, "F");
-    doc.setDrawColor(...BORDER);
-    doc.setLineWidth(0.4);
-    doc.rect(MX, 8, CW, H - 16, "S");
+  const drawPageFrame = () => {
+    doc.setFillColor(...BG);
+    doc.rect(0, 0, W, H, "F");
+
+    doc.setDrawColor(...GOLD_BORDER);
+    doc.setLineWidth(0.8);
+    doc.rect(MX, MX, CW, H - 2 * MX, "S");
+
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.3);
+    doc.rect(MX + 2, MX + 2, CW - 4, H - 2 * MX - 4, "S");
   };
 
   const drawHeader = () => {
-    const headerY = 8;
-    const headerH = 20;
+    const hY = MX + 4;
+    const hH = 18;
     doc.setFillColor(...TEAL);
-    doc.rect(MX, headerY, CW, headerH, "F");
+    doc.rect(MX + 3, hY, CW - 6, hH, "F");
 
-    let tx = MX + 5;
+    let tx = MX + 8;
     if (img) {
       try {
-        doc.addImage(img, "PNG", MX + 4, headerY + 3, 14, 14);
-        tx = MX + 22;
+        doc.addImage(img, "PNG", MX + 6, hY + 2, 14, 14);
+        tx = MX + 24;
       } catch { /* ignore */ }
     }
 
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text("Universal Membership Card", tx, headerY + 9);
+    doc.setFontSize(15);
+    doc.text("Universal Membership Card", tx, hY + 8);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.setTextColor(...YELLOW);
-    doc.text("All In One Wellness — Family Health Club", tx, headerY + 14.5);
+    doc.setFontSize(8);
+    doc.setTextColor(...GOLD);
+    doc.text("All In One Wellness — Family Health Club", tx, hY + 13.5);
   };
 
-  drawBackground();
+  drawPageFrame();
   drawHeader();
 
-  // --- Member details ---
-  let y = 34;
-  const labelX = MX + 6;
-  const valX = MX + 48;
-  const lineGap = 6.5;
+  let y = MX + 27;
+  const lx = MX + 8;
+  const rx = MX + CW - 8;
+  const midCol = MX + CW / 2;
 
-  const drawField = (label: string, value: string) => {
+  const drawRow = (label: string, value: string, x: number, maxW: number) => {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
-    doc.setTextColor(...DARK);
-    doc.text(label, labelX, y);
-
-    const dots = ".".repeat(40);
+    doc.setFontSize(8);
+    doc.setTextColor(...MID);
+    doc.text(label, x, y);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(120, 120, 100);
-    doc.text(dots, labelX + doc.getTextWidth(label) + 1, y);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.5);
+    doc.setFontSize(9);
     doc.setTextColor(...DARK);
-    doc.text(value, valX, y);
-    y += lineGap;
-  };
-
-  const drawFieldPair = (l1: string, v1: string, l2: string, v2: string) => {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
-    doc.setTextColor(...DARK);
-    doc.text(l1, labelX, y);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(120, 120, 100);
-    doc.text("...", labelX + doc.getTextWidth(l1) + 1, y);
-    doc.setTextColor(...DARK);
-    doc.text(v1, valX, y);
-
-    const col2X = MX + CW / 2 + 4;
-    const col2ValX = col2X + 38;
-    doc.setFont("helvetica", "bold");
-    doc.text(l2, col2X, y);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(120, 120, 100);
-    doc.text("...", col2X + doc.getTextWidth(l2) + 1, y);
-    doc.setTextColor(...DARK);
-    doc.text(v2, col2ValX, y);
-    y += lineGap;
+    doc.text(value, x, y + 4, { maxWidth: maxW });
   };
 
   const regNo = (m as any).activation_code ?? data.memberships[0]?.membership_code ?? "—";
 
-  drawField("Name", m.full_name);
-  drawFieldPair("Reg. No", regNo, "Date of Joining", formatDate(m.joining_date));
-  drawField("DOB", m.date_of_birth ? formatDate(m.date_of_birth) : "—");
-  drawField("Anniversary", m.anniversary_date ? formatDate(m.anniversary_date) : "—");
-  drawField("Wellness Coach", data.coach?.name ?? "—");
-  drawField("Coach Mobile", data.coach?.mobile ?? "—");
+  // --- Row 1: Name ---
+  drawRow("NAME", m.full_name, lx, CW - 16);
+  y += 10;
 
-  // Status + Mode badges
-  y += 1;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...TEAL);
-  doc.text(`Status: ${statusLabel(m.status)}`, labelX, y);
-  doc.text(`Mode: ${modeLabel(m.member_mode)}`, MX + CW / 2 + 4, y);
-  y += 3;
+  // --- Row 2: Reg No | Date of Joining ---
+  drawRow("REG. NO", regNo, lx, midCol - lx - 4);
+  drawRow("DATE OF JOINING", formatDate(m.joining_date), midCol, rx - midCol);
+  y += 10;
 
-  // Active membership info
+  // --- Row 3: DOB | Anniversary ---
+  drawRow("DATE OF BIRTH", m.date_of_birth ? formatDate(m.date_of_birth) : "—", lx, midCol - lx - 4);
+  drawRow("ANNIVERSARY", m.anniversary_date ? formatDate(m.anniversary_date) : "—", midCol, rx - midCol);
+  y += 10;
+
+  // --- Row 4: Coach | Coach Mobile ---
+  drawRow("WELLNESS COACH", data.coach?.name ?? "—", lx, midCol - lx - 4);
+  drawRow("COACH MOBILE", data.coach?.mobile ?? "—", midCol, rx - midCol);
+  y += 10;
+
+  // --- Row 5: Status | Mode ---
+  drawRow("STATUS", statusLabel(m.status), lx, midCol - lx - 4);
+  drawRow("MODE", modeLabel(m.member_mode), midCol, rx - midCol);
+  y += 10;
+
+  // Active plan strip
   const active = data.memberships.find((ms) => ms.status === "active" || ms.status === "expiring_soon");
   if (active) {
     const planName = active.wellness_plans?.name ?? data.plans.find((p) => p.id === active.plan_id)?.name ?? "Membership";
-    doc.setDrawColor(...TEAL);
-    doc.setLineWidth(0.2);
-    doc.line(labelX, y, MX + CW - 6, y);
-    y += 4;
+    doc.setFillColor(...TEAL);
+    doc.rect(lx, y - 1, rx - lx, 7, "F");
+    doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(...TEAL);
-    doc.text(`Active Plan: ${planName}`, labelX, y);
+    doc.text(`Active Plan: ${planName}`, lx + 3, y + 3.5);
     doc.setFont("helvetica", "normal");
-    doc.text(`Servings remaining: ${active.remaining_servings}`, MX + CW / 2 + 4, y);
-    y += 3;
+    doc.text(`Remaining: ${active.remaining_servings} servings`, rx - 3, y + 3.5, { align: "right" });
+    y += 10;
   }
 
-  // --- Target Result section ---
-  y += 3;
-  const trBoxX = MX + CW * 0.15;
-  const trBoxW = CW * 0.7;
-  const trBoxH = 28;
-
-  doc.setFillColor(...TEAL);
-  doc.roundedRect(trBoxX + (trBoxW - 28) / 2, y - 3.5, 28, 5.5, 1, 1, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.text("Target Result", trBoxX + trBoxW / 2, y, { align: "center" });
+  // --- Divider ---
+  doc.setDrawColor(...GOLD_BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(lx, y, rx, y);
   y += 4;
 
+  // --- Target Result ---
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...TEAL);
+  doc.text("TARGET RESULT", W / 2, y, { align: "center" });
+  y += 3;
+
   const bm = data.bodyMeasurement;
-  const gridY = y;
-  const cellW = trBoxW / 2;
-  const cellH = 7;
-  const grid: [string, string, string, string][] = [
-    ["Fat", fmt(bm?.body_fat_percentage), "VF", fmt(bm?.visceral_fat)],
-    ["B. Age", fmt(bm?.body_age), "BMI", fmt(bm?.bmi)],
-    ["Weight", fmt(bm?.weight ?? m.current_weight), "MM", fmt(bm?.muscle_mass)],
+  const trX = lx;
+  const trW = rx - lx;
+  const col3W = trW / 3;
+  const cellH = 9;
+
+  const metrics: [string, string][] = [
+    ["Fat %", fmt(bm?.body_fat_percentage)],
+    ["Visceral Fat", fmt(bm?.visceral_fat)],
+    ["Body Age", fmt(bm?.body_age)],
+    ["BMI", fmt(bm?.bmi)],
+    ["Weight", fmt(bm?.weight ?? m.current_weight)],
+    ["Muscle Mass", fmt(bm?.muscle_mass)],
   ];
 
-  doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.3);
-  doc.rect(trBoxX, gridY, trBoxW, cellH * 3, "S");
-  doc.line(trBoxX + cellW, gridY, trBoxX + cellW, gridY + cellH * 3);
-  for (let i = 1; i < 3; i++) {
-    doc.line(trBoxX, gridY + cellH * i, trBoxX + trBoxW, gridY + cellH * i);
+  doc.setDrawColor(...GOLD_BORDER);
+  doc.setLineWidth(0.2);
+
+  for (let i = 0; i < 2; i++) {
+    for (let j = 0; j < 3; j++) {
+      const idx = i * 3 + j;
+      const cx = trX + j * col3W;
+      const cy = y + i * cellH;
+
+      doc.setFillColor(i % 2 === 0 ? 255 : 252, i % 2 === 0 ? 246 : 240, i % 2 === 0 ? 220 : 200);
+      doc.rect(cx, cy, col3W, cellH, "FD");
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.5);
+      doc.setTextColor(...MID);
+      doc.text(metrics[idx][0], cx + 2, cy + 3.5);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...TEAL);
+      doc.text(metrics[idx][1], cx + col3W - 2, cy + 7, { align: "right" });
+    }
   }
 
-  grid.forEach(([l1, v1, l2, v2], i) => {
-    const rowY = gridY + cellH * i + cellH * 0.6;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(...DARK);
-    doc.text(l1, trBoxX + 3, rowY);
-    doc.setFont("helvetica", "normal");
-    doc.text(v1, trBoxX + cellW - 4, rowY, { align: "right" });
+  y += cellH * 2 + 4;
 
-    doc.setFont("helvetica", "bold");
-    doc.text(l2, trBoxX + cellW + 3, rowY);
-    doc.setFont("helvetica", "normal");
-    doc.text(v2, trBoxX + trBoxW - 4, rowY, { align: "right" });
-  });
+  // --- Divider ---
+  doc.setDrawColor(...GOLD_BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(lx, y, rx, y);
+  y += 3;
 
-  y = gridY + cellH * 3 + 6;
+  // --- Plan & Payment History ---
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...TEAL);
+  doc.text("PLAN & PAYMENT HISTORY", W / 2, y, { align: "center" });
+  y += 3;
 
-  // --- Plan & Payment History table ---
   const history = buildHistory(data);
 
   autoTable(doc, {
     startY: y,
-    head: [["Date", "Product Details", "Amount"]],
-    body: history.map((h) => [h.date, h.details, h.amount]),
-    margin: { left: MX + 3, right: MX + 3, bottom: 18 },
+    head: [["#", "Date", "Plan / Product", "Amount"]],
+    body: history.map((h, i) => [String(i + 1), h.date, h.details, h.amount]),
+    margin: { left: lx, right: MX + 8, bottom: 16 },
     styles: {
-      fontSize: 8,
-      cellPadding: 2,
-      lineColor: BORDER,
-      lineWidth: 0.15,
+      fontSize: 7.5,
+      cellPadding: 1.8,
+      lineColor: GOLD_BORDER,
+      lineWidth: 0.12,
       textColor: DARK,
-      fillColor: YELLOW,
+      fillColor: BG as any,
     },
     headStyles: {
       fillColor: TEAL,
       textColor: [255, 255, 255],
       fontStyle: "bold",
       halign: "center",
+      fontSize: 7.5,
     },
-    alternateRowStyles: { fillColor: YELLOW_LIGHT },
+    alternateRowStyles: { fillColor: BG_ALT as any },
     columnStyles: {
-      0: { cellWidth: 30 },
-      2: { cellWidth: 28, halign: "right" },
+      0: { cellWidth: 8, halign: "center" },
+      1: { cellWidth: 24 },
+      3: { cellWidth: 24, halign: "right" },
     },
     didDrawPage: (hookData) => {
       if (hookData.pageNumber > 1) {
-        doc.setFillColor(...YELLOW);
-        doc.rect(MX, 8, CW, H - 16, "F");
-        doc.setDrawColor(...BORDER);
-        doc.setLineWidth(0.4);
-        doc.rect(MX, 8, CW, H - 16, "S");
+        doc.setFillColor(...BG);
+        doc.rect(0, 0, W, H, "F");
+        doc.setDrawColor(...GOLD_BORDER);
+        doc.setLineWidth(0.8);
+        doc.rect(MX, MX, CW, H - 2 * MX, "S");
+        doc.setDrawColor(...GOLD);
+        doc.setLineWidth(0.3);
+        doc.rect(MX + 2, MX + 2, CW - 4, H - 2 * MX - 4, "S");
 
         doc.setFillColor(...TEAL);
-        doc.rect(MX, 8, CW, 10, "F");
+        doc.rect(MX + 3, MX + 4, CW - 6, 10, "F");
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
-        doc.text(`${m.full_name} — Universal Membership Card`, MX + 5, 14.5);
+        doc.text(`${m.full_name} — Universal Membership Card`, MX + 8, MX + 10.5);
       }
     },
   });
@@ -324,8 +328,8 @@ export async function downloadMembershipCard(data: MembershipCardData) {
   if (history.length === 0) {
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
-    doc.setTextColor(100, 100, 80);
-    doc.text("No plan history recorded yet.", MX + CW / 2, y + 8, { align: "center" });
+    doc.setTextColor(...MID);
+    doc.text("No plan history recorded yet.", W / 2, y + 8, { align: "center" });
   }
 
   // Footer on every page
@@ -333,11 +337,12 @@ export async function downloadMembershipCard(data: MembershipCardData) {
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
-    doc.setFontSize(6.5);
-    doc.setTextColor(80, 80, 60);
+    doc.setFontSize(6);
+    doc.setTextColor(...MID);
     doc.setFont("helvetica", "normal");
-    doc.text(`Generated ${generated} IST`, MX + 4, H - 4);
-    if (pages > 1) doc.text(`Page ${p} of ${pages}`, W - MX - 4, H - 4, { align: "right" });
+    doc.text(`Generated ${generated} IST`, MX + 6, H - MX + 1);
+    doc.text("All In One Wellness — Family Health Club", W / 2, H - MX + 1, { align: "center" });
+    if (pages > 1) doc.text(`Page ${p}/${pages}`, W - MX - 6, H - MX + 1, { align: "right" });
   }
 
   const safeName = m.full_name.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "-");
