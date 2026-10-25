@@ -28,6 +28,7 @@ import WhatsAppInbox from "./pages/WhatsAppInbox";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
 import WhatsAppTemplates from "./pages/WhatsAppTemplates";
 import WhatsAppBroadcast from "./pages/WhatsAppBroadcast";
+import WhatsAppBroadcastReport from "./pages/WhatsAppBroadcastReport";
 import WhatsAppTest from "./pages/WhatsAppTest";
 import { PortalLayout } from "./pages/portal/PortalLayout";
 import PortalHome from "./pages/portal/PortalHome";
@@ -107,6 +108,7 @@ const App = () => (
                 <Route path="/whatsapp/logs" element={<WhatsAppLogs />} />
                 <Route path="/whatsapp/templates" element={<WhatsAppTemplates />} />
                 <Route path="/whatsapp/broadcast" element={<WhatsAppBroadcast />} />
+                <Route path="/whatsapp/broadcast/:id" element={<WhatsAppBroadcastReport />} />
                 <Route path="/whatsapp-test" element={<WhatsAppTest />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
