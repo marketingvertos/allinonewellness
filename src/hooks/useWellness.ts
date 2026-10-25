@@ -505,6 +505,38 @@ export function usePaymentHistory(membershipId: string | undefined) {
   });
 }
 
+export function useAllMemberPayments(memberId: string | undefined) {
+  return useQuery({
+    queryKey: ["wellness-payments-all", memberId],
+    enabled: !!memberId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_payments")
+        .select("*")
+        .eq("member_id", memberId!)
+        .order("paid_at", { ascending: true });
+      if (error) throw error;
+      return data as unknown as WellnessPayment[];
+    },
+  });
+}
+
+export function useCoachInfo(referrerId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["coach-info", referrerId],
+    enabled: !!referrerId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wellness_members")
+        .select("full_name, mobile_number")
+        .eq("id", referrerId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? { name: data.full_name, mobile: data.mobile_number } : null;
+    },
+  });
+}
+
 export function useRenewMembership() {
   const qc = useQueryClient();
   const t = useToastedMutation();

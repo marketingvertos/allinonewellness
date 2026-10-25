@@ -13,7 +13,8 @@ import {
   useCreateMembership,
   useRecordPayment,
   usePaymentHistory,
-
+  useAllMemberPayments,
+  useCoachInfo,
 
   useServingLedger,
   useWeightHistory,
@@ -64,7 +65,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, formatDate, formatDateTime, todayIst , planGetsBonus } from "@/lib/formatters";
 
-import { Package, Pencil, Trash2 } from "lucide-react";
+import { Download, Package, Pencil, Trash2 } from "lucide-react";
+import { downloadMembershipCard } from "@/lib/membershipCardPdf";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -108,6 +110,8 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const { data: weights } = useWeightHistory(memberId);
   const { data: notes } = useMemberNotes(memberId);
   const { data: measurements } = useBodyMeasurements(memberId);
+  const { data: allPayments } = useAllMemberPayments(memberId);
+  const { data: coachInfo } = useCoachInfo(memberProp?.referred_by_member_id);
   const updateMember = useUpdateWellnessMember();
 
   const visitTimeline = useMemo(() => {
@@ -405,6 +409,24 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           </TabsContent>
 
           <TabsContent value="plan" className="space-y-4 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() =>
+                downloadMembershipCard({
+                  member,
+                  memberships: memberships ?? [],
+                  trials: trials ?? [],
+                  payments: allPayments ?? [],
+                  bodyMeasurement: measurements?.length ? measurements[measurements.length - 1] : null,
+                  plans: plans ?? [],
+                  coach: coachInfo ?? null,
+                })
+              }
+            >
+              <Download className="h-4 w-4" /> Download membership card
+            </Button>
             {member.referred_by_member_id && <FrontlineCountFlag memberId={member.id} />}
             {activeMembership ? (
               <div className="space-y-3 rounded-xl border p-4 shadow-sm">

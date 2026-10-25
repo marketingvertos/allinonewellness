@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMemberIdentity } from "@/hooks/useMemberIdentity";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements, useAddWeight, useSupervisorStatus, useMemberNetwork } from "@/hooks/useWellness";
+import { useMemberships, useMemberAttendance, useMyMemberProfile, useWeightHistory, useBodyMeasurements, useAddWeight, useSupervisorStatus, useMemberNetwork, useMemberTrials, useAllMemberPayments, useCoachInfo, useWellnessPlans } from "@/hooks/useWellness";
 import { useUpcomingEvent, useMyMonthlyAttendance, currentMonthIst, monthLabel } from "@/hooks/useEvents";
 import { useWlpMonthlyCheckins } from "@/hooks/useWellness";
 import { useAchievementDefinitions, useUnlockedAchievements } from "@/hooks/useAchievements";
@@ -19,7 +19,8 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { formatDate, todayIst } from "@/lib/formatters";
-import { ChevronRight, CreditCard, QrCode, Scale } from "lucide-react";
+import { ChevronRight, CreditCard, Download, QrCode, Scale } from "lucide-react";
+import { downloadMembershipCard } from "@/lib/membershipCardPdf";
 import { PayOnlineDialog } from "@/components/wellness/PayOnlineDialog";
 import { MasterTitleCard } from "@/components/wellness/NetworkPanel";
 import { PromotionCards } from "@/components/portal/PromotionCards";
@@ -36,6 +37,10 @@ export default function PortalHome() {
   const { data: weights } = useWeightHistory(identity?.memberId ?? undefined);
   const { data: evaluations } = useBodyMeasurements(identity?.memberId ?? undefined);
   const latestEvaluation = evaluations?.length ? evaluations[evaluations.length - 1] : null;
+  const { data: portalTrials } = useMemberTrials(identity?.memberId ?? undefined);
+  const { data: portalPayments } = useAllMemberPayments(identity?.memberId ?? undefined);
+  const { data: portalPlans } = useWellnessPlans();
+  const { data: coachInfo } = useCoachInfo(profile?.referred_by_member_id);
   const addWeight = useAddWeight();
   const { data: supervisorStatus } = useSupervisorStatus(identity?.memberId ?? undefined);
   const { data: myNetwork } = useMemberNetwork(identity?.memberId ?? undefined);
@@ -159,6 +164,26 @@ export default function PortalHome() {
               <Button variant="outline" className="w-full" onClick={() => setPayOpen(true)}>
                 <CreditCard className="mr-2 h-4 w-4" /> Renew online
               </Button>
+              {profile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full gap-1.5 text-muted-foreground"
+                  onClick={() =>
+                    downloadMembershipCard({
+                      member: profile,
+                      memberships: memberships ?? [],
+                      trials: portalTrials ?? [],
+                      payments: portalPayments ?? [],
+                      bodyMeasurement: latestEvaluation,
+                      plans: portalPlans ?? [],
+                      coach: coachInfo ?? null,
+                    })
+                  }
+                >
+                  <Download className="h-4 w-4" /> Download membership card
+                </Button>
+              )}
             </>
           ) : (
             <>
