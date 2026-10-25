@@ -2594,11 +2594,16 @@ export type Database = {
         Row: {
           broadcast_id: string
           created_at: string
+          delivered_at: string | null
           error: string | null
+          failed_reason_code: string | null
           full_name: string | null
           id: string
           member_id: string | null
           phone: string | null
+          provider_message_id: string | null
+          read_at: string | null
+          replied_at: string | null
           sent_at: string | null
           status: string
           whatsapp_message_id: string | null
@@ -2606,11 +2611,16 @@ export type Database = {
         Insert: {
           broadcast_id: string
           created_at?: string
+          delivered_at?: string | null
           error?: string | null
+          failed_reason_code?: string | null
           full_name?: string | null
           id?: string
           member_id?: string | null
           phone?: string | null
+          provider_message_id?: string | null
+          read_at?: string | null
+          replied_at?: string | null
           sent_at?: string | null
           status?: string
           whatsapp_message_id?: string | null
@@ -2618,11 +2628,16 @@ export type Database = {
         Update: {
           broadcast_id?: string
           created_at?: string
+          delivered_at?: string | null
           error?: string | null
+          failed_reason_code?: string | null
           full_name?: string | null
           id?: string
           member_id?: string | null
           phone?: string | null
+          provider_message_id?: string | null
+          read_at?: string | null
+          replied_at?: string | null
           sent_at?: string | null
           status?: string
           whatsapp_message_id?: string | null
@@ -2646,15 +2661,22 @@ export type Database = {
       }
       whatsapp_broadcasts: {
         Row: {
+          completed_at: string | null
           created_at: string
           created_by: string | null
+          delivered_count: number
           failed_count: number
           filters: Json
           header_media_type: string | null
           header_media_url: string | null
           id: string
+          parent_broadcast_id: string | null
+          read_count: number
+          replied_count: number
+          scheduled_at: string | null
           sent_count: number
           skipped_count: number
+          started_at: string | null
           status: string
           template_language: string
           template_name: string
@@ -2663,15 +2685,22 @@ export type Database = {
           variable_mapping: Json
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          delivered_count?: number
           failed_count?: number
           filters?: Json
           header_media_type?: string | null
           header_media_url?: string | null
           id?: string
+          parent_broadcast_id?: string | null
+          read_count?: number
+          replied_count?: number
+          scheduled_at?: string | null
           sent_count?: number
           skipped_count?: number
+          started_at?: string | null
           status?: string
           template_language: string
           template_name: string
@@ -2680,15 +2709,22 @@ export type Database = {
           variable_mapping?: Json
         }
         Update: {
+          completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          delivered_count?: number
           failed_count?: number
           filters?: Json
           header_media_type?: string | null
           header_media_url?: string | null
           id?: string
+          parent_broadcast_id?: string | null
+          read_count?: number
+          replied_count?: number
+          scheduled_at?: string | null
           sent_count?: number
           skipped_count?: number
+          started_at?: string | null
           status?: string
           template_language?: string
           template_name?: string
