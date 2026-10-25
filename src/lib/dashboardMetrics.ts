@@ -117,6 +117,9 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
   const { today, mode = "all" } = input;
   const from = input.from ?? today;
   const to = input.to ?? today;
+  // Past trials have since completed or converted; only today's view requires still-active.
+  const historic = from !== today || to !== today;
+  const trialOk = (status: string) => historic ? status !== "cancelled" : status === "active";
   const inRange = (d: string | null | undefined) => !!d && d >= from && d <= to;
   const dayBefore = (d: string) => new Date(Date.parse(d + "T00:00:00Z") - 86_400_000).toISOString().slice(0, 10);
   const members = new Map(input.members
@@ -183,7 +186,7 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
 
   // Trials started today: three-day paid, three-day free, and one-day free.
   for (const trial of input.trials) {
-    if (trial.status !== "active" || !inRange(trial.start_date) || !trial.end_date ||
+    if (!trialOk(trial.status) || !inRange(trial.start_date) || !trial.end_date ||
         !members.has(trial.member_id)) continue;
     const plan = trial.plan_id ? plans.get(trial.plan_id) : undefined;
     // A missing referenced plan is unknown, rather than silently counted as free.
@@ -202,7 +205,7 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
   for (const attendance of input.attendance) {
     if (!inRange(attendance.visit_date) || !attendance.trial_id) continue;
     const trial = trialsById.get(attendance.trial_id);
-    if (!trial || trial.duration_days !== 3 || trial.start_date !== dayBefore(attendance.visit_date) || trial.status !== "active") continue;
+    if (!trial || trial.duration_days !== 3 || trial.start_date !== dayBefore(attendance.visit_date) || !trialOk(trial.status)) continue;
     const plan = trial.plan_id ? plans.get(trial.plan_id) : undefined;
     if (trial.plan_id && (!plan || Number(plan.price) > 0)) continue;
     if (!members.has(trial.member_id)) continue;
