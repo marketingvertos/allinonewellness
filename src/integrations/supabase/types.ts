@@ -603,6 +603,9 @@ export type Database = {
           id: string
           joined_at: string
           member_id: string
+          removed_at: string | null
+          removed_by: string | null
+          removed_reason: string | null
           source: string
         }
         Insert: {
@@ -610,6 +613,9 @@ export type Database = {
           id?: string
           joined_at?: string
           member_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
           source?: string
         }
         Update: {
@@ -617,6 +623,9 @@ export type Database = {
           id?: string
           joined_at?: string
           member_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
           source?: string
         }
         Relationships: [
@@ -646,6 +655,8 @@ export type Database = {
           participant_id: string
           recorded_by: string | null
           reference: string | null
+          void_reason: string | null
+          voided_at: string | null
         }
         Insert: {
           amount: number
@@ -656,6 +667,8 @@ export type Database = {
           participant_id: string
           recorded_by?: string | null
           reference?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
         }
         Update: {
           amount?: number
@@ -666,6 +679,8 @@ export type Database = {
           participant_id?: string
           recorded_by?: string | null
           reference?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
         }
         Relationships: [
           {
@@ -3284,9 +3299,17 @@ export type Database = {
         }
         Returns: string
       }
+      miw_fulfil_payment: {
+        Args: { p_order_id: string; p_payment_id: string }
+        Returns: Json
+      }
       miw_register_member: {
         Args: { p_challenge_id: string; p_member_id: string; p_payments?: Json }
         Returns: Json
+      }
+      miw_remove_participant: {
+        Args: { p_participant_id: string; p_reason?: string }
+        Returns: undefined
       }
       miw_report: { Args: { p_challenge_id: string }; Returns: Json }
       monthly_coach_title_check: { Args: never; Returns: undefined }
