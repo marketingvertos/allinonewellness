@@ -5,7 +5,30 @@ import type { DashboardCardKey } from "@/lib/dashboardMetrics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { todayIst } from "@/lib/formatters";
+
+/** Period options: today plus the last 12 calendar months (India time). */
+function periodOptions() {
+  const today = todayIst();
+  const [y, m] = today.split("-").map(Number);
+  const opts: { value: string; label: string; from: string; to: string }[] = [
+    { value: "today", label: "Today", from: today, to: today },
+  ];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(Date.UTC(y, m - 1 - i, 1));
+    const from = d.toISOString().slice(0, 10);
+    const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
+    const name = d.toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" });
+    opts.push({
+      value: from.slice(0, 7),
+      label: i === 0 ? `This month (${name})` : i === 1 ? `Last month (${name})` : name,
+      from, to: i === 0 ? today : last,
+    });
+  }
+  return opts;
+}
 import { ActivityMembersSheet } from "@/components/wellness/ActivityMembersSheet";
 
 const cards: { key: DashboardCardKey; title: string; description: string; icon: typeof UserPlus }[] = [
@@ -22,16 +45,31 @@ const cards: { key: DashboardCardKey; title: string; description: string; icon: 
 ];
 
 export function DashboardActivityCards({ mode }: { mode: MemberModeFilter }) {
-  const { data, isPending, isError, refetch, isFetching } = useDashboardMetrics(mode);
+  const options = useMemo(periodOptions, []);
+  const [period, setPeriod] = useState("today");
+  const selected = options.find((o) => o.value === period) ?? options[0];
+  const isToday = period === "today";
+  const { data, isPending, isError, refetch, isFetching } = useDashboardMetrics(mode, { from: selected.from, to: selected.to });
+  const periodText = isToday ? "today" : `in ${selected.label.replace(/^(This|Last) month \((.*)\)$/, "$2")}`;
   const [openKey, setOpenKey] = useState<DashboardCardKey | null>(null);
   const openCard = cards.find((c) => c.key === openKey);
   return (
     <section className="space-y-3" aria-labelledby="dashboard-activity-heading">
-      <div>
-        <h2 id="dashboard-activity-heading" className="font-display text-base font-semibold">Today&rsquo;s club activity</h2>
-        <p className="text-xs text-muted-foreground">
-          Guests, memberships, renewals and trials — India time. Tap any card to see who it counts.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id="dashboard-activity-heading" className="font-display text-base font-semibold">
+            {isToday ? "Today’s club activity" : `Club activity — ${selected.label}`}
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Guests, memberships, renewals and trials — India time. Tap any card to see who it counts.
+          </p>
+        </div>
+        <Select value={period} onValueChange={setPeriod}>
+          <SelectTrigger className="w-56" aria-label="Activity period"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
       {isError ? (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 p-4">
@@ -62,7 +100,7 @@ export function DashboardActivityCards({ mode }: { mode: MemberModeFilter }) {
                 ) : (
                   <p className="font-display text-3xl font-bold tabular-nums">{data?.[card.key] ?? 0}</p>
                 )}
-                <p className="mt-2 text-xs text-muted-foreground">{card.description}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{isToday ? card.description : card.description.replace(/today/g, periodText)}</p>
               </CardContent>
             </Card>
             </button>
@@ -74,7 +112,8 @@ export function DashboardActivityCards({ mode }: { mode: MemberModeFilter }) {
           open
           onOpenChange={(o) => !o && setOpenKey(null)}
           title={openCard.title}
-          description={openCard.description}
+          description={isToday ? openCard.description : openCard.description.replace(/today/g, periodText)}
+          exportName={`${openCard.title} ${selected.label}`}
           items={data.lists[openCard.key] ?? []}
           memberById={data.memberById}
           planById={data.planById}
