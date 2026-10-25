@@ -21,6 +21,9 @@ import { Textarea } from "@/components/ui/textarea";
 import * as XLSX from "xlsx";
 import { useAllWhatsAppTemplates } from "@/hooks/useWhatsApp";
 import { fillTemplate } from "@/components/whatsapp/TemplatePicker";
+import { Link } from "react-router-dom";
+import { callBroadcast } from "@/lib/broadcastApi";
+import { funnel } from "@/lib/broadcastStatus";
 const friendlyError = (e?: string | null) => !e ? "" : /ecosystem|131049/i.test(e) ? "Meta marketing limit for this person, Retry works after 24 hours" : /132012|IMAGE/i.test(e) ? "Picture missing (fixed, can retry)" : e;
 import familyPoster from "@/assets/family-day-4-oct-2026.jpg.asset.json";
 
@@ -54,17 +57,6 @@ function varValue(m: Mapping, name: string) {
   if (m.source === "full_name") return n || "Member";
   if (m.source === "first_name") return n.split(/\s+/)[0] || "Member";
   return m.value || "";
-}
-
-async function callBroadcast(body: Record<string, unknown>) {
-  const { data, error } = await supabase.functions.invoke("whatsapp-broadcast", { body });
-  if (error) {
-    let msg = error.message;
-    try { msg = (await (error as { context?: Response }).context?.json())?.error || msg; } catch { /* ignore */ }
-    throw new Error(msg);
-  }
-  if (data?.success === false) throw new Error(data.error || "Request failed");
-  return data;
 }
 
 export default function WhatsAppBroadcast() {
@@ -158,6 +150,9 @@ export default function WhatsAppBroadcast() {
   });
 
   const [confirm, setConfirm] = useState(false);
+  const [scheduleAt, setScheduleAt] = useState("");
+  const [hSearch, setHSearch] = useState("");
+  const [hDays, setHDays] = useState("30");
   const [activeId, setActiveId] = useState<string | null>(null);
   const create = useMutation({
     mutationFn: () => callBroadcast({
@@ -165,20 +160,23 @@ export default function WhatsAppBroadcast() {
       variable_mapping: mapping,
       ...(audience === "list" ? { list_id: listId, excluded_ids: [...excluded] } : { member_ids: selected.map((m) => m.id) }),
       filters: { audience, mode, tag, list_id: audience === "list" ? listId : null, excluded: excluded.size },
+      scheduled_at: scheduleAt ? new Date(scheduleAt).toISOString() : null,
     }),
-    onSuccess: (d) => { setActiveId(d.id); toast.success("Broadcast started"); qc.invalidateQueries({ queryKey: ["broadcasts"] }); },
+    onSuccess: (d) => { setActiveId(d.id); toast.success(d.scheduled ? "Broadcast scheduled" : "Broadcast started"); setScheduleAt(""); qc.invalidateQueries({ queryKey: ["broadcasts"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const { data: history = [] } = useQuery({
     queryKey: ["broadcasts"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("whatsapp_broadcasts").select("*").order("created_at", { ascending: false }).limit(20);
+      const { data, error } = await supabase.from("whatsapp_broadcasts").select("*").order("created_at", { ascending: false }).limit(200);
       if (error) throw error;
       return data;
     },
     refetchInterval: (q) => ((q.state.data as { status: string }[] | undefined)?.some((b) => b.status === "sending") ? 3000 : false),
   });
+  const shown = history.filter((b) => (!hSearch || b.template_name.toLowerCase().includes(hSearch.toLowerCase())) &&
+    (hDays === "all" || new Date(b.created_at).getTime() > Date.now() - Number(hDays) * 864e5));
   const active = history.find((b) => b.id === activeId) || history.find((b) => b.status === "sending");
 
   const retry = useMutation({
@@ -396,39 +394,56 @@ export default function WhatsAppBroadcast() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-lg">History</CardTitle></CardHeader>
+        <CardHeader className="space-y-3">
+          <CardTitle className="text-lg">Broadcast reports</CardTitle>
+          <div className="flex flex-wrap gap-2">
+            <Input className="max-w-xs" placeholder="Search template" value={hSearch} onChange={(e) => setHSearch(e.target.value)} />
+            <Select value={hDays} onValueChange={setHDays}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">Last 7 days</SelectItem>
+                <SelectItem value="30">Last 30 days</SelectItem>
+                <SelectItem value="90">Last 90 days</SelectItem>
+                <SelectItem value="all">All time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {(() => {
+            const t = shown.reduce((a, b) => ({ total_count: a.total_count + b.total_count, sent_count: a.sent_count + b.sent_count, failed_count: a.failed_count + b.failed_count, skipped_count: a.skipped_count + b.skipped_count, delivered_count: a.delivered_count + (b.delivered_count || 0), read_count: a.read_count + (b.read_count || 0), replied_count: a.replied_count + (b.replied_count || 0) }), { total_count: 0, sent_count: 0, failed_count: 0, skipped_count: 0, delivered_count: 0, read_count: 0, replied_count: 0 });
+            const f = funnel(t);
+            return (
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+                {[["Broadcasts", shown.length], ["Messages sent", f.sent], ["Delivered", `${f.deliveryRate}%`], ["Read", `${f.readRate}%`], ["Replies", f.replied]].map(([l, v]) => (
+                  <div key={l as string} className="rounded-md border bg-muted/30 p-3"><div className="text-xs text-muted-foreground">{l}</div><div className="text-xl font-semibold tabular-nums">{v}</div></div>
+                ))}
+              </div>
+            );
+          })()}
+        </CardHeader>
         <CardContent className="space-y-2">
-          {!history.length && <p className="text-sm text-muted-foreground">No broadcasts yet.</p>}
-          {history.map((b) => (
-            <div key={b.id} className="rounded-md border p-3 text-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium">{b.template_name}</span>
-                <Badge variant={b.status === "completed" ? "secondary" : "default"}>{b.status}</Badge>
-                <span className="text-xs text-muted-foreground">{new Date(b.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</span>
-                <span className="ml-auto text-xs">Total {b.total_count} · Sent {b.sent_count} · Failed {b.failed_count} · Skipped {b.skipped_count}</span>
-              </div>
-              <div className="mt-2 flex gap-2">
-                {(b.failed_count > 0 || b.skipped_count > 0) && (
-                  <Button size="sm" variant="ghost" onClick={() => setOpenFailed(openFailed === b.id ? null : b.id)}>
-                    {openFailed === b.id ? "Hide" : "Show"} failed / skipped
-                  </Button>
-                )}
-                {b.failed_count > 0 && <Button size="sm" variant="outline" onClick={() => retry.mutate(b.id)}>Retry failed</Button>}
-                {b.status === "sending" && <Button size="sm" variant="outline" onClick={() => resume.mutate(b.id)}>Resume</Button>}
-              </div>
-              {openFailed === b.id && (
-                <div className="mt-2 max-h-60 overflow-auto rounded border">
-                  {failedRows.map((r, i) => (
-                    <div key={i} className="flex gap-2 border-b px-2 py-1 text-xs">
-                      <span className="w-40 truncate">{r.full_name}</span>
-                      <span className="w-28">{r.phone}</span>
-                      <span className="flex-1 text-destructive">{r.status}: {friendlyError(r.error)}</span>
-                    </div>
-                  ))}
+          {!shown.length && <p className="text-sm text-muted-foreground">No broadcasts in this period.</p>}
+          {shown.map((b) => {
+            const f = funnel(b);
+            const w = (n: number) => `${f.total ? (n / f.total) * 100 : 0}%`;
+            return (
+              <Link key={b.id} to={`/whatsapp/broadcast/${b.id}`} className="block rounded-md border p-3 text-sm transition-colors hover:bg-muted/40">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium">{b.template_name}</span>
+                  <Badge variant={b.status === "completed" ? "secondary" : "default"} className={b.status === "sending" ? "animate-pulse" : ""}>{b.status}</Badge>
+                  {b.parent_broadcast_id && <Badge variant="outline">follow-up</Badge>}
+                  <span className="text-xs text-muted-foreground">{new Date(b.scheduled_at || b.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                  <span className="ml-auto text-xs tabular-nums">{f.total} people · {f.sent} sent · {f.delivered} delivered ({f.deliveryRate}%) · {f.read} read ({f.readRate}%) · {f.replied} replied · {f.failed} failed</span>
                 </div>
-              )}
-            </div>
-          ))}
+                <div className="mt-2 flex h-2 overflow-hidden rounded bg-muted">
+                  <div className="bg-primary" style={{ width: w(f.read) }} />
+                  <div className="bg-primary/60" style={{ width: w(f.delivered - f.read) }} />
+                  <div className="bg-primary/25" style={{ width: w(f.sent - f.delivered) }} />
+                  <div className="bg-destructive" style={{ width: w(f.failed) }} />
+                </div>
+              </Link>
+            );
+          })}
+          <p className="pt-1 text-xs text-muted-foreground">Bar: dark = read, mid = delivered, light = sent only, red = failed. Open a broadcast for the full recipient report.</p>
         </CardContent>
       </Card>
 
@@ -461,11 +476,19 @@ export default function WhatsAppBroadcast() {
             <AlertDialogTitle>Send to {validCount} members?</AlertDialogTitle>
             <AlertDialogDescription>
               "{tpl?.name}" {isFamilyPoster ? "with the Family Day picture " : ""}will go out from the centre's WhatsApp number. This cannot be undone.
+              {tpl?.category ? ` Category: ${tpl.category} (Meta charges ${tpl.category === "MARKETING" ? "marketing" : tpl.category === "UTILITY" ? "utility" : "per"} rates).` : ""}
             </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1">
+            <Label className="text-xs">Send later (optional, India time)</Label>
+            <Input type="datetime-local" value={scheduleAt} min={new Date(Date.now() + 5 * 60000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)} onChange={(e) => setScheduleAt(e.target.value)} />
+            <p className="text-xs text-muted-foreground">Scheduled broadcasts start within about 10 minutes of the chosen time.</p>
+          </div>
+          <AlertDialogHeader className="hidden">
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => create.mutate()}>Send now</AlertDialogAction>
+            <AlertDialogAction onClick={() => create.mutate()}>{scheduleAt ? "Schedule" : "Send now"}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
