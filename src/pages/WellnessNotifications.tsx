@@ -58,6 +58,11 @@ const TRIGGERS = [
   "milestone_achieved",
   "birthday",
   "anniversary",
+  "milestone_achieved_gain",
+  "yellow_card",
+  "wlp_checkin",
+  "miw_registered",
+  "pink_card_credit",
 ];
 
 /** Member details the automatic message can insert into a template variable. */
@@ -88,6 +93,20 @@ const MEMBER_FIELDS = [
   { value: "issue_reason", label: "Reason for issue" },
   { value: "daily_change", label: "Weight change since last visit" },
   { value: "last_weight", label: "Previous weight" },
+  { value: "trial_plan_name", label: "Trial plan name" },
+  { value: "coach_name", label: "Coach (referrer) name" },
+  { value: "covered_dates", label: "Packed serving dates" },
+  { value: "weight_change_abs", label: "Total kg lost/gained" },
+  { value: "start_date", label: "Plan start date" },
+  { value: "session_date", label: "WLP session date" },
+  { value: "wlp_remaining", label: "WLP servings left" },
+  { value: "challenge_name", label: "MIW challenge name" },
+  { value: "fee", label: "MIW fee" },
+  { value: "challenge_start", label: "MIW start date" },
+  { value: "challenge_end", label: "MIW end date" },
+  { value: "referred_name", label: "Referred member" },
+  { value: "credits", label: "Pink Card credits earned" },
+  { value: "pink_balance", label: "Pink Card balance" },
 ];
 
 function renderMessage(template: string, name: string) {
@@ -282,9 +301,20 @@ export default function WellnessNotifications() {
                 <Card key={t.id} className={t.active ? "" : "opacity-60"}>
                   <CardHeader className="flex flex-row items-start justify-between space-y-0">
                     <CardTitle className="text-base capitalize">{t.trigger_key.replace(/_/g, " ")}</CardTitle>
-                    <Badge variant="outline" className="capitalize">
-                      {t.channel}
-                    </Badge>
+                    <div className="flex gap-1">
+                      {(t as { next_status?: string | null }).next_status && (
+                        <Badge
+                          variant={(t as { next_status?: string }).next_status === "APPROVED" ? "default" : "secondary"}
+                          className="capitalize"
+                        >
+                          {String((t as { next_status?: string }).next_status).toLowerCase()}
+                          {(t as { next_template_name?: string | null }).next_template_name ? " · new version" : ""}
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="capitalize">
+                        {t.channel}
+                      </Badge>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-muted-foreground">
                     <p>{t.message_template}</p>

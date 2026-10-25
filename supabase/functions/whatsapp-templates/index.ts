@@ -141,8 +141,10 @@ Deno.serve(async (req) => {
         return json({ success: false, error: "The message body is required" }, 200);
       }
 
-      // Optional image header: upload the sample picture to Meta for a header_handle.
-      const headerImageUrl = String(payload.header_image_url || "").trim();
+      // Optional image/document header: upload the sample file to Meta for a header_handle.
+      const headerDocUrl = String(payload.header_document_url || "").trim();
+      const headerFormat = headerDocUrl ? "DOCUMENT" : "IMAGE";
+      const headerImageUrl = headerDocUrl || String(payload.header_image_url || "").trim();
       if (headerImageUrl) {
         if (!/^https:\/\//i.test(headerImageUrl)) {
           return json({ success: false, error: "Header image must be an https link" }, 200);
@@ -150,7 +152,7 @@ Deno.serve(async (req) => {
         const img = await fetch(headerImageUrl);
         if (!img.ok) return json({ success: false, error: `Could not read header image (${img.status})` }, 200);
         const bytes = new Uint8Array(await img.arrayBuffer());
-        const fileType = img.headers.get("content-type")?.split(";")[0] || "image/jpeg";
+        const fileType = headerDocUrl ? "application/pdf" : (img.headers.get("content-type")?.split(";")[0] || "image/jpeg");
         const appRes = await fetch(`${cfg.apiUrl}/app`, { headers: authHeaders });
         const appRaw = await appRes.text();
         const appId = appRes.ok ? JSON.parse(appRaw)?.id : null;
@@ -175,7 +177,7 @@ Deno.serve(async (req) => {
         );
         components.length = 0;
         components.push(
-          { type: "HEADER", format: "IMAGE", example: { header_handle: [handle] } },
+          { type: "HEADER", format: headerFormat, example: { header_handle: [handle] } },
           ...withoutHeader,
         );
       }

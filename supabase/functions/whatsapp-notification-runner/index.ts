@@ -11,6 +11,57 @@ import {
   toE164,
 } from "../_shared/whatsapp.ts";
 import { sendWhatsApp } from "../_shared/whatsappService.ts";
+import { buildYellowCard } from "./yellowCard.ts";
+
+// deno-lint-ignore no-explicit-any
+async function syncTemplateStatuses(supabase: any, cfg: any): Promise<Map<string, string>> {
+  const status = new Map<string, string>();
+  try {
+    if (cfg.provider !== "meta" || !cfg.apiKey) return status;
+    const { data: wabaRow } = await supabase.from("integration_credentials")
+      .select("value").eq("key", "whatsapp_waba_id").maybeSingle();
+    const wabaId = (wabaRow?.value || Deno.env.get("META_WABA_ID") || "").trim();
+    if (!wabaId) return status;
+    const res = await fetch(`${cfg.apiUrl}/${wabaId}/message_templates?fields=name,status&limit=500`, {
+      headers: { Authorization: `Bearer ${cfg.apiKey}` },
+    });
+    if (!res.ok) return status;
+    const body = await res.json();
+    for (const t of body?.data || []) {
+      const cur = status.get(t.name);
+      if (cur !== "APPROVED") status.set(t.name, String(t.status).toUpperCase());
+    }
+    const { data: rows } = await supabase.from("wellness_notification_templates")
+      .select("id, template_name, next_template_name, next_variables, next_status")
+      .eq("channel", "whatsapp");
+    for (const r of rows || []) {
+      if (r.next_template_name) {
+        const st = status.get(r.next_template_name) || "PENDING";
+        if (st === "APPROVED") {
+          await supabase.from("wellness_notification_templates").update({
+            template_name: r.next_template_name,
+            variables: r.next_variables || [],
+            next_template_name: null,
+            next_variables: null,
+            next_status: "APPROVED",
+          }).eq("id", r.id);
+          status.set(r.next_template_name, "APPROVED");
+        } else if (st !== r.next_status) {
+          await supabase.from("wellness_notification_templates").update({ next_status: st }).eq("id", r.id);
+        }
+      } else if (r.template_name) {
+        const st = status.get(r.template_name) || "UNKNOWN";
+        if (st !== r.next_status) {
+          await supabase.from("wellness_notification_templates").update({ next_status: st }).eq("id", r.id);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("template status sync failed", e);
+  }
+  return status;
+}
+
 
 const MAX_ATTEMPTS = 3;
 const BATCH_SIZE = 25;
@@ -94,20 +145,19 @@ Deno.serve(async (req) => {
       return json({ skipped: "automation_disabled", sent: 0, failed: 0 });
     }
 
+    // Sync Meta approval status; promote approved replacement templates.
+    const metaStatus = await syncTemplateStatuses(supabase, cfg);
+
     const evening = inEveningWindow();
     const { data: rawQueue, error: queueError } = await supabase
       .from("wellness_notification_log")
-      .select("id, member_id, trigger_key, channel, message, attempts")
+      .select("id, member_id, trigger_key, channel, message, attempts, payload, created_at")
       .eq("status", "queued")
       .eq("channel", "whatsapp")
       .lt("attempts", MAX_ATTEMPTS)
       .order("created_at", { ascending: true })
       .limit(500);
     if (queueError) throw queueError;
-    const queue = (rawQueue || [])
-      .filter((q) => evening || !isEveningTrigger(q.trigger_key))
-      .slice(0, evening ? EVENING_BATCH_SIZE : BATCH_SIZE);
-    if (!queue.length) return json({ sent: 0, failed: 0, processed: 0 });
 
     const { data: templateRows } = await supabase
       .from("wellness_notification_templates")
@@ -118,21 +168,46 @@ Deno.serve(async (req) => {
       .eq("active", true);
     const templates = (templateRows || []) as TemplateRow[];
 
+    // Hold messages whose template Meta hasn't approved; drop them after 24 hours.
+    const ready: typeof rawQueue = [];
+    for (const q of rawQueue || []) {
+      const t = pickTemplate(templates, q.trigger_key);
+      const st = t?.template_name && !q.message ? metaStatus.get(t.template_name) : "APPROVED";
+      if (!metaStatus.size || st === "APPROVED") { ready.push(q); continue; }
+      if (Date.now() - new Date(q.created_at).getTime() > 86400000) {
+        await supabase.from("wellness_notification_log").update({
+          status: "skipped",
+          error_message: `Template "${t?.template_name}" was not approved within 24 hours`,
+        }).eq("id", q.id);
+      }
+    }
+    const queue = ready
+      .filter((q) => evening || !isEveningTrigger(q.trigger_key))
+      .slice(0, evening ? EVENING_BATCH_SIZE : BATCH_SIZE);
+    if (!queue.length) return json({ sent: 0, failed: 0, processed: 0 });
+
     const memberIds = [...new Set(queue.map((q) => q.member_id))];
     const { data: memberRows } = await supabase
       .from("wellness_members")
       .select(
-        "id, full_name, mobile_number, initial_weight, current_weight, joining_date, activation_code",
+        "id, full_name, mobile_number, initial_weight, current_weight, joining_date, activation_code, referred_by_member_id",
       )
       .in("id", memberIds);
     const members = new Map(
       (memberRows || []).map((m) => [m.id, m]),
     );
+    const coachIds = [...new Set((memberRows || []).map((m) => m.referred_by_member_id).filter(Boolean))];
+    const coaches = new Map<string, string>();
+    if (coachIds.length) {
+      const { data: coachRows } = await supabase
+        .from("wellness_members").select("id, full_name").in("id", coachIds as string[]);
+      for (const c of coachRows || []) coaches.set(c.id, c.full_name);
+    }
 
     const { data: membershipRows } = await supabase
       .from("wellness_memberships")
       .select(
-        "member_id, membership_code, end_date, remaining_servings, total_servings, used_servings, price_paid, servings_exhausted_on, status, wellness_plans(name)",
+        "member_id, id, start_date, membership_code, end_date, remaining_servings, total_servings, used_servings, price_paid, servings_exhausted_on, status, wellness_plans(name)",
       )
       .in("member_id", memberIds)
       .in("status", ["active", "expiring_soon"]);
@@ -170,10 +245,10 @@ Deno.serve(async (req) => {
     // active trials
     const { data: trialRows } = await supabase
       .from("wellness_trials")
-      .select("member_id, end_date, status")
+      .select("member_id, end_date, status, wellness_plans(name)")
       .in("member_id", memberIds)
       .eq("status", "active");
-    const trials = new Map<string, { end_date: string | null }>();
+    const trials = new Map<string, { end_date: string | null; wellness_plans?: { name?: string } | null }>();
     for (const t of trialRows || []) {
       if (!trials.has(t.member_id)) trials.set(t.member_id, t);
     }
@@ -209,7 +284,7 @@ Deno.serve(async (req) => {
     // most recent packed-and-issued servings
     const { data: issuedRows } = await supabase
       .from("serving_transactions")
-      .select("member_id, change, note, created_at")
+      .select("member_id, change, note, created_at, attendance_id")
       .in("member_id", memberIds)
       .eq("txn_type", "pack_and_issue")
       .order("created_at", { ascending: false })
@@ -369,7 +444,17 @@ Deno.serve(async (req) => {
         renewal_window_days: "10",
         last_plan_name: expiredInfo.get(item.member_id)?.plan || planName,
         expired_on: expiredInfo.get(item.member_id)?.on || "",
+        trial_plan_name: trial?.wellness_plans?.name || "Trial",
+        coach_name: (member.referred_by_member_id && coaches.get(member.referred_by_member_id)) || "Shri Chatap",
+        covered_dates: issuedPack?.note || fmtDate(new Date().toISOString()),
+        weight_change_abs: latestWeight !== null && startWeight !== null
+          ? Math.abs(latestWeight - startWeight).toFixed(1) : "",
+        start_date: fmtDate((membership as { start_date?: string } | undefined)?.start_date),
+        wlp_remaining: String(membership?.remaining_servings ?? ""),
       };
+      for (const [k, v] of Object.entries((item.payload || {}) as Record<string, unknown>)) {
+        if (v !== null && v !== undefined && String(v).trim()) vars[k] = String(v);
+      }
 
 
       const text = item.message?.trim() ||
@@ -386,8 +471,30 @@ Deno.serve(async (req) => {
         return v === "daily_change" || v === "weight_change" ? "N/A" : "—";
       });
 
+      let mediaUrl: string | null = null;
+      if (item.trigger_key === "yellow_card") {
+        try {
+          const pdf = buildYellowCard({
+            name: member.full_name || "", mobile: member.mobile_number || "",
+            plan: vars.plan_name, code: vars.code, startDate: vars.start_date,
+            totalServings: vars.total_servings, remaining: vars.remaining,
+            price: vars.price, paymentMode: vars.payment_mode,
+          });
+          const path = `yellow-cards/${member.id}/${Date.now()}.pdf`;
+          const up = await supabase.storage.from("promotion-media")
+            .upload(path, pdf, { contentType: "application/pdf", upsert: true });
+          if (up.error) throw up.error;
+          const signed = await supabase.storage.from("promotion-media").createSignedUrl(path, 60 * 60 * 24 * 7);
+          mediaUrl = signed.data?.signedUrl || null;
+        } catch (e) {
+          await markFailed(`Could not create Yellow Card: ${e instanceof Error ? e.message : e}`);
+          continue;
+        }
+      }
+
       const result = await sendWhatsApp(supabase, cfg, {
         to,
+        ...(mediaUrl ? { mediaUrl, mediaType: "document" as const, mediaFileName: "Yellow-Card.pdf" } : {}),
         templateName: tpl?.template_name || null,
         templateLanguage: tpl?.template_language || null,
         vars: templateVars,
@@ -414,6 +521,11 @@ Deno.serve(async (req) => {
             whatsapp_message_id: result.messageId,
           })
           .eq("id", item.id);
+        if (item.trigger_key === "membership_activated" || item.trigger_key === "membership_renewed") {
+          await supabase.rpc("queue_member_notification_payload", {
+            p_member_id: member.id, p_trigger: "yellow_card", p_dedupe: "1 hour", p_payload: {},
+          });
+        }
       } else if (result.accountBlocked) {
         // Account-level block at Meta: nothing in the queue can go out. Keep the
         // item queued without burning an attempt and stop the batch.
