@@ -519,6 +519,13 @@
       "when": 1792590164013,
       "tag": "0073_wlp_trial_checkins",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1792923235753,
+      "tag": "0074_whatsapp_template_upgrades",
+      "breakpoints": true
     }
   ]
 }

@@ -2066,6 +2066,7 @@ export type Database = {
           last_attempt_at: string | null
           member_id: string
           message: string | null
+          payload: Json
           sent_at: string | null
           status: string
           trigger_key: string
@@ -2081,6 +2082,7 @@ export type Database = {
           last_attempt_at?: string | null
           member_id: string
           message?: string | null
+          payload?: Json
           sent_at?: string | null
           status?: string
           trigger_key: string
@@ -2096,6 +2098,7 @@ export type Database = {
           last_attempt_at?: string | null
           member_id?: string
           message?: string | null
+          payload?: Json
           sent_at?: string | null
           status?: string
           trigger_key?: string
@@ -2119,6 +2122,9 @@ export type Database = {
           created_by: string
           id: string
           message_template: string
+          next_status: string | null
+          next_template_name: string | null
+          next_variables: Json | null
           template_language: string | null
           template_name: string | null
           trigger_key: string
@@ -2132,6 +2138,9 @@ export type Database = {
           created_by: string
           id?: string
           message_template: string
+          next_status?: string | null
+          next_template_name?: string | null
+          next_variables?: Json | null
           template_language?: string | null
           template_name?: string | null
           trigger_key: string
@@ -2145,6 +2154,9 @@ export type Database = {
           created_by?: string
           id?: string
           message_template?: string
+          next_status?: string | null
+          next_template_name?: string | null
+          next_variables?: Json | null
           template_language?: string | null
           template_name?: string | null
           trigger_key?: string
@@ -3261,6 +3273,15 @@ export type Database = {
       queue_birthday_notifications: { Args: never; Returns: undefined }
       queue_member_notification: {
         Args: { p_dedupe?: string; p_member_id: string; p_trigger: string }
+        Returns: undefined
+      }
+      queue_member_notification_payload: {
+        Args: {
+          p_dedupe: string
+          p_member_id: string
+          p_payload: Json
+          p_trigger: string
+        }
         Returns: undefined
       }
       queue_reactivation_reminders: { Args: never; Returns: undefined }
