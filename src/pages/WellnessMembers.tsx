@@ -15,7 +15,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WellnessListRow } from "@/components/wellness/WellnessListRow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, todayIst } from "@/lib/formatters";
+import { eventMatches, useMemberPlanIndex, type PlanEvent } from "@/hooks/useMemberPlanIndex";
+import { downloadXlsx } from "@/lib/reportExport";
+
+const monthOptions = () => {
+  const [y, m] = todayIst().split("-").map(Number);
+  return Array.from({ length: 18 }, (_, i) => {
+    const d = new Date(Date.UTC(y, m - 1 - i, 1));
+    return { value: d.toISOString().slice(0, 7), label: d.toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" }) };
+  });
+};
 import { Download, KeyRound, Plus, Search, Users } from "lucide-react";
 
 const STATUSES: (WellnessStatus | "all")[] = [
@@ -36,6 +46,11 @@ export default function WellnessMembers() {
   );
   const [mode, setMode] = useState<MemberModeFilter>((searchParams.get("mode") as MemberModeFilter) ?? "all");
   const [tag, setTag] = useState<string>(searchParams.get("tag") ?? "all");
+  const [planF, setPlanF] = useState<string>(searchParams.get("plan") ?? "all");
+  const [typeF, setTypeF] = useState<string>(searchParams.get("ptype") ?? "all");
+  const [monthF, setMonthF] = useState<string>(searchParams.get("month") ?? "all");
+  const planFilterOn = planF !== "all" || typeF !== "all" || monthF !== "all";
+  const { data: planIndex, isLoading: planLoading } = useMemberPlanIndex(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<WellnessMember | null>(null);
 
@@ -56,7 +71,28 @@ export default function WellnessMembers() {
     setSearchParams(p, { replace: true });
   };
 
-  const { data: members, isLoading } = useWellnessMembers(search, status, "all", mode, tag);
+  const { data: allMembers, isLoading: membersLoading } = useWellnessMembers(search, status, "all", mode, tag);
+  const matchedEvents = new Map<string, PlanEvent[]>();
+  if (planFilterOn && planIndex) {
+    for (const e of planIndex.events) {
+      if (!eventMatches(e, planF, typeF, monthF)) continue;
+      matchedEvents.set(e.memberId, [...(matchedEvents.get(e.memberId) ?? []), e]);
+    }
+  }
+  const members = planFilterOn ? allMembers?.filter((m) => matchedEvents.has(m.id)) : allMembers;
+  const isLoading = membersLoading || (planFilterOn && planLoading);
+  const months = monthOptions();
+
+  const exportPlanXlsx = () => {
+    const rows: (string | number)[][] = [["Name", "Mobile", "Status", "Mode", "Tags", "Plan", "Type", "Date", "Amount (₹)", "Servings left"]];
+    for (const m of members ?? []) {
+      for (const e of matchedEvents.get(m.id) ?? []) {
+        rows.push([m.full_name, m.mobile_number, statusLabel(m.status), modeLabel(m.member_mode), (m.tags ?? []).map(tagLabel).join(" | "),
+          e.planName, e.type === "new" ? "New" : e.type === "renewal" ? "Renewal" : "Trial", formatDate(e.date), e.amount ?? "", e.remaining ?? ""]);
+      }
+    }
+    downloadXlsx(`members-by-plan-${todayIst()}.xlsx`, "Members", rows, [24, 14, 14, 10, 20, 28, 10, 14, 12, 12]);
+  };
   const { data: referralCounts } = useReferralCounts();
 
   const exportCsv = () => {
@@ -102,6 +138,11 @@ export default function WellnessMembers() {
     <div className="space-y-6">
       <PageBanner title="Members" description="Every wellness member, from first enquiry to renewal.">
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {planFilterOn && (
+            <Button variant="secondary" className="w-full sm:w-auto" onClick={exportPlanXlsx} disabled={!members?.length}>
+              <Download className="mr-2 h-4 w-4" /> Export plan list (Excel)
+            </Button>
+          )}
           <Button variant="secondary" className="w-full sm:w-auto" onClick={exportCsv} disabled={!members?.length}>
             <Download className="mr-2 h-4 w-4" /> Export CSV
           </Button>
@@ -169,7 +210,37 @@ export default function WellnessMembers() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={planF} onValueChange={(v) => { setPlanF(v); syncParam("plan", v); }}>
+          <SelectTrigger className="sm:w-52" aria-label="Plan"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any plan</SelectItem>
+            <SelectItem value="gold">Gold Card UMS (30)</SelectItem>
+            <SelectItem value="white">White Card (15)</SelectItem>
+            <SelectItem value="paid_trial">Paid trials</SelectItem>
+            <SelectItem value="free_trial">Free / guest trials</SelectItem>
+            {planIndex?.plans.map((p) => <SelectItem key={p.id} value={`plan:${p.id}`}>{p.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={typeF} onValueChange={(v) => { setTypeF(v); syncParam("ptype", v); }}>
+          <SelectTrigger className="sm:w-36" aria-label="Plan type"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">New, renewal & trial</SelectItem>
+            <SelectItem value="new">New</SelectItem>
+            <SelectItem value="renewal">Renewal</SelectItem>
+            <SelectItem value="trial">Trial</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={monthF} onValueChange={(v) => { setMonthF(v); syncParam("month", v); }}>
+          <SelectTrigger className="sm:w-44" aria-label="Month"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any time</SelectItem>
+            {months.map((m, i) => <SelectItem key={m.value} value={m.value}>{i === 0 ? `This month (${m.label})` : i === 1 ? `Last month (${m.label})` : m.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
+      {planFilterOn && !isLoading && (
+        <p className="text-sm text-muted-foreground">{members?.length ?? 0} people match this plan filter.</p>
+      )}
 
       {isLoading ? (
         <div className="space-y-2">

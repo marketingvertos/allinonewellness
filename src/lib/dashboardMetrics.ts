@@ -87,6 +87,9 @@ export interface DashboardMetricInput {
   payments: DashboardPayment[];
   attendance: DashboardAttendance[];
   today: string;
+  /** Optional IST date range (inclusive); defaults to today only. */
+  from?: string;
+  to?: string;
   mode?: string;
 }
 
@@ -112,7 +115,13 @@ export function paymentDateIst(timestamp: string): string {
 
 export function calculateDashboardMetrics(input: DashboardMetricInput) {
   const { today, mode = "all" } = input;
-  const yesterday = new Date(Date.parse(today + "T00:00:00Z") - 86_400_000).toISOString().slice(0, 10);
+  const from = input.from ?? today;
+  const to = input.to ?? today;
+  // Past trials have since completed or converted; only today's view requires still-active.
+  const historic = from !== today || to !== today;
+  const trialOk = (status: string) => historic ? status !== "cancelled" : status === "active";
+  const inRange = (d: string | null | undefined) => !!d && d >= from && d <= to;
+  const dayBefore = (d: string) => new Date(Date.parse(d + "T00:00:00Z") - 86_400_000).toISOString().slice(0, 10);
   const members = new Map(input.members
     .filter((member) => mode === "all" || member.member_mode === mode)
     .map((member) => [member.id, member]));
@@ -145,10 +154,10 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
   for (const membership of input.memberships) {
     if (membership.renewed_from || membership.status === "cancelled") continue;
     const member = members.get(membership.member_id);
-    if (!member || member.is_guest || membership.start_date !== today) continue;
+    if (!member || member.is_guest || !inRange(membership.start_date)) continue;
     const plan = plans.get(membership.plan_id);
     if (!plan) continue;
-    const item = { memberId: member.id, planId: membership.plan_id, date: today, label: "New" };
+    const item = { memberId: member.id, planId: membership.plan_id, date: membership.start_date, label: "New" };
     if (isGoldCardPlan(plan)) addUnique("newGoldCardToday", member.id, item);
     else if (isWhiteCardPlan(plan)) addUnique("newWhiteCardToday", member.id, item);
   }
@@ -156,7 +165,7 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
   // Renewals paid today, grouped by the membership's plan family.
   for (const payment of input.payments) {
     if (payment.context !== "renewal" || Number(payment.amount) <= 0 ||
-        paymentDateIst(payment.paid_at) !== today) continue;
+        !inRange(paymentDateIst(payment.paid_at))) continue;
     const member = members.get(payment.member_id);
     const membership = memberships.get(payment.membership_id);
     if (!member || member.is_guest || !membership || membership.status === "cancelled" ||
@@ -170,14 +179,14 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
     else if (isPaid3DayTrialPlan(plan)) key = "renewals3DayToday";
     else continue;
     addRenewal(key, member.id, {
-      memberId: member.id, planId, date: today,
+      memberId: member.id, planId, date: paymentDateIst(payment.paid_at),
       amount: Number(payment.amount), label: "Renewal",
     });
   }
 
   // Trials started today: three-day paid, three-day free, and one-day free.
   for (const trial of input.trials) {
-    if (trial.status !== "active" || trial.start_date !== today || !trial.end_date ||
+    if (!trialOk(trial.status) || !inRange(trial.start_date) || !trial.end_date ||
         !members.has(trial.member_id)) continue;
     const plan = trial.plan_id ? plans.get(trial.plan_id) : undefined;
     // A missing referenced plan is unknown, rather than silently counted as free.
@@ -194,19 +203,19 @@ export function calculateDashboardMetrics(input: DashboardMetricInput) {
 
   // Day-2 visits: free three-day trials that started yesterday, present today.
   for (const attendance of input.attendance) {
-    if (attendance.visit_date !== today || !attendance.trial_id) continue;
+    if (!inRange(attendance.visit_date) || !attendance.trial_id) continue;
     const trial = trialsById.get(attendance.trial_id);
-    if (!trial || trial.duration_days !== 3 || trial.start_date !== yesterday || trial.status !== "active") continue;
+    if (!trial || trial.duration_days !== 3 || trial.start_date !== dayBefore(attendance.visit_date) || !trialOk(trial.status)) continue;
     const plan = trial.plan_id ? plans.get(trial.plan_id) : undefined;
     if (trial.plan_id && (!plan || Number(plan.price) > 0)) continue;
     if (!members.has(trial.member_id)) continue;
     addUnique("guestDay2VisitsToday", trial.member_id, {
-      memberId: trial.member_id, planId: trial.plan_id, date: today, label: "Day 2 visit",
+      memberId: trial.member_id, planId: trial.plan_id, date: attendance.visit_date, label: "Day 2 visit",
     });
   }
 
   for (const member of members.values()) {
-    if (member.is_guest && member.joining_date === today) {
+    if (member.is_guest && inRange(member.joining_date)) {
       addUnique("newGuestsToday", member.id, { memberId: member.id, planId: null, date: member.joining_date, label: "Guest" });
     }
   }
