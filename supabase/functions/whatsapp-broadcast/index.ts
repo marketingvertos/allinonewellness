@@ -67,18 +67,38 @@ async function validateTemplate(sb: Sb, cfg: Awaited<ReturnType<typeof loadWhats
 }
 
 async function refreshCounts(sb: Sb, id: string) {
-  const { data } = await sb.from("whatsapp_broadcast_recipients").select("status").eq("broadcast_id", id);
-  const rows = (data || []) as { status: string }[];
+  const rows: { status: string }[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data } = await sb.from("whatsapp_broadcast_recipients").select("status").eq("broadcast_id", id).range(from, from + 999);
+    rows.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
   const c = (s: string) => rows.filter((r) => r.status === s).length;
-  const pending = c("pending");
+  const pending = c("pending") + c("sending");
+  const { data: cur } = await sb.from("whatsapp_broadcasts").select("status, completed_at").eq("id", id).maybeSingle();
+  const scheduled = cur?.status === "scheduled";
   await sb.from("whatsapp_broadcasts").update({
     sent_count: c("sent"),
     failed_count: c("failed"),
     skipped_count: c("skipped"),
-    status: pending ? "sending" : "completed",
+    status: scheduled ? "scheduled" : pending ? "sending" : "completed",
+    completed_at: !scheduled && !pending ? (cur?.completed_at || new Date().toISOString()) : null,
     updated_at: new Date().toISOString(),
   }).eq("id", id);
-  return pending;
+  return scheduled ? 0 : pending;
+}
+
+/** Puts rows stuck mid-send for more than 2 minutes back in the queue. */
+async function releaseStuck(sb: Sb, id: string) {
+  await sb.from("whatsapp_broadcast_recipients").update({ status: "pending" })
+    .eq("broadcast_id", id).eq("status", "sending").is("whatsapp_message_id", null)
+    .lt("created_at", new Date(Date.now() - 120000).toISOString());
+}
+
+async function startRun(sb: Sb, id: string, userId: string | null) {
+  await sb.from("whatsapp_broadcasts").update({ status: "sending", started_at: new Date().toISOString() }).eq("id", id).is("started_at", null);
+  // @ts-ignore EdgeRuntime is available in the Supabase runtime
+  EdgeRuntime.waitUntil(runToEnd(sb, id, userId));
 }
 
 async function processBatch(sb: Sb, id: string, userId: string | null, size = 20) {
