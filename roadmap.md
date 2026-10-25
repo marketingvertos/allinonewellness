@@ -12,3 +12,8 @@
 - [x] Verify the member card at phone and desktop sizes.- [x] Club Owner Reports (Daily/Weekly/Monthly, Excel/PDF)
 - [x] Extend Master network titles through 15, 60, 70, 80 and 90; refresh existing titles and verify.
 - [x] Add staff-managed image and YouTube posts under Offers, published to the member app by audience.
+
+## WhatsApp templates (25 Oct 2026)
+- [x] Submit 24 document templates + yellow_card_details to Meta
+- [x] Auto-switch triggers to new templates on approval; Yellow Card PDF after new/renewal
+- [ ] Event hooks still to build: lead_welcome_invite (leads aren't members), trial_day2_followup, trial_completed_offer, family_day_qualified, consistency_26_days, ambassador/supervisor titles + at-risk, MIW starts/midway/completed, member_absent_reminder
