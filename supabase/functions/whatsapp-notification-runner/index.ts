@@ -11,6 +11,57 @@ import {
   toE164,
 } from "../_shared/whatsapp.ts";
 import { sendWhatsApp } from "../_shared/whatsappService.ts";
+import { buildYellowCard } from "./yellowCard.ts";
+
+// deno-lint-ignore no-explicit-any
+async function syncTemplateStatuses(supabase: any, cfg: any): Promise<Map<string, string>> {
+  const status = new Map<string, string>();
+  try {
+    if (cfg.provider !== "meta" || !cfg.apiKey) return status;
+    const { data: wabaRow } = await supabase.from("integration_credentials")
+      .select("value").eq("key", "whatsapp_waba_id").maybeSingle();
+    const wabaId = (wabaRow?.value || Deno.env.get("META_WABA_ID") || "").trim();
+    if (!wabaId) return status;
+    const res = await fetch(`${cfg.apiUrl}/${wabaId}/message_templates?fields=name,status&limit=500`, {
+      headers: { Authorization: `Bearer ${cfg.apiKey}` },
+    });
+    if (!res.ok) return status;
+    const body = await res.json();
+    for (const t of body?.data || []) {
+      const cur = status.get(t.name);
+      if (cur !== "APPROVED") status.set(t.name, String(t.status).toUpperCase());
+    }
+    const { data: rows } = await supabase.from("wellness_notification_templates")
+      .select("id, template_name, next_template_name, next_variables, next_status")
+      .eq("channel", "whatsapp");
+    for (const r of rows || []) {
+      if (r.next_template_name) {
+        const st = status.get(r.next_template_name) || "PENDING";
+        if (st === "APPROVED") {
+          await supabase.from("wellness_notification_templates").update({
+            template_name: r.next_template_name,
+            variables: r.next_variables || [],
+            next_template_name: null,
+            next_variables: null,
+            next_status: "APPROVED",
+          }).eq("id", r.id);
+          status.set(r.next_template_name, "APPROVED");
+        } else if (st !== r.next_status) {
+          await supabase.from("wellness_notification_templates").update({ next_status: st }).eq("id", r.id);
+        }
+      } else if (r.template_name) {
+        const st = status.get(r.template_name) || "UNKNOWN";
+        if (st !== r.next_status) {
+          await supabase.from("wellness_notification_templates").update({ next_status: st }).eq("id", r.id);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("template status sync failed", e);
+  }
+  return status;
+}
+
 
 const MAX_ATTEMPTS = 3;
 const BATCH_SIZE = 25;
@@ -420,8 +471,30 @@ Deno.serve(async (req) => {
         return v === "daily_change" || v === "weight_change" ? "N/A" : "—";
       });
 
+      let mediaUrl: string | null = null;
+      if (item.trigger_key === "yellow_card") {
+        try {
+          const pdf = buildYellowCard({
+            name: member.full_name || "", mobile: member.mobile_number || "",
+            plan: vars.plan_name, code: vars.code, startDate: vars.start_date,
+            totalServings: vars.total_servings, remaining: vars.remaining,
+            price: vars.price, paymentMode: vars.payment_mode,
+          });
+          const path = `yellow-cards/${member.id}/${Date.now()}.pdf`;
+          const up = await supabase.storage.from("promotion-media")
+            .upload(path, pdf, { contentType: "application/pdf", upsert: true });
+          if (up.error) throw up.error;
+          const signed = await supabase.storage.from("promotion-media").createSignedUrl(path, 60 * 60 * 24 * 7);
+          mediaUrl = signed.data?.signedUrl || null;
+        } catch (e) {
+          await markFailed(`Could not create Yellow Card: ${e instanceof Error ? e.message : e}`);
+          continue;
+        }
+      }
+
       const result = await sendWhatsApp(supabase, cfg, {
         to,
+        ...(mediaUrl ? { mediaUrl, mediaType: "document" as const, mediaFileName: "Yellow-Card.pdf" } : {}),
         templateName: tpl?.template_name || null,
         templateLanguage: tpl?.template_language || null,
         vars: templateVars,
@@ -448,6 +521,11 @@ Deno.serve(async (req) => {
             whatsapp_message_id: result.messageId,
           })
           .eq("id", item.id);
+        if (item.trigger_key === "membership_activated" || item.trigger_key === "membership_renewed") {
+          await supabase.rpc("queue_member_notification_payload", {
+            p_member_id: member.id, p_trigger: "yellow_card", p_dedupe: "1 hour", p_payload: {},
+          });
+        }
       } else if (result.accountBlocked) {
         // Account-level block at Meta: nothing in the queue can go out. Keep the
         // item queued without burning an attempt and stop the batch.
