@@ -222,10 +222,10 @@ describe("monthly range", () => {
       { id: "m1", member_id: "a", plan_id: "g", start_date: "2026-09-10", created_at: "", renewed_from: null, status: "active" },
       { id: "m2", member_id: "b", plan_id: "g", start_date: "2026-10-01", created_at: "", renewed_from: null, status: "active" },
     ];
-    const payments = [{ member_id: "a", membership_id: "m1", amount: 7500, context: "renewal", paid_at: "2026-09-30T18:00:00Z", plan_id: "g" }];
+    const payments = [{ member_id: "a", membership_id: "m1", amount: 7500, context: "renewal", paid_at: "2026-09-30T19:00:00Z", plan_id: "g" }];
     const r = calc({ members, plans, memberships, trials: [], payments, attendance: [], today: "2026-10-25", from: "2026-09-01", to: "2026-09-30", mode: "all" });
     expect(r.newGoldCardToday).toBe(1);
-    // 30 Sep 18:00 UTC is 1 Oct in India, so it is not a September renewal.
+    // 30 Sep 19:00 UTC is 1 Oct in India, so it is not a September renewal.
     expect(r.goldCardRenewalsToday).toBe(0);
   });
 });
