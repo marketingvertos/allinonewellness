@@ -136,6 +136,14 @@ Deno.serve(async (req) => {
 
   const supabase = serviceClient();
 
+  // Same 10-minute tick also starts scheduled broadcasts and revives stalled ones.
+  // @ts-ignore EdgeRuntime is available in the Supabase runtime
+  EdgeRuntime.waitUntil(fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/whatsapp-broadcast`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: Deno.env.get("SUPABASE_ANON_KEY") || "" },
+    body: JSON.stringify({ action: "run_scheduled" }),
+  }).catch((e) => console.error("broadcast scheduler", e)));
+
   try {
     const cfg = await loadWhatsAppConfig(supabase);
     if (!validateConfig(cfg).ok) {
