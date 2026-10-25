@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MemberModeFilter, useReferralCounts, useWellnessMembers, WellnessMember, WellnessStatus } from "@/hooks/useWellness";
 import { PageBanner } from "@/components/PageBanner";
@@ -12,11 +12,12 @@ import { PinkCardBadge } from "@/components/wellness/PinkCardPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WellnessListRow } from "@/components/wellness/WellnessListRow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate } from "@/lib/formatters";
-import { Download, KeyRound, Plus, Search, Users } from "lucide-react";
+import { Download, KeyRound, Plus, RotateCcw, Search, SearchX, Users, X } from "lucide-react";
 
 const STATUSES: (WellnessStatus | "all")[] = [
   "all",
@@ -27,6 +28,20 @@ const STATUSES: (WellnessStatus | "all")[] = [
   "expired",
   "inactive",
 ];
+
+type FilterKey = "status" | "mode" | "tag";
+
+interface ActiveFilter {
+  key: FilterKey | "search";
+  label: string;
+  value: string;
+}
+
+function activeSelectClass(isActive: boolean) {
+  return isActive
+    ? "border-primary/50 bg-primary/5 text-primary font-medium"
+    : "";
+}
 
 export default function WellnessMembers() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -39,7 +54,6 @@ export default function WellnessMembers() {
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<WellnessMember | null>(null);
 
-  // follow deep links from the dashboard
   useEffect(() => {
     const s = searchParams.get("status");
     if (s) setStatus(s as WellnessStatus | "all");
@@ -58,6 +72,46 @@ export default function WellnessMembers() {
 
   const { data: members, isLoading } = useWellnessMembers(search, status, "all", mode, tag);
   const { data: referralCounts } = useReferralCounts();
+
+  const activeFilters = useMemo<ActiveFilter[]>(() => {
+    const list: ActiveFilter[] = [];
+    if (search.trim()) list.push({ key: "search", label: `"${search.trim()}"`, value: search });
+    if (status !== "all") list.push({ key: "status", label: statusLabel(status as WellnessStatus), value: status });
+    if (mode !== "all") list.push({ key: "mode", label: modeLabel(mode), value: mode });
+    if (tag !== "all") list.push({ key: "tag", label: tagLabel(tag), value: tag });
+    return list;
+  }, [search, status, mode, tag]);
+
+  const hasActiveFilters = activeFilters.length > 0;
+
+  const dismissFilter = (f: ActiveFilter) => {
+    switch (f.key) {
+      case "search":
+        setSearch("");
+        syncParam("q", "");
+        break;
+      case "status":
+        setStatus("all");
+        syncParam("status", "all");
+        break;
+      case "mode":
+        setMode("all");
+        syncParam("mode", "all");
+        break;
+      case "tag":
+        setTag("all");
+        syncParam("tag", "all");
+        break;
+    }
+  };
+
+  const clearAll = () => {
+    setSearch("");
+    setStatus("all");
+    setMode("all");
+    setTag("all");
+    setSearchParams({}, { replace: true });
+  };
 
   const exportCsv = () => {
     const rows = members ?? [];
@@ -113,64 +167,139 @@ export default function WellnessMembers() {
 
       <MissingLoginsBanner />
 
+      {/* Filter container */}
+      <Card className="space-y-3.5 border-border/60 p-4 shadow-sm">
+        {/* Top row: search + count + clear */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 sm:min-w-[16rem]">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9 pr-9"
+              placeholder="Search by name, mobile, email or code"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                syncParam("q", e.target.value);
+              }}
+            />
+            {search && (
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                onClick={() => {
+                  setSearch("");
+                  syncParam("q", "");
+                }}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <div className="relative flex-1 sm:min-w-[16rem]">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Search by name, mobile, email or activation code"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div className="flex items-center gap-2">
+            {!isLoading && members && (
+              <span className="whitespace-nowrap text-sm text-muted-foreground">
+                {members.length} member{members.length !== 1 ? "s" : ""}
+              </span>
+            )}
+            {hasActiveFilters && (
+              <>
+                <Badge variant="secondary" className="whitespace-nowrap tabular-nums">
+                  {activeFilters.length} active
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+                  onClick={clearAll}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Clear all
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-        <Select
-          value={status}
-          onValueChange={(v) => {
-            setStatus(v as WellnessStatus | "all");
-            syncParam("status", v);
-          }}
-        >
-          <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s === "all" ? "All statuses" : statusLabel(s as WellnessStatus)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={mode}
-          onValueChange={(v) => {
-            setMode(v as MemberModeFilter);
-            syncParam("mode", v);
-          }}
-        >
-          <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All modes</SelectItem>
-            <SelectItem value="physical">Physical</SelectItem>
-            <SelectItem value="virtual">Virtual</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={tag}
-          onValueChange={(v) => {
-            setTag(v);
-            syncParam("tag", v);
-          }}
-        >
-          <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All tags</SelectItem>
-            {MEMBER_TAGS.map((t) => (
-              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
 
+        {/* Filter grid */}
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+          <Select
+            value={status}
+            onValueChange={(v) => {
+              setStatus(v as WellnessStatus | "all");
+              syncParam("status", v);
+            }}
+          >
+            <SelectTrigger className={activeSelectClass(status !== "all")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s === "all" ? "All statuses" : statusLabel(s as WellnessStatus)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={mode}
+            onValueChange={(v) => {
+              setMode(v as MemberModeFilter);
+              syncParam("mode", v);
+            }}
+          >
+            <SelectTrigger className={activeSelectClass(mode !== "all")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All modes</SelectItem>
+              <SelectItem value="physical">Physical</SelectItem>
+              <SelectItem value="virtual">Virtual</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={tag}
+            onValueChange={(v) => {
+              setTag(v);
+              syncParam("tag", v);
+            }}
+          >
+            <SelectTrigger className={activeSelectClass(tag !== "all")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tags</SelectItem>
+              {MEMBER_TAGS.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Active filter chips */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-1.5">
+            {activeFilters.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                onClick={() => dismissFilter(f)}
+              >
+                <span className="text-primary/60">
+                  {f.key === "search" ? "Search" : f.key === "status" ? "Status" : f.key === "mode" ? "Mode" : "Tag"}:
+                </span>
+                {f.label}
+                <X className="h-3 w-3 text-primary/50" />
+              </button>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Member list */}
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16" />)}
@@ -207,9 +336,21 @@ export default function WellnessMembers() {
             />
           ))}
         </div>
-
       ) : (
-        <p className="py-16 text-center text-muted-foreground">No members match this view yet.</p>
+        <Card className="flex flex-col items-center gap-4 py-16">
+          <div className="rounded-full bg-muted p-3">
+            <SearchX className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <div className="text-center">
+            <p className="font-medium text-foreground">No members match your current filters</p>
+            <p className="mt-1 text-sm text-muted-foreground">Try broadening your search or clearing some filters.</p>
+          </div>
+          {hasActiveFilters && (
+            <Button variant="outline" onClick={clearAll} className="gap-1.5">
+              <RotateCcw className="h-4 w-4" /> Clear all filters
+            </Button>
+          )}
+        </Card>
       )}
 
       <CreateMemberDialog open={createOpen} onOpenChange={setCreateOpen} />
