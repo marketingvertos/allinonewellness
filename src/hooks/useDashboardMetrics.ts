@@ -57,35 +57,35 @@ export function useDashboardMetrics(mode: MemberModeFilter, range?: DashboardRan
       const yesterday = shiftD(from, -1);
       void shift;
       const [members, plans, memberships, trials, payments, attendance] = await Promise.all([
-        readAllMetricRows<DashboardMember>((from, to) => supabase
+        readAllMetricRows<DashboardMember>((start, end) => supabase
           .from("wellness_members")
           .select("id, is_guest, member_mode, joining_date, full_name, mobile_number")
-          .order("id").range(from, to)),
-        readAllMetricRows<DashboardPlan>((from, to) => supabase
+          .order("id").range(start, end)),
+        readAllMetricRows<DashboardPlan>((start, end) => supabase
           .from("wellness_plans")
           .select("id, name, plan_type, duration_days, total_servings, price")
-          .order("id").range(from, to)),
-        readAllMetricRows<DashboardMembership>((from, to) => supabase
+          .order("id").range(start, end)),
+        readAllMetricRows<DashboardMembership>((start, end) => supabase
           .from("wellness_memberships")
           .select("id, member_id, plan_id, start_date, created_at, renewed_from, status")
-          .order("id").range(from, to)),
-        readAllMetricRows<DashboardTrial>((from, to) => supabase
+          .order("id").range(start, end)),
+        readAllMetricRows<DashboardTrial>((start, end) => supabase
           .from("wellness_trials")
           .select("id, member_id, plan_id, duration_days, start_date, end_date, status")
           .gte("start_date", yesterday).lte("start_date", to)
-          .order("id").range(from, to)),
-        readAllMetricRows<DashboardPayment>((from, to) => supabase
+          .order("id").range(start, end)),
+        readAllMetricRows<DashboardPayment>((start, end) => supabase
           .from("wellness_payments")
           .select("member_id, membership_id, amount, context, paid_at, plan_id")
           .eq("context", "renewal").gt("amount", 0)
           .gte("paid_at", from + "T00:00:00+05:30")
           .lt("paid_at", tomorrow + "T00:00:00+05:30")
-          .order("id").range(from, to)),
-        readAllMetricRows<DashboardAttendance>((from, to) => supabase
+          .order("id").range(start, end)),
+        readAllMetricRows<DashboardAttendance>((start, end) => supabase
           .from("wellness_attendance")
           .select("member_id, trial_id, visit_date")
           .gte("visit_date", from).lte("visit_date", to).not("trial_id", "is", null)
-          .order("id").range(from, to)),
+          .order("id").range(start, end)),
       ]);
       const result = calculateDashboardMetrics({ members, plans, memberships, trials, payments, attendance, today, from, to, mode });
       return {
