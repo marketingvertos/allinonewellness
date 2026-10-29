@@ -1038,6 +1038,10 @@ export type Database = {
           member_id: string
           membership_id: string
           note: string | null
+          reversal_note: string | null
+          reversed_at: string | null
+          reversed_by: string | null
+          reverses_txn_id: string | null
           txn_type: Database["public"]["Enums"]["serving_txn_type"]
         }
         Insert: {
@@ -1050,6 +1054,10 @@ export type Database = {
           member_id: string
           membership_id: string
           note?: string | null
+          reversal_note?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          reverses_txn_id?: string | null
           txn_type: Database["public"]["Enums"]["serving_txn_type"]
         }
         Update: {
@@ -1062,6 +1070,10 @@ export type Database = {
           member_id?: string
           membership_id?: string
           note?: string | null
+          reversal_note?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          reverses_txn_id?: string | null
           txn_type?: Database["public"]["Enums"]["serving_txn_type"]
         }
         Relationships: [
@@ -3450,6 +3462,10 @@ export type Database = {
           p_servings?: number
         }
         Returns: string
+      }
+      reverse_serving_issue: {
+        Args: { p_note: string; p_txn_id: string }
+        Returns: number
       }
       reverse_trial_pink_card: {
         Args: { p_member_id: string }

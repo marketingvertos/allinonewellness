@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   WellnessMember,
@@ -27,6 +29,7 @@ import {
   useIsWellnessManager,
   useIsWellnessAdmin,
   BodyMeasurement,
+  useReverseServingIssue,
 } from "@/hooks/useWellness";
 import {
   PaymentInput,
@@ -179,6 +182,10 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [renewOpen, setRenewOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [introOpen, setIntroOpen] = useState(false);
+  const [reverseTxn, setReverseTxn] = useState<{ id: string; qty: number } | null>(null);
+  const [reverseNote, setReverseNote] = useState("");
+  const reverseServing = useReverseServingIssue();
 
   // Clear any pending referrer selection when the panel switches member.
   useEffect(() => {
@@ -216,6 +223,25 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           <SheetDescription>
             {member.mobile_number} · Joined {formatDate(member.joining_date)}
           </SheetDescription>
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-sm">
+            <span className="text-muted-foreground">Introduced by</span>
+            {member.referred_by_member_id && coachInfo ? (
+              <button
+                type="button"
+                className="rounded-full bg-primary/10 px-3 py-0.5 font-medium text-primary hover:bg-primary/20"
+                onClick={() => setNetworkMemberId(member.referred_by_member_id!)}
+              >
+                {coachInfo.name}
+              </button>
+            ) : (member as { referrer_name?: string | null }).referrer_name ? (
+              <Badge variant="secondary">{(member as { referrer_name?: string | null }).referrer_name} · outside</Badge>
+            ) : (
+              <Badge variant="outline">Not recorded</Badge>
+            )}
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setIntroOpen(true)}>
+              {member.referred_by_member_id || (member as { referrer_name?: string | null }).referrer_name ? "Change" : "Set introducer"}
+            </Button>
+          </div>
         </SheetHeader>
 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -255,6 +281,40 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
         />
 
         <EditMemberDialog member={member} open={editProfileOpen} onOpenChange={setEditProfileOpen} />
+
+        <ResponsiveDialog open={introOpen} onOpenChange={setIntroOpen} title="Who introduced this member?">
+          <IntroducerEditor member={member as never} introducerLabel={coachInfo?.name ?? null} />
+        </ResponsiveDialog>
+
+        <ResponsiveDialog
+          open={!!reverseTxn}
+          onOpenChange={(o) => !o && setReverseTxn(null)}
+          title="Reverse packed servings"
+          description={reverseTxn ? `${reverseTxn.qty} serving${reverseTxn.qty === 1 ? "" : "s"} will go back to the balance and the S mark will be removed.` : undefined}
+          footer={
+            <Button
+              variant="destructive"
+              disabled={!reverseNote.trim() || reverseServing.isPending}
+              onClick={async () => {
+                if (!reverseTxn) return;
+                try {
+                  await reverseServing.mutateAsync({ txnId: reverseTxn.id, note: reverseNote.trim() });
+                  toast.success("Servings reversed");
+                  setReverseTxn(null);
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
+            >
+              Reverse servings
+            </Button>
+          }
+        >
+          <div className="space-y-2">
+            <Label htmlFor="reverse-note">Note (required)</Label>
+            <Input id="reverse-note" placeholder="e.g. Issued to wrong member" value={reverseNote} onChange={(e) => setReverseNote(e.target.value)} />
+          </div>
+        </ResponsiveDialog>
 
 
         <SendWhatsAppDialog
@@ -375,9 +435,6 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                 </p>
               </div>
 
-              <div className="rounded-xl border p-4 shadow-sm text-sm sm:col-span-2">
-                <IntroducerEditor member={member as never} />
-              </div>
             </div>
 
 
@@ -641,6 +698,11 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                       {t.created_by_name ? ` · by ${t.created_by_name}` : ""}
                     </p>
                     {t.note ? <p className="text-xs text-muted-foreground">{t.note}</p> : null}
+                    {t.reversed_at ? (
+                      <p className="text-xs text-destructive">
+                        Reversed {formatDateTime(t.reversed_at)}{t.reversal_note ? ` · ${t.reversal_note}` : ""}
+                      </p>
+                    ) : null}
                     {t.txn_type === "pack_and_issue" && (
                       <p className="text-xs text-muted-foreground">
                         For: {t.covered_dates.length ? t.covered_dates.map((d) => formatDate(d)).join(", ") : "no dates set"}
@@ -648,20 +710,35 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                     )}
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span className={t.change < 0 ? "text-muted-foreground" : "font-medium"}>
+                    <span className={`${t.change < 0 ? "text-muted-foreground" : "font-medium"} ${t.reversed_at ? "line-through" : ""}`}>
                       {t.change > 0 ? `+${t.change}` : t.change} → {t.balance_after}
                     </span>
-                    {t.txn_type === "pack_and_issue" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs"
-                        onClick={() =>
-                          setEditServing({ id: t.id, qty: Math.abs(t.change), dates: t.covered_dates })
-                        }
-                      >
-                        <Pencil className="mr-1 h-3 w-3" /> Edit dates
-                      </Button>
+                    {t.txn_type === "pack_and_issue" && t.reversed_at && (
+                      <Badge variant="destructive" className="text-[10px]">Reversed</Badge>
+                    )}
+                    {t.txn_type === "pack_and_issue" && !t.reversed_at && (
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-xs"
+                          onClick={() =>
+                            setEditServing({ id: t.id, qty: Math.abs(t.change), dates: t.covered_dates })
+                          }
+                        >
+                          <Pencil className="mr-1 h-3 w-3" /> Edit dates
+                        </Button>
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs text-destructive"
+                            onClick={() => { setReverseTxn({ id: t.id, qty: Math.abs(t.change) }); setReverseNote(""); }}
+                          >
+                            Reverse
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
