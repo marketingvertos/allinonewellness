@@ -33,7 +33,7 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
   const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
   const [startDate, setStartDate] = useState(today);
-  const [duration, setDuration] = useState("3");
+  const [duration, setDuration] = useState("1");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [referrerMode, setReferrerMode] = useState<"member" | "other">("member");
@@ -52,7 +52,7 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
       setMobile(isNumber ? seed : "");
       setEmail("");
       setStartDate(today);
-      setDuration("3");
+      setDuration("1");
       setHeight("");
       setWeight("");
       setReferrerMode("member");
@@ -247,7 +247,7 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
                 />
               </div>
               <p className="sm:col-span-2 text-xs text-muted-foreground">
-                Saved on the guest's notes. No referral credit is given, as they are not a club member.
+                Saved as the guest's introducer. No referral credit is given, as they are not a club member.
               </p>
             </div>
           )}
