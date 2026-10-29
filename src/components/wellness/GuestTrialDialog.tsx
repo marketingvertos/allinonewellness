@@ -32,6 +32,7 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
+  const [localArea, setLocalArea] = useState("");
   const [startDate, setStartDate] = useState(today);
   const [duration, setDuration] = useState("1");
   const [height, setHeight] = useState("");
@@ -51,6 +52,7 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
       setName(isNumber ? "" : seed);
       setMobile(isNumber ? seed : "");
       setEmail("");
+      setLocalArea("");
       setStartDate(today);
       setDuration("1");
       setHeight("");
@@ -82,6 +84,7 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
       referred_by_member_id: referrerMode === "member" ? referrerId : null,
       referrer_name: referrerMode === "other" ? otherName : null,
       referrer_mobile: referrerMode === "other" ? otherMobile : null,
+      local_area: localArea,
     });
 
     setCreated({ mobile: digits, loginError: result.loginError });
@@ -161,6 +164,10 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
             value={mobile}
             onChange={(e) => setMobile(e.target.value)}
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="g-area">Local area</Label>
+          <Input id="g-area" maxLength={80} placeholder="e.g. Vijay Nagar" value={localArea} onChange={(e) => setLocalArea(e.target.value)} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="g-email">Email (optional)</Label>

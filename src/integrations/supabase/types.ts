@@ -1842,6 +1842,7 @@ export type Database = {
           is_guest: boolean
           joining_date: string
           last_title_downgrade_month: string | null
+          local_area: string | null
           marital_status: string | null
           master_level: number
           member_mode: string
@@ -1880,6 +1881,7 @@ export type Database = {
           is_guest?: boolean
           joining_date?: string
           last_title_downgrade_month?: string | null
+          local_area?: string | null
           marital_status?: string | null
           master_level?: number
           member_mode?: string
@@ -1918,6 +1920,7 @@ export type Database = {
           is_guest?: boolean
           joining_date?: string
           last_title_downgrade_month?: string | null
+          local_area?: string | null
           marital_status?: string | null
           master_level?: number
           member_mode?: string

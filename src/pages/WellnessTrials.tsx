@@ -156,7 +156,7 @@ export default function WellnessTrials() {
                       {isGuest && <Badge variant="outline">Guest</Badge>}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {t.wellness_members?.mobile_number} · {formatDate(t.start_date)} → {formatDate(t.end_date)}
+                      {t.wellness_members?.mobile_number}{(t.wellness_members as { local_area?: string | null } | null)?.local_area ? ` · ${(t.wellness_members as { local_area?: string | null }).local_area}` : ""} · {formatDate(t.start_date)} → {formatDate(t.end_date)}
                     </p>
                   </button>
                   <TrialAttendanceControls

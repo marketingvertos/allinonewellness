@@ -1,0 +1,1 @@
+ALTER TABLE public.wellness_members ADD COLUMN IF NOT EXISTS local_area text;

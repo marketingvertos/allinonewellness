@@ -221,7 +221,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
             <AmbassadorHeaderBadge memberId={member.id} />
           </SheetTitle>
           <SheetDescription>
-            {member.mobile_number} · Joined {formatDate(member.joining_date)}
+            {member.mobile_number}{(member as { local_area?: string | null }).local_area ? ` · ${(member as { local_area?: string | null }).local_area}` : ""} · Joined {formatDate(member.joining_date)}
           </SheetDescription>
           <div className="flex flex-wrap items-center gap-2 pt-1 text-sm">
             <span className="text-muted-foreground">Introduced by</span>

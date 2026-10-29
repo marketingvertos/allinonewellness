@@ -1727,7 +1727,7 @@ export function useActiveTrials(memberMode?: MemberModeFilter) {
       let q = supabase
         .from("wellness_trials")
         .select(
-          "*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight, is_guest, joining_date, tags, member_mode)",
+          "*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight, is_guest, joining_date, tags, member_mode, local_area)",
         )
         .eq("status", "active")
         .order("end_date");
@@ -1752,7 +1752,7 @@ export function useRecentEndedTrials() {
       const since = new Date(Date.now() - 30 * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       const { data, error } = await supabase
         .from("wellness_trials")
-        .select("*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight, is_guest, joining_date, tags, member_mode)")
+        .select("*, wellness_plans(id, name, price), wellness_members(id, full_name, mobile_number, status, goal, initial_weight, current_weight, is_guest, joining_date, tags, member_mode, local_area)")
         .in("status", ["expired", "completed"])
         .gte("end_date", since)
         .order("end_date", { ascending: false });
@@ -2393,6 +2393,7 @@ export function useStartGuestTrial() {
       referred_by_member_id?: string | null;
       referrer_name?: string | null;
       referrer_mobile?: string | null;
+      local_area?: string | null;
     }) => {
       const duration = args.duration_days ?? 3;
 
@@ -2413,6 +2414,7 @@ export function useStartGuestTrial() {
           referred_by_member_id: args.referred_by_member_id ?? null,
           referrer_name: args.referred_by_member_id ? null : args.referrer_name?.trim() || null,
           referrer_mobile: args.referred_by_member_id ? null : args.referrer_mobile?.trim() || null,
+          local_area: args.local_area?.trim() || null,
           created_by: args.created_by,
         } as never)
         .select("id")

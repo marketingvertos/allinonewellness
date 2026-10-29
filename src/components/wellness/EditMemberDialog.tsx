@@ -34,6 +34,7 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
     full_name: member.full_name ?? "",
     mobile_number: member.mobile_number ?? "",
     email: member.email ?? "",
+    local_area: (member as { local_area?: string | null }).local_area ?? "",
     gender: member.gender ?? "",
     date_of_birth: member.date_of_birth ?? "",
     joining_date: member.joining_date ?? "",
@@ -57,6 +58,7 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
       full_name: member.full_name ?? "",
       mobile_number: member.mobile_number ?? "",
       email: member.email ?? "",
+      local_area: (member as { local_area?: string | null }).local_area ?? "",
       gender: member.gender ?? "",
       date_of_birth: member.date_of_birth ?? "",
       joining_date: member.joining_date ?? "",
@@ -82,6 +84,7 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
       full_name: form.full_name.trim(),
       mobile_number: form.mobile_number.trim(),
       email: form.email.trim() || null,
+      local_area: form.local_area.trim() || null,
       gender: form.gender || null,
       date_of_birth: form.date_of_birth || null,
       joining_date: form.joining_date || member.joining_date,
@@ -141,6 +144,10 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
         <div className="space-y-2">
           <Label htmlFor="em-email">Email (optional)</Label>
           <Input id="em-email" type="email" value={form.email} onChange={(e) => set("email")(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="em-area">Local area</Label>
+          <Input id="em-area" value={form.local_area} onChange={(e) => set("local_area")(e.target.value)} />
         </div>
 
         <div className="space-y-2">
