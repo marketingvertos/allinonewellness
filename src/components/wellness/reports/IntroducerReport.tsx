@@ -39,7 +39,6 @@ export function IntroducerReport() {
   const lmEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0)).toISOString().slice(0, 10);
   const [from, setFrom] = useState(monthStart);
   const [to, setTo] = useState(today);
-  const [open, setOpen] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["introducer-report", from, to],
