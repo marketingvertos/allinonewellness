@@ -2079,7 +2079,8 @@ export type Database = {
           error_message: string | null
           id: string
           last_attempt_at: string | null
-          member_id: string
+          lead_id: string | null
+          member_id: string | null
           message: string | null
           payload: Json
           sent_at: string | null
@@ -2095,7 +2096,8 @@ export type Database = {
           error_message?: string | null
           id?: string
           last_attempt_at?: string | null
-          member_id: string
+          lead_id?: string | null
+          member_id?: string | null
           message?: string | null
           payload?: Json
           sent_at?: string | null
@@ -2111,7 +2113,8 @@ export type Database = {
           error_message?: string | null
           id?: string
           last_attempt_at?: string | null
-          member_id?: string
+          lead_id?: string | null
+          member_id?: string | null
           message?: string | null
           payload?: Json
           sent_at?: string | null
@@ -3330,6 +3333,7 @@ export type Database = {
       }
       plan_gets_bonus: { Args: { p_plan_id: string }; Returns: boolean }
       queue_birthday_notifications: { Args: never; Returns: undefined }
+      queue_daily_engagement_notifications: { Args: never; Returns: undefined }
       queue_member_notification: {
         Args: { p_dedupe?: string; p_member_id: string; p_trigger: string }
         Returns: undefined
@@ -3338,6 +3342,16 @@ export type Database = {
         Args: {
           p_dedupe: string
           p_member_id: string
+          p_payload: Json
+          p_trigger: string
+        }
+        Returns: undefined
+      }
+      queue_once: {
+        Args: {
+          p_key: string
+          p_lead: string
+          p_member: string
           p_payload: Json
           p_trigger: string
         }

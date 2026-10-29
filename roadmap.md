@@ -16,4 +16,5 @@
 ## WhatsApp templates (25 Oct 2026)
 - [x] Submit 24 document templates + yellow_card_details to Meta
 - [x] Auto-switch triggers to new templates on approval; Yellow Card PDF after new/renewal
-- [ ] Event hooks still to build: lead_welcome_invite (leads aren't members), trial_day2_followup, trial_completed_offer, family_day_qualified, consistency_26_days, ambassador/supervisor titles + at-risk, MIW starts/midway/completed, member_absent_reminder
+- [x] Connected approved: lead welcome, Family Day, 26-day consistency, Ambassador/Supervisor title, absent reminder, MIW start/midway/completed
+- [ ] trial_day2_followup, trial_completed_offer, at-risk title warnings — waiting on Meta approval status

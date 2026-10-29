@@ -70,7 +70,8 @@ const EVENING_BATCH_SIZE = 100;
 /** Renewal/reactivation reminders only go out from 8:30 pm IST. */
 function isEveningTrigger(key: string): boolean {
   return key.startsWith("serving_balance") || key === "renewal_reminder" ||
-    key === "membership_expired" || key.startsWith("membership_reactivation");
+    key === "membership_expired" || key.startsWith("membership_reactivation") ||
+    key === "member_absent";
 }
 function inEveningWindow(): boolean {
   const ist = new Date(Date.now() + 330 * 60000);
@@ -159,7 +160,7 @@ Deno.serve(async (req) => {
     const evening = inEveningWindow();
     const { data: rawQueue, error: queueError } = await supabase
       .from("wellness_notification_log")
-      .select("id, member_id, trigger_key, channel, message, attempts, payload, created_at")
+      .select("id, member_id, lead_id, trigger_key, channel, message, attempts, payload, created_at")
       .eq("status", "queued")
       .eq("channel", "whatsapp")
       .lt("attempts", MAX_ATTEMPTS)
@@ -194,7 +195,14 @@ Deno.serve(async (req) => {
       .slice(0, evening ? EVENING_BATCH_SIZE : BATCH_SIZE);
     if (!queue.length) return json({ sent: 0, failed: 0, processed: 0 });
 
-    const memberIds = [...new Set(queue.map((q) => q.member_id))];
+    const memberIds = [...new Set(queue.map((q) => q.member_id).filter(Boolean))] as string[];
+    const leadIds = [...new Set(queue.map((q) => q.lead_id).filter(Boolean))] as string[];
+    const leads = new Map<string, { id: string; full_name: string; mobile_number: string }>();
+    if (leadIds.length) {
+      const { data: leadRows } = await supabase.from("wellness_leads")
+        .select("id, full_name, mobile_number").in("id", leadIds);
+      for (const l of leadRows || []) leads.set(l.id, l);
+    }
     const { data: memberRows } = await supabase
       .from("wellness_members")
       .select(
@@ -358,7 +366,13 @@ Deno.serve(async (req) => {
     let blocked = false;
 
     for (const item of queue) {
-      const member = members.get(item.member_id);
+      const lead = !item.member_id && item.lead_id ? leads.get(item.lead_id) : undefined;
+      const member = item.member_id
+        ? members.get(item.member_id)
+        : lead
+        ? { id: null, full_name: lead.full_name, mobile_number: lead.mobile_number, initial_weight: null,
+          current_weight: null, joining_date: null, activation_code: null, referred_by_member_id: null }
+        : undefined;
       const attempts = (item.attempts ?? 0) + 1;
       const markFailed = async (error: string) => {
         failed++;
