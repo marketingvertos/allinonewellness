@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useUpdateWellnessMember } from "@/hooks/useWellness";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

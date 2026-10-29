@@ -39,6 +39,8 @@ import { MemberDashboard } from "./MemberDashboard";
 import { RecordMeasurementDialog } from "./RecordMeasurementDialog";
 import { EditWeightEntryDialog, WeightEntry } from "./EditWeightEntryDialog";
 import { AchievementsPanel } from "./AchievementsPanel";
+import { IntroducerEditor } from "./IntroducerEditor";
+import { plansForNew, plansForRenewal } from "@/lib/planUsage";
 import { ReferrerPicker } from "./ReferrerPicker";
 import { BatchPicker } from "./BatchPicker";
 import { StartTrialDialog } from "./StartTrialDialog";
@@ -188,6 +190,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
 
   if (!member) return null;
 
+  const isFirstTimer = Boolean((member as { is_guest?: boolean }).is_guest) || ["lead", "trial"].includes(String(member.status)) || !(memberships ?? []).length;
   const currentReferrer = (member as { referred_by_member_id?: string | null }).referred_by_member_id ?? null;
   const referrerValue = referrerDraft === undefined ? currentReferrer : referrerDraft;
 
@@ -373,27 +376,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               </div>
 
               <div className="rounded-xl border p-4 shadow-sm text-sm sm:col-span-2">
-                <p className="font-medium">Referred by / helped by</p>
-                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <ReferrerPicker
-                    value={referrerValue}
-                    excludeId={member.id}
-                    onChange={(id) => setReferrerDraft(id)}
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={referrerValue === currentReferrer || updateMember.isPending}
-                    onClick={() =>
-                      updateMember.mutate({ id: member.id, referred_by_member_id: referrerValue })
-                    }
-                  >
-                    Save
-                  </Button>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Credits the selected member with helping this person join.
-                </p>
+                <IntroducerEditor member={member as never} />
               </div>
             </div>
 
@@ -509,7 +492,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                     <SelectContent>
                       <SelectGroup>
                         <SelectLabel>Memberships</SelectLabel>
-                        {plans?.filter((p) => p.plan_type === "membership").map((p) => (
+                        {(isFirstTimer ? plansForNew(plans ?? []) : plansForRenewal(plans ?? [])).filter((p) => p.plan_type === "membership").map((p) => (
                           <SelectItem key={p.id} value={p.id}>
                             {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings{planGetsBonus(p) ? " + 2 bonus" : ""}
                           </SelectItem>
@@ -518,7 +501,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                       {activeTrial && (
                         <SelectGroup>
                           <SelectLabel>Paid trials</SelectLabel>
-                          {plans?.filter((p) => p.plan_type === "trial" && Number(p.price) > 0 && p.id !== (activeTrial as { plan_id?: string | null }).plan_id).map((p) => (
+                          {plansForNew(plans ?? []).filter((p) => p.plan_type === "trial" && Number(p.price) > 0 && p.id !== (activeTrial as { plan_id?: string | null }).plan_id).map((p) => (
                             <SelectItem key={p.id} value={p.id}>
                               {p.name} — {formatCurrency(Number(p.price))} · {p.total_servings} servings
                             </SelectItem>
