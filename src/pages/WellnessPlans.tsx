@@ -1,3 +1,4 @@
+import { PLAN_USAGE_LABEL } from "@/lib/planUsage";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -38,6 +39,7 @@ const empty = {
   price: "",
   description: "",
   active: true,
+  plan_usage: "both",
 };
 
 export default function WellnessPlans() {
@@ -68,6 +70,7 @@ export default function WellnessPlans() {
       price: String(plan.price),
       description: plan.description ?? "",
       active: plan.active,
+      plan_usage: (plan as { plan_usage?: string }).plan_usage ?? "both",
     });
     setOpen(true);
   };
@@ -84,6 +87,7 @@ export default function WellnessPlans() {
       price: Number(form.price || 0),
       description: form.description.trim() || null,
       active: form.active,
+      plan_usage: form.plan_usage,
       ...(editing ? {} : { created_by: user.id }),
     });
     setOpen(false);
@@ -123,6 +127,9 @@ export default function WellnessPlans() {
                 <p className="text-2xl font-bold text-foreground">{formatCurrency(Number(p.price))}</p>
                 <p>
                   {p.duration_days} days · {p.total_servings} servings
+                </p>
+                <p className="text-xs font-medium text-foreground">
+                  For: {PLAN_USAGE_LABEL[((p as { plan_usage?: string }).plan_usage ?? "both") as keyof typeof PLAN_USAGE_LABEL]}
                 </p>
                 {p.description && <p>{p.description}</p>}
                 <p className="text-xs">
@@ -174,6 +181,19 @@ export default function WellnessPlans() {
                 <SelectContent>
                   <SelectItem value="trial">Trial</SelectItem>
                   <SelectItem value="membership">Membership</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Use for</Label>
+              <Select value={form.plan_usage} onValueChange={(v) => setForm({ ...form, plan_usage: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(PLAN_USAGE_LABEL) as (keyof typeof PLAN_USAGE_LABEL)[]).map((k) => (
+                    <SelectItem key={k} value={k}>{PLAN_USAGE_LABEL[k]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
