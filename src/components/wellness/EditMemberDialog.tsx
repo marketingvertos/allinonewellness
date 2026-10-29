@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TagPicker } from "./TagPicker";
 import { BatchPicker } from "./BatchPicker";
-import { ReferrerPicker } from "./ReferrerPicker";
+import { IntroducerEditor } from "./IntroducerEditor";
 
 import { MEMBER_GOALS as GOALS } from "@/lib/goals";
 
@@ -94,7 +94,6 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
       height: form.height ? Number(form.height) : null,
       tags,
       batch_id: batchId,
-      referred_by_member_id: referrerId,
     });
     onOpenChange(false);
   };
@@ -228,9 +227,8 @@ export function EditMemberDialog({ member, open, onOpenChange }: Props) {
           <BatchPicker value={batchId} onChange={setBatchId} />
         </div>
 
-        <div className="sm:col-span-2 space-y-2">
-          <Label>Referred by / helped by</Label>
-          <ReferrerPicker value={referrerId} excludeId={member.id} onChange={setReferrerId} />
+        <div className="sm:col-span-2 rounded-md border p-3">
+          <IntroducerEditor member={member as never} />
         </div>
       </div>
     </ResponsiveDialog>

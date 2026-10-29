@@ -742,6 +742,9 @@ export function useServingLedger(memberId: string | undefined) {
         note: string | null;
         created_at: string;
         created_by: string | null;
+        reversed_at?: string | null;
+        reversal_note?: string | null;
+        reverses_txn_id?: string | null;
       }[];
 
       const staffIds = [...new Set(rows.map((r) => r.created_by).filter(Boolean))] as string[];
@@ -778,6 +781,22 @@ export function useServingLedger(memberId: string | undefined) {
       }));
     },
     enabled: !!memberId,
+  });
+}
+
+export function useReverseServingIssue() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { txnId: string; note: string }) => {
+      const { error } = await supabase.rpc("reverse_serving_issue" as never, {
+        p_txn_id: args.txnId,
+        p_note: args.note,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
+    },
   });
 }
 
