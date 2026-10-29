@@ -1,3 +1,4 @@
+import { PublicIntroducerField, emptyIntroducer, type IntroducerValue } from "@/components/public/PublicIntroducerField";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -39,7 +40,6 @@ export default function PublicRegister() {
     height: "",
     joining_weight: "",
     target_weight: "",
-    referrer_name: "",
     health_issues: "",
     website: "",
   });
@@ -50,6 +50,7 @@ export default function PublicRegister() {
     if (meta) meta.setAttribute("content", DESCRIPTION);
   }, []);
 
+  const [intro, setIntro] = useState<IntroducerValue>(emptyIntroducer);
   const set = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
 
   const setMaritalStatus = (value: string) =>
@@ -69,7 +70,7 @@ export default function PublicRegister() {
     setError(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke("public-register", {
-        body: form,
+        body: { ...form, ...intro },
       });
       if (fnError) {
         const ctx = (fnError as { context?: Response }).context;
@@ -264,15 +265,8 @@ export default function PublicRegister() {
                   onChange={(e) => set("target_weight")(e.target.value)}
                 />
               </div>
-              <div className="sm:col-span-2 space-y-2">
-                <Label htmlFor="pr-ref">Who introduced you? (optional)</Label>
-                <Input
-                  id="pr-ref"
-                  maxLength={100}
-                  value={form.referrer_name}
-                  onChange={(e) => set("referrer_name")(e.target.value)}
-                  placeholder="Name of the member who invited you"
-                />
+              <div className="sm:col-span-2">
+                <PublicIntroducerField value={intro} onChange={setIntro} />
               </div>
               <div className="sm:col-span-2 space-y-2">
                 <Label htmlFor="pr-health">Any health issues?</Label>
