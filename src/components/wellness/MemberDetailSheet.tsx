@@ -233,8 +233,8 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               >
                 {coachInfo.name}
               </button>
-            ) : member.referrer_name ? (
-              <Badge variant="secondary">{member.referrer_name} · outside</Badge>
+            ) : (member as { referrer_name?: string | null }).referrer_name ? (
+              <Badge variant="secondary">{(member as { referrer_name?: string | null }).referrer_name} · outside</Badge>
             ) : (
               <Badge variant="outline">Not recorded</Badge>
             )}
