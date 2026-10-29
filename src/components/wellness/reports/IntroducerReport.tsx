@@ -146,7 +146,7 @@ export function IntroducerReport() {
           {selected?.people.map((p) => (
             <li key={p.member_id} className="flex items-center justify-between gap-3 py-2">
               <div>
-                <a className="font-medium underline-offset-2 hover:underline" href={`/wellness/members?member=${p.member_id}`}>{p.full_name}</a>
+                <a className="font-medium underline-offset-2 hover:underline" href={`/members?q=${p.mobile_number}`}>{p.full_name}</a>
                 <p className="text-xs text-muted-foreground">{p.mobile_number} · joined {formatDate(p.joined_on)}</p>
               </div>
               <Badge variant="outline">{p.current_plan ?? p.status}</Badge>
