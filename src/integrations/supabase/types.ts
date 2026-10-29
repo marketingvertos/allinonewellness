@@ -1572,6 +1572,7 @@ export type Database = {
           joining_weight: string | null
           mobile_number: string
           notes: string | null
+          referred_by_member_id: string | null
           referrer_mobile: string | null
           referrer_name: string | null
           source: Database["public"]["Enums"]["lead_source"]
@@ -1597,6 +1598,7 @@ export type Database = {
           joining_weight?: string | null
           mobile_number: string
           notes?: string | null
+          referred_by_member_id?: string | null
           referrer_mobile?: string | null
           referrer_name?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
@@ -1622,6 +1624,7 @@ export type Database = {
           joining_weight?: string | null
           mobile_number?: string
           notes?: string | null
+          referred_by_member_id?: string | null
           referrer_mobile?: string | null
           referrer_name?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
@@ -3466,6 +3469,9 @@ export type Database = {
           p_height?: string
           p_joining_weight?: string
           p_mobile_number: string
+          p_referred_by_member_id?: string
+          p_referrer_mobile?: string
+          p_referrer_name?: string
           p_source?: string
           p_source_detail?: string
         }
