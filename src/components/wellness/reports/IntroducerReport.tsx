@@ -9,6 +9,7 @@ import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Download, Loader2 } from "lucide-react";
 import { downloadXlsx } from "@/lib/reportExport";
 import { formatDate } from "@/lib/formatters";
+import { IntroducerEditor } from "@/components/wellness/IntroducerEditor";
 
 type Kind = "coach" | "member" | "outside" | "none";
 interface Row {
@@ -38,7 +39,6 @@ export function IntroducerReport() {
   const lmEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0)).toISOString().slice(0, 10);
   const [from, setFrom] = useState(monthStart);
   const [to, setTo] = useState(today);
-  const [open, setOpen] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["introducer-report", from, to],
@@ -63,7 +63,31 @@ export function IntroducerReport() {
   }, [rows]);
 
   const count = (k: Kind) => rows.filter((r) => r.introducer_kind === k).length;
-  const selected = groups.find((g) => g.key === open);
+  const [drill, setDrill] = useState<{ title: string; people: Row[] } | null>(null);
+  const [q, setQ] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  // keep drill list fresh after edits
+  const drillPeople = useMemo(() => {
+    if (!drill) return [];
+    const ids = new Set(drill.people.map((p) => p.member_id));
+    const fresh = rows.filter((r) => ids.has(r.member_id));
+    const list = drill.title === "Not recorded" ? fresh.filter((r) => r.introducer_kind === "none").concat(fresh.filter((r) => r.introducer_kind !== "none")) : fresh;
+    const s = q.toLowerCase().trim();
+    return s ? list.filter((p) => p.full_name.toLowerCase().includes(s) || p.mobile_number?.includes(s)) : list;
+  }, [drill, rows, q]);
+  const openDrill = (title: string, people: Row[]) => { if (people.length) { setQ(""); setEditId(null); setDrill({ title, people }); } };
+  const NumBtn = ({ n, title, people, bold }: { n: number; title: string; people: Row[]; bold?: boolean }) =>
+    n ? (
+      <button type="button" className={`text-primary underline underline-offset-2 hover:opacity-80 ${bold ? "font-semibold" : ""}`} onClick={(e) => { e.stopPropagation(); openDrill(title, people); }}>{n}</button>
+    ) : <span className="text-muted-foreground">0</span>;
+
+  const exportList = () => {
+    if (!drill) return;
+    downloadXlsx(`${drill.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${from}-to-${to}.xlsx`, "People", [
+      ["Name", "Mobile", "Joined", "Current plan", "Status", "Introduced by", "Introducer mobile", "Type"],
+      ...drillPeople.map((r) => [r.full_name, r.mobile_number, formatDate(r.joined_on), r.current_plan ?? "", r.status, r.introducer_name ?? "", r.introducer_mobile ?? "", KIND_LABEL[r.introducer_kind]]),
+    ], [24, 14, 14, 26, 14, 24, 16, 16]);
+  };
 
   const exportAll = () => {
     downloadXlsx(`introducers-${from}-to-${to}.xlsx`, "Who introduced whom", [
@@ -71,6 +95,14 @@ export function IntroducerReport() {
       ...rows.map((r) => [r.full_name, r.mobile_number, formatDate(r.joined_on), r.current_plan ?? "", r.introducer_name ?? "", r.introducer_mobile ?? "", KIND_LABEL[r.introducer_kind]]),
     ], [24, 14, 14, 26, 24, 16, 16]);
   };
+
+  const tiles: [string, Row[]][] = [
+    ["New people", rows],
+    ["By coaches", rows.filter((r) => r.introducer_kind === "coach")],
+    ["By club members", rows.filter((r) => r.introducer_kind === "member")],
+    ["By outside people", rows.filter((r) => r.introducer_kind === "outside")],
+    ["Not recorded", rows.filter((r) => r.introducer_kind === "none")],
+  ];
 
   return (
     <div className="space-y-4">
@@ -90,17 +122,14 @@ export function IntroducerReport() {
       ) : (
         <>
           <div className="grid gap-3 grid-cols-2 md:grid-cols-5">
-            {[
-              ["New people", rows.length],
-              ["By coaches", count("coach")],
-              ["By club members", count("member")],
-              ["By outside people", count("outside")],
-              ["Not recorded", count("none")],
-            ].map(([label, n]) => (
-              <Card key={label as string}><CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="text-2xl font-bold">{n}</p>
-              </CardContent></Card>
+            {tiles.map(([label, people]) => (
+              <Card key={label} className={people.length ? "cursor-pointer transition hover:border-primary hover:shadow-sm" : ""} onClick={() => openDrill(label, people)}>
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <p className="text-2xl font-bold">{people.length}</p>
+                  {people.length ? <p className="text-[11px] text-primary">Tap to see list</p> : null}
+                </CardContent>
+              </Card>
             ))}
           </div>
 
@@ -115,15 +144,15 @@ export function IntroducerReport() {
               </thead>
               <tbody>
                 {groups.map((g) => {
-                  const b = (k: string) => g.people.filter((p) => planBucket(p.current_plan) === k).length;
+                  const b = (k: string) => g.people.filter((p) => planBucket(p.current_plan) === k);
                   return (
-                    <tr key={g.key} className="cursor-pointer border-b hover:bg-accent/40" onClick={() => setOpen(g.key)}>
+                    <tr key={g.key} className="cursor-pointer border-b hover:bg-accent/40" onClick={() => openDrill(`Introduced by ${g.name}`, g.people)}>
                       <td className="p-3 font-medium">{g.name}{g.mobile ? <span className="ml-2 text-xs text-muted-foreground">{g.mobile}</span> : null}</td>
                       <td className="p-3"><Badge variant={g.kind === "coach" ? "default" : "secondary"}>{KIND_LABEL[g.kind]}</Badge></td>
-                      <td className="p-3 text-right font-semibold">{g.people.length}</td>
-                      <td className="p-3 text-right">{b("paid_trial")}</td>
-                      <td className="p-3 text-right">{b("white")}</td>
-                      <td className="p-3 text-right">{b("gold")}</td>
+                      <td className="p-3 text-right"><NumBtn bold n={g.people.length} title={`Introduced by ${g.name}`} people={g.people} /></td>
+                      <td className="p-3 text-right"><NumBtn n={b("paid_trial").length} title={`${g.name} · Paid trial`} people={b("paid_trial")} /></td>
+                      <td className="p-3 text-right"><NumBtn n={b("white").length} title={`${g.name} · White Card`} people={b("white")} /></td>
+                      <td className="p-3 text-right"><NumBtn n={b("gold").length} title={`${g.name} · Gold UMS`} people={b("gold")} /></td>
                     </tr>
                   );
                 })}
@@ -137,21 +166,43 @@ export function IntroducerReport() {
       )}
 
       <ResponsiveDialog
-        open={!!selected}
-        onOpenChange={(o) => !o && setOpen(null)}
-        title={selected ? `Introduced by ${selected.name}` : ""}
-        description={selected ? `${selected.people.length} people · ${KIND_LABEL[selected.kind]}` : ""}
+        open={!!drill}
+        onOpenChange={(o) => !o && setDrill(null)}
+        title={drill?.title ?? ""}
+        description={drill ? `${drillPeople.length} people · ${formatDate(from)} to ${formatDate(to)}` : ""}
       >
+        <div className="mb-3 flex gap-2">
+          <Input placeholder="Search name or mobile" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Button size="sm" variant="outline" onClick={exportList} disabled={!drillPeople.length}><Download className="mr-1 h-4 w-4" />Excel</Button>
+        </div>
         <ul className="divide-y text-sm">
-          {selected?.people.map((p) => (
-            <li key={p.member_id} className="flex items-center justify-between gap-3 py-2">
-              <div>
-                <a className="font-medium underline-offset-2 hover:underline" href={`/members?q=${p.mobile_number}`}>{p.full_name}</a>
-                <p className="text-xs text-muted-foreground">{p.mobile_number} · joined {formatDate(p.joined_on)}</p>
+          {drillPeople.map((p) => (
+            <li key={p.member_id} className="py-2">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <a className="font-medium text-primary underline-offset-2 hover:underline" href={`/members?q=${p.mobile_number}`}>{p.full_name}</a>
+                  <p className="text-xs text-muted-foreground">{p.mobile_number} · joined {formatDate(p.joined_on)} · {p.status}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Introduced by: {p.introducer_kind === "none" ? <span className="text-destructive">Not recorded</span> : `${p.introducer_name ?? "—"}${p.introducer_mobile ? ` · ${p.introducer_mobile}` : ""} (${KIND_LABEL[p.introducer_kind]})`}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <Badge variant="outline">{p.current_plan ?? "No plan"}</Badge>
+                  {p.introducer_kind === "none" && (
+                    <Button size="sm" variant="secondary" onClick={() => setEditId(editId === p.member_id ? null : p.member_id)}>
+                      {editId === p.member_id ? "Close" : "Set introducer"}
+                    </Button>
+                  )}
+                </div>
               </div>
-              <Badge variant="outline">{p.current_plan ?? p.status}</Badge>
+              {editId === p.member_id && (
+                <div className="mt-2 rounded-md border p-3">
+                  <IntroducerEditor member={{ id: p.member_id, referred_by_member_id: null, referrer_name: null, referrer_mobile: null }} />
+                </div>
+              )}
             </li>
           ))}
+          {!drillPeople.length && <li className="py-6 text-center text-muted-foreground">No people found.</li>}
         </ul>
       </ResponsiveDialog>
     </div>

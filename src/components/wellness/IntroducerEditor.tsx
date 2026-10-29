@@ -61,6 +61,7 @@ export function IntroducerEditor({ member, introducerLabel }: Props) {
       created_by: user?.id,
     } as never);
     qc.invalidateQueries({ queryKey: ["member-notes"] });
+    qc.invalidateQueries({ queryKey: ["introducer-report"] });
   };
 
   const shown = introducerLabel || (curName ? `${curName}${curMobile ? ` · ${curMobile}` : ""}` : null);
