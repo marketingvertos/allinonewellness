@@ -239,7 +239,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               <Badge variant="outline">Not recorded</Badge>
             )}
             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setIntroOpen(true)}>
-              {member.referred_by_member_id || member.referrer_name ? "Change" : "Set introducer"}
+              {member.referred_by_member_id || (member as { referrer_name?: string | null }).referrer_name ? "Change" : "Set introducer"}
             </Button>
           </div>
         </SheetHeader>
