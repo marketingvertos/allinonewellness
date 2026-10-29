@@ -1,3 +1,4 @@
+import { plansForNew } from "@/lib/planUsage";
 import { useState } from "react";
 import { useActiveTrials, useRecentEndedTrials, useCreateMembership, useTrialCandidates, useWellnessPlans } from "@/hooks/useWellness";
 import { PageBanner } from "@/components/PageBanner";
@@ -43,8 +44,8 @@ export default function WellnessTrials() {
   const [guestOpen, setGuestOpen] = useState(false);
 
   const { data: trialVisits } = useTrialAttendance((trials ?? []).map((t) => t.id));
-  const membershipPlans = (plans ?? []).filter((p) => p.plan_type === "membership" && p.active);
-  const paidTrialPlans = (plans ?? []).filter((p) => p.plan_type === "trial" && p.active && Number(p.price) > 0);
+  const membershipPlans = plansForNew(plans ?? []).filter((p) => p.plan_type === "membership");
+  const paidTrialPlans = plansForNew(plans ?? []).filter((p) => p.plan_type === "trial" && Number(p.price) > 0);
   const [changeFor, setChangeFor] = useState<{ id: string; plan_id: string | null; duration_days: number | null; name: string; used: number } | null>(null);
   const qc = useQueryClient();
   const { toast } = useToast();

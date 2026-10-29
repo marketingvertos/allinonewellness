@@ -1,3 +1,4 @@
+import { PublicIntroducerField, emptyIntroducer, type IntroducerValue } from "@/components/public/PublicIntroducerField";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -19,6 +20,7 @@ export default function PublicTrial() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [intro, setIntro] = useState<IntroducerValue>(emptyIntroducer);
   const [form, setForm] = useState({
     full_name: "",
     mobile_number: "",
@@ -63,6 +65,9 @@ export default function PublicTrial() {
         p_height: form.height || undefined,
         p_joining_weight: form.joining_weight || undefined,
         p_health_issues: form.health_issues || undefined,
+        p_referred_by_member_id: intro.referred_by_member_id || undefined,
+        p_referrer_name: intro.referrer_name || undefined,
+        p_referrer_mobile: intro.referrer_mobile || undefined,
       });
       if (rpcError) throw new Error(rpcError.message);
       const result = data as { ok?: boolean };
@@ -193,6 +198,9 @@ export default function PublicTrial() {
                   value={form.joining_weight}
                   onChange={(e) => set("joining_weight")(e.target.value)}
                 />
+              </div>
+              <div className="sm:col-span-2">
+                <PublicIntroducerField value={intro} onChange={setIntro} />
               </div>
               <div className="sm:col-span-2 space-y-2">
                 <Label htmlFor="pt-health">Any health issues? (optional)</Label>

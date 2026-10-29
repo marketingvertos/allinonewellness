@@ -1572,6 +1572,9 @@ export type Database = {
           joining_weight: string | null
           mobile_number: string
           notes: string | null
+          referred_by_member_id: string | null
+          referrer_mobile: string | null
+          referrer_name: string | null
           source: Database["public"]["Enums"]["lead_source"]
           source_detail: string | null
           status: Database["public"]["Enums"]["lead_status"]
@@ -1595,6 +1598,9 @@ export type Database = {
           joining_weight?: string | null
           mobile_number: string
           notes?: string | null
+          referred_by_member_id?: string | null
+          referrer_mobile?: string | null
+          referrer_name?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
           source_detail?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
@@ -1618,6 +1624,9 @@ export type Database = {
           joining_weight?: string | null
           mobile_number?: string
           notes?: string | null
+          referred_by_member_id?: string | null
+          referrer_mobile?: string | null
+          referrer_name?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
           source_detail?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
@@ -1828,6 +1837,8 @@ export type Database = {
           network_total: number
           pink_card_balance: number
           referred_by_member_id: string | null
+          referrer_mobile: string | null
+          referrer_name: string | null
           status: Database["public"]["Enums"]["wellness_status"]
           tags: string[]
           target_weight: number | null
@@ -1864,6 +1875,8 @@ export type Database = {
           network_total?: number
           pink_card_balance?: number
           referred_by_member_id?: string | null
+          referrer_mobile?: string | null
+          referrer_name?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
           tags?: string[]
           target_weight?: number | null
@@ -1900,6 +1913,8 @@ export type Database = {
           network_total?: number
           pink_card_balance?: number
           referred_by_member_id?: string | null
+          referrer_mobile?: string | null
+          referrer_name?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
           tags?: string[]
           target_weight?: number | null
@@ -2260,6 +2275,7 @@ export type Database = {
           id: string
           name: string
           plan_type: string
+          plan_usage: string
           price: number
           servings_per_day: number
           total_servings: number
@@ -2274,6 +2290,7 @@ export type Database = {
           id?: string
           name: string
           plan_type?: string
+          plan_usage?: string
           price?: number
           servings_per_day?: number
           total_servings?: number
@@ -2288,6 +2305,7 @@ export type Database = {
           id?: string
           name?: string
           plan_type?: string
+          plan_usage?: string
           price?: number
           servings_per_day?: number
           total_servings?: number
@@ -3193,6 +3211,21 @@ export type Database = {
       }
       get_club_monthly_report: { Args: { p_month: string }; Returns: Json }
       get_coach_title_status: { Args: { p_member_id: string }; Returns: Json }
+      get_introducer_report: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          current_plan: string
+          full_name: string
+          introducer_id: string
+          introducer_kind: string
+          introducer_mobile: string
+          introducer_name: string
+          joined_on: string
+          member_id: string
+          mobile_number: string
+          status: string
+        }[]
+      }
       get_member_network: {
         Args: { p_member_id: string }
         Returns: {
@@ -3436,6 +3469,9 @@ export type Database = {
           p_height?: string
           p_joining_weight?: string
           p_mobile_number: string
+          p_referred_by_member_id?: string
+          p_referrer_mobile?: string
+          p_referrer_name?: string
           p_source?: string
           p_source_detail?: string
         }

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
   DailyRow, MonthlyManual, useClubDailyReport, useClubMonthlyReport, useMonthlyOps, useSaveDailyOps, useSaveMonthlyOps,
 } from "@/hooks/useClubReports";
+import { IntroducerReport } from "@/components/wellness/reports/IntroducerReport";
 import { EditableCell } from "@/components/wellness/reports/EditableCell";
 import { downloadXlsx } from "@/lib/reportExport";
 import { downloadBrandedPdf } from "@/lib/reportPdf";
@@ -236,10 +237,11 @@ export default function ClubReports() {
         <Input type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} className="w-44" />
       </CardContent></Card>
       <Tabs defaultValue="daily">
-        <TabsList className="print:hidden">
+        <TabsList className="print:hidden h-auto flex-wrap">
           <TabsTrigger value="daily">Daily</TabsTrigger>
           <TabsTrigger value="weekly">Weekly</TabsTrigger>
           <TabsTrigger value="monthly">Monthly</TabsTrigger>
+          <TabsTrigger value="introducers">Who introduced whom</TabsTrigger>
         </TabsList>
         <TabsContent value="daily" className="space-y-3">
           <div className="flex justify-end gap-2 print:hidden">
@@ -260,6 +262,7 @@ export default function ClubReports() {
           <RegisterTable rows={weekRows} labels={weeks.map((w) => w.label)} total={total} month={month} editable={false} />
         </TabsContent>
         <TabsContent value="monthly"><MonthlyRecord month={month} /></TabsContent>
+        <TabsContent value="introducers"><IntroducerReport /></TabsContent>
       </Tabs>
     </div>
   );

@@ -2392,6 +2392,8 @@ export function useStartGuestTrial() {
           initial_weight: args.weight ?? null,
           current_weight: args.weight ?? null,
           referred_by_member_id: args.referred_by_member_id ?? null,
+          referrer_name: args.referred_by_member_id ? null : args.referrer_name?.trim() || null,
+          referrer_mobile: args.referred_by_member_id ? null : args.referrer_mobile?.trim() || null,
           created_by: args.created_by,
         } as never)
         .select("id")

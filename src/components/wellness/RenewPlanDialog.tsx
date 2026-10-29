@@ -1,3 +1,4 @@
+import { plansForRenewal } from "@/lib/planUsage";
 import { useEffect, useState } from "react";
 import {
   PINK_CARD_SERVING_VALUE,
@@ -36,7 +37,7 @@ interface Props {
 export function RenewPlanDialog({ membership, open, onOpenChange }: Props) {
   const { data: plans } = useWellnessPlans();
   const renew = useRenewPlan();
-  const membershipPlans = (plans ?? []).filter((p) => p.plan_type === "membership");
+  const membershipPlans = plansForRenewal(plans ?? []);
 
   const [planId, setPlanId] = useState(membership.plan_id);
   const [servings, setServings] = useState<number>(0);

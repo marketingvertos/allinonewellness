@@ -64,6 +64,8 @@ const BodySchema = z.object({
   joining_weight: optionalNumber(20, 300),
   target_weight: optionalNumber(20, 300),
   referrer_name: optionalText(100),
+  referrer_mobile: optionalText(15),
+  referred_by_member_id: z.string().uuid().optional().or(z.literal("")).transform((v) => (v ? v : null)),
   health_issues: optionalText(1000),
   /** Hidden honeypot — real people never fill this in. */
   website: z.string().max(200).optional(),
@@ -94,9 +96,30 @@ Deno.serve(async (req) => {
 
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    if (throttled(ip)) return json({ error: "Too many submissions. Please try again later." }, 429);
+    const raw = await req.json().catch(() => ({}));
 
-    const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
+    // Type-ahead for "Who introduced you?" — returns first name + masked mobile only.
+    if (raw?.action === "search_referrers") {
+      const term = String(raw.term ?? "").trim().replace(/[%,()*]/g, "").slice(0, 40);
+      if (term.length < 3) return json({ results: [] });
+      const { data } = await supabase
+        .from("wellness_members")
+        .select("id, full_name, mobile_number")
+        .eq("is_guest", false)
+        .not("status", "eq", "lead")
+        .ilike("full_name", `%${term}%`)
+        .order("full_name")
+        .limit(10);
+      return json({
+        results: (data ?? []).map((m) => ({
+          id: m.id,
+          label: `${String(m.full_name).trim().split(/\s+/).slice(0, 2).join(" ")} · ••${String(m.mobile_number ?? "").slice(-4)}`,
+        })),
+      });
+    }
+
+    if (throttled(ip)) return json({ error: "Too many submissions. Please try again later." }, 429);
+    const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
       return json({ error: "Please check the details you entered." }, 400);
     }
@@ -112,7 +135,7 @@ Deno.serve(async (req) => {
 
     const { data: existing } = await supabase
       .from("wellness_members")
-      .select("id, full_name, tags")
+      .select("id, full_name, tags, referred_by_member_id, referrer_name")
       .ilike("mobile_number", `%${mobile}%`)
       .limit(1);
     const prior = existing?.[0] ?? null;
@@ -136,6 +159,18 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
     if (!adminRole?.user_id) return json({ error: "Registration is unavailable right now." }, 503);
+
+    let refId: string | null = null;
+    if (input.referred_by_member_id) {
+      const { data: r } = await supabase.from("wellness_members").select("id")
+        .eq("id", input.referred_by_member_id).eq("is_guest", false).maybeSingle();
+      refId = r?.id && r.id !== prior?.id ? r.id : null;
+    }
+    const introducer = refId
+      ? { referred_by_member_id: refId, referrer_name: null, referrer_mobile: null }
+      : input.referrer_name
+        ? { referrer_name: input.referrer_name, referrer_mobile: input.referrer_mobile ? last10(input.referrer_mobile) : null }
+        : {};
 
     const isMarried = input.marital_status === "married";
     const norm = (n: string) => n.toLowerCase().replace(/[^a-z ]/g, "").trim();
@@ -163,6 +198,8 @@ Deno.serve(async (req) => {
       if (input.target_weight) patch.target_weight = input.target_weight;
       if (input.goal) patch.goal = input.goal;
       patch.tags = Array.from(new Set([...(prior.tags ?? []), "form_filled"]));
+      // Only fill the introducer if staff haven't recorded one already.
+      if (!prior.referred_by_member_id && !prior.referrer_name) Object.assign(patch, introducer);
       const res = await supabase.from("wellness_members").update(patch).eq("id", prior.id)
         .select("id, full_name").maybeSingle();
       member = res.data; insertErr = res.error;
@@ -185,6 +222,7 @@ Deno.serve(async (req) => {
           goal: input.goal ?? "weight_loss",
           member_mode: input.member_mode ?? "physical",
           tags: ["public_form"],
+          ...introducer,
           created_by: adminRole.user_id,
         })
         .select("id, full_name")
@@ -201,7 +239,7 @@ Deno.serve(async (req) => {
       nameMismatch ? `Name entered on form: ${input.full_name}` : null,
       input.city ? `City: ${input.city}` : null,
       input.alternate_mobile ? `Alternate number: ${input.alternate_mobile}` : null,
-      input.referrer_name ? `Introduced by: ${input.referrer_name}` : null,
+      !refId && input.referrer_name ? `Introduced by: ${input.referrer_name}${input.referrer_mobile ? ` · ${input.referrer_mobile}` : ""}` : null,
       input.health_issues ? `Health issues: ${input.health_issues}` : null,
     ].filter(Boolean);
 
