@@ -2393,6 +2393,7 @@ export function useStartGuestTrial() {
       referred_by_member_id?: string | null;
       referrer_name?: string | null;
       referrer_mobile?: string | null;
+      local_area?: string | null;
     }) => {
       const duration = args.duration_days ?? 3;
 
@@ -2413,6 +2414,7 @@ export function useStartGuestTrial() {
           referred_by_member_id: args.referred_by_member_id ?? null,
           referrer_name: args.referred_by_member_id ? null : args.referrer_name?.trim() || null,
           referrer_mobile: args.referred_by_member_id ? null : args.referrer_mobile?.trim() || null,
+          local_area: args.local_area?.trim() || null,
           created_by: args.created_by,
         } as never)
         .select("id")
