@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   WellnessMember,
