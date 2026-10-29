@@ -15,16 +15,16 @@ type Kind = "coach" | "member" | "outside" | "none";
 interface Row {
   member_id: string; full_name: string; mobile_number: string; joined_on: string; status: string;
   current_plan: string | null; introducer_id: string | null; introducer_name: string | null;
-  introducer_mobile: string | null; introducer_kind: Kind;
+  introducer_mobile: string | null; introducer_kind: Kind; gold_type?: "new" | "renewal" | null;
 }
 
 const ist = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 const KIND_LABEL: Record<Kind, string> = { coach: "Coach", member: "Club member", outside: "Outside", none: "Not recorded" };
 
-function planBucket(p: string | null): "paid_trial" | "white" | "gold" | null {
+export function planBucket(p: string | null, goldType?: string | null): "paid_trial" | "white" | "gold_new" | "gold_renewal" | null {
   if (!p) return null;
   const n = p.toLowerCase();
-  if (n.includes("gold") || n.includes("ums")) return "gold";
+  if (n.includes("gold") || n.includes("ums")) return goldType === "renewal" ? "gold_renewal" : "gold_new";
   if (n.includes("white") || n.includes("15 visit")) return "white";
   if (n.includes("paid") || n.includes("3 days renewal")) return "paid_trial";
   return null;
@@ -84,15 +84,15 @@ export function IntroducerReport() {
   const exportList = () => {
     if (!drill) return;
     downloadXlsx(`${drill.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${from}-to-${to}.xlsx`, "People", [
-      ["Name", "Mobile", "Joined", "Current plan", "Status", "Introduced by", "Introducer mobile", "Type"],
-      ...drillPeople.map((r) => [r.full_name, r.mobile_number, formatDate(r.joined_on), r.current_plan ?? "", r.status, r.introducer_name ?? "", r.introducer_mobile ?? "", KIND_LABEL[r.introducer_kind]]),
+      ["Name", "Mobile", "Joined", "Current plan", "Gold UMS type", "Status", "Introduced by", "Introducer mobile", "Type"],
+      ...drillPeople.map((r) => [r.full_name, r.mobile_number, formatDate(r.joined_on), r.current_plan ?? "", r.gold_type === "renewal" ? "Renewal" : r.gold_type === "new" ? "New" : "", r.status, r.introducer_name ?? "", r.introducer_mobile ?? "", KIND_LABEL[r.introducer_kind]]),
     ], [24, 14, 14, 26, 14, 24, 16, 16]);
   };
 
   const exportAll = () => {
     downloadXlsx(`introducers-${from}-to-${to}.xlsx`, "Who introduced whom", [
-      ["New person", "Mobile", "Joined", "Current plan", "Introduced by", "Introducer mobile", "Introducer type"],
-      ...rows.map((r) => [r.full_name, r.mobile_number, formatDate(r.joined_on), r.current_plan ?? "", r.introducer_name ?? "", r.introducer_mobile ?? "", KIND_LABEL[r.introducer_kind]]),
+      ["New person", "Mobile", "Joined", "Current plan", "Gold UMS type", "Introduced by", "Introducer mobile", "Introducer type"],
+      ...rows.map((r) => [r.full_name, r.mobile_number, formatDate(r.joined_on), r.current_plan ?? "", r.gold_type === "renewal" ? "Renewal" : r.gold_type === "new" ? "New" : "", r.introducer_name ?? "", r.introducer_mobile ?? "", KIND_LABEL[r.introducer_kind]]),
     ], [24, 14, 14, 26, 24, 16, 16]);
   };
 
@@ -139,12 +139,12 @@ export function IntroducerReport() {
                 <tr>
                   <th className="p-3">Introduced by</th><th className="p-3">Type</th>
                   <th className="p-3 text-right">Introduced</th><th className="p-3 text-right">Paid trial</th>
-                  <th className="p-3 text-right">White Card</th><th className="p-3 text-right">Gold UMS</th>
+                  <th className="p-3 text-right">White Card</th><th className="p-3 text-right">New Gold UMS</th><th className="p-3 text-right">Renewal Gold UMS</th>
                 </tr>
               </thead>
               <tbody>
                 {groups.map((g) => {
-                  const b = (k: string) => g.people.filter((p) => planBucket(p.current_plan) === k);
+                  const b = (k: string) => g.people.filter((p) => planBucket(p.current_plan, p.gold_type) === k);
                   return (
                     <tr key={g.key} className="cursor-pointer border-b hover:bg-accent/40" onClick={() => openDrill(`Introduced by ${g.name}`, g.people)}>
                       <td className="p-3 font-medium">{g.name}{g.mobile ? <span className="ml-2 text-xs text-muted-foreground">{g.mobile}</span> : null}</td>
@@ -152,12 +152,13 @@ export function IntroducerReport() {
                       <td className="p-3 text-right"><NumBtn bold n={g.people.length} title={`Introduced by ${g.name}`} people={g.people} /></td>
                       <td className="p-3 text-right"><NumBtn n={b("paid_trial").length} title={`${g.name} · Paid trial`} people={b("paid_trial")} /></td>
                       <td className="p-3 text-right"><NumBtn n={b("white").length} title={`${g.name} · White Card`} people={b("white")} /></td>
-                      <td className="p-3 text-right"><NumBtn n={b("gold").length} title={`${g.name} · Gold UMS`} people={b("gold")} /></td>
+                      <td className="p-3 text-right"><NumBtn n={b("gold_new").length} title={`${g.name} · New Gold UMS`} people={b("gold_new")} /></td>
+                      <td className="p-3 text-right"><NumBtn n={b("gold_renewal").length} title={`${g.name} · Renewal Gold UMS`} people={b("gold_renewal")} /></td>
                     </tr>
                   );
                 })}
                 {!groups.length && (
-                  <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No introducers recorded in this period.</td></tr>
+                  <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No introducers recorded in this period.</td></tr>
                 )}
               </tbody>
             </table>
@@ -187,7 +188,7 @@ export function IntroducerReport() {
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
-                  <Badge variant="outline">{p.current_plan ?? "No plan"}</Badge>
+                  <Badge variant="outline">{p.current_plan ?? "No plan"}{p.gold_type ? ` · ${p.gold_type === "renewal" ? "Renewal" : "New"}` : ""}</Badge>
                   {p.introducer_kind === "none" && (
                     <Button size="sm" variant="secondary" onClick={() => setEditId(editId === p.member_id ? null : p.member_id)}>
                       {editId === p.member_id ? "Close" : "Set introducer"}

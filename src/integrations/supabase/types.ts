@@ -3228,6 +3228,7 @@ export type Database = {
         Returns: {
           current_plan: string
           full_name: string
+          gold_type: string
           introducer_id: string
           introducer_kind: string
           introducer_mobile: string
