@@ -582,6 +582,13 @@
       "when": 1793268847407,
       "tag": "0082_introducer_report_gold_type",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1793269656835,
+      "tag": "0083_member_local_area",
+      "breakpoints": true
     }
   ]
 }
