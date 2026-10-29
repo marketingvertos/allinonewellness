@@ -237,7 +237,7 @@ export default function ClubReports() {
         <Input type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} className="w-44" />
       </CardContent></Card>
       <Tabs defaultValue="daily">
-        <TabsList className="print:hidden">
+        <TabsList className="print:hidden h-auto flex-wrap">
           <TabsTrigger value="daily">Daily</TabsTrigger>
           <TabsTrigger value="weekly">Weekly</TabsTrigger>
           <TabsTrigger value="monthly">Monthly</TabsTrigger>
