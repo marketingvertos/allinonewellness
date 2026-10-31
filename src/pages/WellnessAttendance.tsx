@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Download, FileText, RefreshCw, Search, Sparkles, TrendingUp, Trophy, UserCheck, Users, UserX, X } from "lucide-react";
+import { Check, Download, Eye, FileText, RefreshCw, Search, Sparkles, TrendingUp, Trophy, UserCheck, Users, UserX, X } from "lucide-react";
 import { MemberModeFilter, useAttendanceRegister, AttendanceRow } from "@/hooks/useWellness";
 import { MemberSheetById } from "@/components/wellness/MemberSheetById";
 import { AttendanceFilterBar, applyAttendanceFilters, formatLastSeen, DEFAULT_FILTERS, type AttendanceFilters } from "@/components/wellness/AttendanceFilterBar";
@@ -139,6 +139,44 @@ export default function WellnessAttendance() {
   const wlpToday = rows.filter((r) => r.wlpByDate[data?.today ?? ""]);
   const absent = rows.filter((r) => !r.dayMap[data?.today ?? ""] && !r.wlpByDate[data?.today ?? ""]);
 
+  type CardKey = "present" | "absent" | "serving" | "wlp";
+  const CARD_DEFS: { key: CardKey; label: string }[] = [
+    { key: "present", label: "Present" },
+    { key: "absent", label: "Absent" },
+    { key: "serving", label: "Serving" },
+    { key: "wlp", label: "WLP" },
+  ];
+  const ALL_KEYS: CardKey[] = ["present", "absent", "serving", "wlp"];
+
+  const [visibleCards, setVisibleCards] = useState<Set<CardKey>>(() => {
+    try {
+      const stored = localStorage.getItem("att-visible-cards");
+      if (stored) {
+        const arr = JSON.parse(stored) as string[];
+        const valid = arr.filter((k): k is CardKey => ALL_KEYS.includes(k as CardKey));
+        if (valid.length) return new Set(valid);
+      }
+    } catch { /* ignore */ }
+    return new Set(ALL_KEYS);
+  });
+
+  const toggleCard = useCallback((key: CardKey) => {
+    setVisibleCards((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        if (next.size <= 1) return prev;
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      try { localStorage.setItem("att-visible-cards", JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  const visibleCount = visibleCards.size;
+  const gridCols = visibleCount <= 1 ? "" : visibleCount === 2 ? "md:grid-cols-2" : "md:grid-cols-2 xl:grid-cols-3";
+
   return (
     <div className="space-y-4 p-4 md:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -208,12 +246,25 @@ export default function WellnessAttendance() {
       {isLoading || !data ? (
         <Skeleton className="h-64 w-full" />
       ) : view === "daily" ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <MemberList title="Present at club" tone="present" rows={present} today={data?.today ?? ""} onSelect={setSelected} />
-          <MemberList title="Serving issued (not at club)" tone="served" rows={served} today={data?.today ?? ""} onSelect={setSelected} />
-          <MemberList title="WLP evening session" tone="served" rows={wlpToday} today={data?.today ?? ""} onSelect={setSelected} />
-          <MemberList title="Absent" tone="absent" rows={absent} today={data?.today ?? ""} onSelect={setSelected} />
-        </div>
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <Eye className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Show:</span>
+            {CARD_DEFS.map((c) => (
+              <button key={c.key} type="button" onClick={() => toggleCard(c.key)}
+                className={cn("rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                  visibleCards.has(c.key) ? "border-primary bg-primary/10 text-primary" : "border-muted-foreground/30 text-muted-foreground hover:border-muted-foreground")}>
+                {c.label}
+              </button>
+            ))}
+          </div>
+          <div className={cn("grid gap-4", gridCols)}>
+            {visibleCards.has("present") && <MemberList title="Present at club" tone="present" rows={present} today={data?.today ?? ""} onSelect={setSelected} />}
+            {visibleCards.has("absent") && <MemberList title="Absent" tone="absent" rows={absent} today={data?.today ?? ""} onSelect={setSelected} />}
+            {visibleCards.has("serving") && <MemberList title="Serving issued (not at club)" tone="served" rows={served} today={data?.today ?? ""} onSelect={setSelected} />}
+            {visibleCards.has("wlp") && <MemberList title="WLP evening session" tone="served" rows={wlpToday} today={data?.today ?? ""} onSelect={setSelected} />}
+          </div>
+        </>
       ) : (
         <Card>
           <CardContent className="p-0">
