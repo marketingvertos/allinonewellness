@@ -70,8 +70,11 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, formatDate, formatDateTime, todayIst , planGetsBonus } from "@/lib/formatters";
 
-import { Download, Package, Pencil, Trash2 } from "lucide-react";
-import { downloadMembershipCard } from "@/lib/membershipCardPdf";
+import { FileText, Package, Pencil, Trash2 } from "lucide-react";
+import { buildMembershipCardPdf } from "@/lib/membershipCardPdf";
+import { buildPinkCardPdf } from "@/lib/pinkCardPdf";
+import { CardPreviewDialog } from "./CardPreviewDialog";
+import { usePinkCardLedger } from "@/hooks/useWellness";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -117,6 +120,8 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const { data: measurements } = useBodyMeasurements(memberId);
   const { data: allPayments } = useAllMemberPayments(memberId);
   const { data: coachInfo } = useCoachInfo(memberProp?.referred_by_member_id);
+  const { data: pinkLedger } = usePinkCardLedger(memberId);
+  const { data: referrerMember } = useWellnessMember(memberProp?.referred_by_member_id ?? undefined);
   const updateMember = useUpdateWellnessMember();
 
   const visitTimeline = useMemo(() => {
@@ -184,6 +189,8 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [introOpen, setIntroOpen] = useState(false);
   const [reverseTxn, setReverseTxn] = useState<{ id: string; qty: number } | null>(null);
+  const [yellowCardOpen, setYellowCardOpen] = useState(false);
+  const [pinkCardOpen, setPinkCardOpen] = useState(false);
   const [reverseNote, setReverseNote] = useState("");
   const reverseServing = useReverseServingIssue();
 
@@ -453,8 +460,16 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() =>
-                downloadMembershipCard({
+              onClick={() => setYellowCardOpen(true)}
+            >
+              <FileText className="h-4 w-4" /> View membership card
+            </Button>
+            <CardPreviewDialog
+              open={yellowCardOpen}
+              onOpenChange={setYellowCardOpen}
+              title="Universal Membership Card"
+              buildPdf={() =>
+                buildMembershipCardPdf({
                   member,
                   memberships: memberships ?? [],
                   trials: trials ?? [],
@@ -464,9 +479,7 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
                   coach: coachInfo ?? null,
                 })
               }
-            >
-              <Download className="h-4 w-4" /> Download membership card
-            </Button>
+            />
             {member.referred_by_member_id && <FrontlineCountFlag memberId={member.id} />}
             {activeMembership ? (
               <div className="space-y-3 rounded-xl border p-4 shadow-sm">
@@ -749,6 +762,27 @@ export function MemberDetailSheet({ member: memberProp, open, onOpenChange }: Pr
           </TabsContent>
 
           <TabsContent value="pinkcard" className="space-y-4 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setPinkCardOpen(true)}
+            >
+              <FileText className="h-4 w-4" /> View Pink Card
+            </Button>
+            <CardPreviewDialog
+              open={pinkCardOpen}
+              onOpenChange={setPinkCardOpen}
+              title="Pink Card"
+              buildPdf={() =>
+                buildPinkCardPdf({
+                  member,
+                  ledger: pinkLedger ?? [],
+                  referrer: referrerMember ? { full_name: referrerMember.full_name } : null,
+                  coach: coachInfo ?? null,
+                })
+              }
+            />
             <PinkCardPanel
               memberId={member.id}
               balance={member.pink_card_balance}

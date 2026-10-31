@@ -81,7 +81,7 @@ function buildHistory(data: MembershipCardData): HistoryEntry[] {
   return entries;
 }
 
-export async function downloadMembershipCard(data: MembershipCardData) {
+export async function buildMembershipCardPdf(data: MembershipCardData): Promise<{ blob: Blob; fileName: string }> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a6", compress: true });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -279,5 +279,17 @@ export async function downloadMembershipCard(data: MembershipCardData) {
   }
 
   const safeName = m.full_name.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "-");
-  doc.save(`UMS-${safeName}-${todayIst()}.pdf`);
+  const fileName = `UMS-${safeName}-${todayIst()}.pdf`;
+  const blob = doc.output("blob");
+  return { blob, fileName };
+}
+
+export async function downloadMembershipCard(data: MembershipCardData) {
+  const { blob, fileName } = await buildMembershipCardPdf(data);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
 }
