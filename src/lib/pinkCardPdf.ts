@@ -48,25 +48,25 @@ export interface PinkCardPdfData {
   coach: { name: string; mobile: string } | null;
 }
 
-const rupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+const rupees = (n: number) => `Rs ${n.toLocaleString("en-IN")}`;
+
+const REASON_LABELS: Record<string, string> = {
+  trial_referral: "Trial referral",
+  membership_referral: "Membership referral",
+  renewal_redemption: "Redeemed at renewal",
+  serving_redemption: "Redeemed as extra servings",
+  referral_reversal: "Referral reversed",
+  manual_adjustment: "Manual adjustment",
+};
 
 function reasonLabel(reason: string, referredName?: string | null): string {
-  switch (reason) {
-    case "trial_referral":
-      return referredName ? `Trial referral — ${referredName}` : "Trial referral";
-    case "membership_referral":
-      return referredName ? `Membership referral — ${referredName}` : "Membership referral";
-    case "renewal_redemption":
-      return "Redeemed at renewal";
-    case "serving_redemption":
-      return "Redeemed as extra servings";
-    case "referral_reversal":
-      return referredName ? `Referral reversed — ${referredName}` : "Referral reversed";
-    case "manual_adjustment":
-      return "Manual adjustment";
-    default:
-      return reason;
-  }
+  const base = REASON_LABELS[reason] ?? reason;
+  return referredName ? `${base} - ${referredName}` : base;
+}
+
+function cleanNote(note: string | null): string {
+  if (!note) return "";
+  return note.replace(/\b(trial_referral|membership_referral|referral_reversal|renewal_redemption|serving_redemption|manual_adjustment)\b/g, (m) => REASON_LABELS[m] ?? m);
 }
 
 export async function buildPinkCardPdf(data: PinkCardPdfData): Promise<{ blob: Blob; fileName: string }> {
@@ -190,7 +190,7 @@ export async function buildPinkCardPdf(data: PinkCardPdfData): Promise<{ blob: B
   doc.setTextColor(...GREY);
   doc.text("BALANCE", IN + tileW / 2, y + 3, { align: "center" });
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(...DEEP_PINK);
   doc.text(`${bal} serving${bal === 1 ? "" : "s"}`, IN + tileW / 2, y + 8.5, { align: "center" });
 
@@ -203,7 +203,7 @@ export async function buildPinkCardPdf(data: PinkCardPdfData): Promise<{ blob: B
   doc.setTextColor(...GREY);
   doc.text("CREDIT VALUE", cx + tileW / 2, y + 3, { align: "center" });
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(...DEEP_PINK);
   doc.text(rupees(bal * PINK_CARD_SERVING_VALUE), cx + tileW / 2, y + 8.5, { align: "center" });
 
@@ -216,11 +216,11 @@ export async function buildPinkCardPdf(data: PinkCardPdfData): Promise<{ blob: B
   const ledger = data.ledger;
   autoTable(doc, {
     startY: y,
-    head: [["#", "Date", "Details", "+/−"]],
+    head: [["#", "Date", "Details", "+/-"]],
     body: ledger.map((row, i) => [
       String(i + 1),
       formatDate(row.created_at),
-      reasonLabel(row.reason, row.referred?.full_name) + (row.note ? ` · ${row.note}` : ""),
+      reasonLabel(row.reason, row.referred?.full_name) + (cleanNote(row.note) ? ` - ${cleanNote(row.note)}` : ""),
       (row.change > 0 ? "+" : "") + String(row.change),
     ]),
     margin: { left: IN, right: IN, top: F + 20, bottom: 12 },
