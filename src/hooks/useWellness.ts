@@ -723,7 +723,9 @@ export function useCheckIn() {
         toast({
           title: "Checked in",
           description:
-            result.mode === "trial"
+            result.mode === "credit"
+              ? result.message
+              : result.mode === "trial"
               ? "Trial visit recorded."
               : `Serving used. ${result.remaining} servings left.`,
         });
@@ -1522,7 +1524,7 @@ export function useCheckInWithWeight() {
         toast({
           title: "Checked in",
           description:
-            (result.mode === "trial" ? "Trial visit recorded." : `Serving used. ${result.remaining} servings left.`) +
+            (result.mode === "credit" ? result.message : result.mode === "trial" ? "Trial visit recorded." : `Serving used. ${result.remaining} servings left.`) +
             weightNote,
         });
       } else {
