@@ -1585,7 +1585,6 @@ export type Database = {
           mobile_number: string
           notes: string | null
           referred_by_member_id: string | null
-          referral_acquaintance: string | null
           referrer_mobile: string | null
           referrer_name: string | null
           source: Database["public"]["Enums"]["lead_source"]
@@ -1612,7 +1611,6 @@ export type Database = {
           mobile_number: string
           notes?: string | null
           referred_by_member_id?: string | null
-          referral_acquaintance?: string | null
           referrer_mobile?: string | null
           referrer_name?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
@@ -1639,7 +1637,6 @@ export type Database = {
           mobile_number?: string
           notes?: string | null
           referred_by_member_id?: string | null
-          referral_acquaintance?: string | null
           referrer_mobile?: string | null
           referrer_name?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
@@ -1853,7 +1850,6 @@ export type Database = {
           network_total: number
           pink_card_balance: number
           referred_by_member_id: string | null
-          referral_acquaintance: string | null
           referrer_mobile: string | null
           referrer_name: string | null
           status: Database["public"]["Enums"]["wellness_status"]
@@ -1893,7 +1889,6 @@ export type Database = {
           network_total?: number
           pink_card_balance?: number
           referred_by_member_id?: string | null
-          referral_acquaintance?: string | null
           referrer_mobile?: string | null
           referrer_name?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
@@ -1933,7 +1928,6 @@ export type Database = {
           network_total?: number
           pink_card_balance?: number
           referred_by_member_id?: string | null
-          referral_acquaintance?: string | null
           referrer_mobile?: string | null
           referrer_name?: string | null
           status?: Database["public"]["Enums"]["wellness_status"]
@@ -3245,7 +3239,6 @@ export type Database = {
           joined_on: string
           member_id: string
           mobile_number: string
-          referral_acquaintance: string
           status: string
         }[]
       }

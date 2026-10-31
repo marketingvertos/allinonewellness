@@ -494,6 +494,17 @@ Deno.serve(async (req) => {
       });
 
       let mediaUrl: string | null = null;
+      let mediaType: "image" | "document" = "document";
+      // Picture-header wish templates attach the club's creative.
+      const wishImage = (tpl?.template_name || "").endsWith("_img")
+        ? ({ birthday: "wishes/birthday_wish.jpg", anniversary: "wishes/anniversary_wish.jpg" } as Record<string, string>)[item.trigger_key]
+        : undefined;
+      if (wishImage) {
+        const signed = await supabase.storage.from("promotion-media").createSignedUrl(wishImage, 60 * 60 * 24 * 7);
+        if (!signed.data?.signedUrl) { await markFailed("Could not load wish picture"); continue; }
+        mediaUrl = signed.data.signedUrl;
+        mediaType = "image";
+      }
       if (item.trigger_key === "yellow_card") {
         try {
           const pdf = buildYellowCard({
@@ -516,7 +527,7 @@ Deno.serve(async (req) => {
 
       const result = await sendWhatsApp(supabase, cfg, {
         to,
-        ...(mediaUrl ? { mediaUrl, mediaType: "document" as const, mediaFileName: "Yellow-Card.pdf" } : {}),
+        ...(mediaUrl ? (mediaType === "image" ? { mediaUrl, mediaType: "image" as const } : { mediaUrl, mediaType: "document" as const, mediaFileName: "Yellow-Card.pdf" }) : {}),
         templateName: tpl?.template_name || null,
         templateLanguage: tpl?.template_language || null,
         vars: templateVars,
