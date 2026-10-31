@@ -662,12 +662,13 @@ export function useAdjustServings() {
 export function useTodayAttendance(memberMode?: MemberModeFilter) {
   return useQuery({
     queryKey: ["wellness-attendance-today", memberMode ?? "all"],
+    staleTime: 15_000,
     queryFn: async () => {
       const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       const ids = await memberIdsForMode(memberMode);
       let q = supabase
         .from("wellness_attendance")
-        .select("*, wellness_members(id, full_name, mobile_number)")
+        .select("id, member_id, visit_time, serving_deducted, remaining_balance_snapshot, checkin_method, wellness_members(id, full_name, mobile_number)")
         .eq("visit_date", today)
         .neq("checkin_method", "serving_issue" as never)
         .order("visit_time", { ascending: false });
@@ -690,10 +691,11 @@ export function useTodayAttendance(memberMode?: MemberModeFilter) {
 export function useMemberAttendance(memberId: string | undefined) {
   return useQuery({
     queryKey: ["wellness-attendance", memberId],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("wellness_attendance")
-        .select("*")
+        .select("id, visit_date, visit_time, serving_deducted, remaining_balance_snapshot, checkin_method")
         .eq("member_id", memberId!)
         .order("visit_date", { ascending: false })
         .limit(60);
@@ -3395,6 +3397,7 @@ function isoDateRange(from: string, to: string): string[] {
 export function useAttendanceRegister(from: string, to: string, memberMode?: MemberModeFilter) {
   return useQuery({
     queryKey: ["attendance-register", from, to, memberMode],
+    staleTime: 2 * 60_000,
     enabled: !!from && !!to && from <= to,
     queryFn: async (): Promise<AttendanceRegisterResult> => {
       let mq = supabase

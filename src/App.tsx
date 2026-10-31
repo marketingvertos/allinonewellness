@@ -47,8 +47,8 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Returning to a browser tab must never overwrite what someone is typing.
       refetchOnWindowFocus: false,
+      staleTime: 2 * 60_000,
     },
   },
 });
