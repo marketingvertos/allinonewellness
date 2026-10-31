@@ -75,7 +75,7 @@ type Col = { key: keyof DailyRow; label: string; money?: boolean; editable?: "mi
 const COLS: Col[] = [
   { key: "total_shake", label: "Total Shake" },
   { key: "new_guest", label: "New Guest" },
-  { key: "total_shake", label: "Daily Shake" },
+  { key: "daily_shake", label: "Daily Shake" },
   { key: "wlp", label: "WLP" },
   { key: "tp_new", label: "3D TP - N" },
   { key: "tp_repeat", label: "3D TP - R" },
@@ -162,7 +162,7 @@ function MonthlyRecord({ month }: { month: string }) {
   const m = manual ?? ({} as any);
   const lead = m.lead_generation_count ?? a.lead_generation_auto ?? 0;
   const lines: { sr: number; subject: string; value: number; field?: keyof MonthlyManual; money?: boolean }[] = [
-    { sr: 1, subject: "Total Shake", value: a.total_shake ?? 0 },
+    { sr: 1, subject: `Total Shake (Club ${a.daily_shake ?? 0} + WLP ${a.wlp ?? 0})`, value: a.total_shake ?? 0 },
     { sr: 2, subject: "Total Volume Points", value: m.volume_points ?? 0, field: "volume_points" },
     { sr: 3, subject: "Total New Guest", value: a.new_guest ?? 0 },
     { sr: 4, subject: "Total No. of 3 Day's Trial", value: a.trials_3day ?? 0 },
