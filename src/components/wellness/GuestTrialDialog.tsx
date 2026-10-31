@@ -39,6 +39,8 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
   const [weight, setWeight] = useState("");
   const [referrerMode, setReferrerMode] = useState<"member" | "other">("member");
   const [referrerId, setReferrerId] = useState<string | null>(null);
+  const [referrerIsCoach, setReferrerIsCoach] = useState(false);
+  const [acquaintance, setAcquaintance] = useState<"known" | "unknown" | null>(null);
   const [otherName, setOtherName] = useState("");
   const [otherMobile, setOtherMobile] = useState("");
   const [created, setCreated] = useState<{ mobile: string; loginError: string | null } | null>(null);
@@ -59,6 +61,8 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
       setWeight("");
       setReferrerMode("member");
       setReferrerId(null);
+      setReferrerIsCoach(false);
+      setAcquaintance(null);
       setOtherName("");
       setOtherMobile("");
       setCreated(null);
@@ -84,6 +88,7 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
       referred_by_member_id: referrerMode === "member" ? referrerId : null,
       referrer_name: referrerMode === "other" ? otherName : null,
       referrer_mobile: referrerMode === "other" ? otherMobile : null,
+      referral_acquaintance: referrerMode === "member" && referrerIsCoach ? acquaintance : null,
       local_area: localArea,
     });
 
@@ -231,7 +236,28 @@ export function GuestTrialDialog({ open, onOpenChange, defaultName }: Props) {
             </ToggleGroupItem>
           </ToggleGroup>
           {referrerMode === "member" ? (
-            <ReferrerPicker value={referrerId} onChange={(id) => setReferrerId(id)} />
+            <div className="space-y-3">
+              <ReferrerPicker value={referrerId} onChange={(id, _name, tags) => {
+                setReferrerId(id);
+                const isCoach = (tags ?? []).includes("coach");
+                setReferrerIsCoach(isCoach);
+                if (!isCoach) setAcquaintance(null);
+              }} />
+              {referrerIsCoach && referrerId && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">This referrer is a Coach. Was the guest from their known circle or a public invite?</p>
+                  <ToggleGroup
+                    type="single"
+                    value={acquaintance ?? ""}
+                    onValueChange={(v) => v && setAcquaintance(v as "known" | "unknown")}
+                    className="justify-start flex-wrap"
+                  >
+                    <ToggleGroupItem value="known" variant="outline" className="px-4">Known</ToggleGroupItem>
+                    <ToggleGroupItem value="unknown" variant="outline" className="px-4">Unknown / Public</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">

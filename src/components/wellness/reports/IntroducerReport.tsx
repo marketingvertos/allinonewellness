@@ -16,6 +16,7 @@ interface Row {
   member_id: string; full_name: string; mobile_number: string; joined_on: string; status: string;
   current_plan: string | null; introducer_id: string | null; introducer_name: string | null;
   introducer_mobile: string | null; introducer_kind: Kind; gold_type?: "new" | "renewal" | null;
+  referral_acquaintance?: "known" | "unknown" | null;
 }
 
 const ist = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -84,16 +85,16 @@ export function IntroducerReport() {
   const exportList = () => {
     if (!drill) return;
     downloadXlsx(`${drill.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${from}-to-${to}.xlsx`, "People", [
-      ["Name", "Mobile", "Joined", "Current plan", "Gold UMS type", "Status", "Introduced by", "Introducer mobile", "Type"],
-      ...drillPeople.map((r) => [r.full_name, r.mobile_number, formatDate(r.joined_on), r.current_plan ?? "", r.gold_type === "renewal" ? "Renewal" : r.gold_type === "new" ? "New" : "", r.status, r.introducer_name ?? "", r.introducer_mobile ?? "", KIND_LABEL[r.introducer_kind]]),
-    ], [24, 14, 14, 26, 14, 24, 16, 16]);
+      ["Name", "Mobile", "Joined", "Current plan", "Gold UMS type", "Status", "Introduced by", "Introducer mobile", "Type", "Known/Unknown"],
+      ...drillPeople.map((r) => [r.full_name, r.mobile_number, formatDate(r.joined_on), r.current_plan ?? "", r.gold_type === "renewal" ? "Renewal" : r.gold_type === "new" ? "New" : "", r.status, r.introducer_name ?? "", r.introducer_mobile ?? "", KIND_LABEL[r.introducer_kind], r.referral_acquaintance ?? ""]),
+    ], [24, 14, 14, 26, 14, 10, 24, 16, 16, 16]);
   };
 
   const exportAll = () => {
     downloadXlsx(`introducers-${from}-to-${to}.xlsx`, "Who introduced whom", [
-      ["New person", "Mobile", "Joined", "Current plan", "Gold UMS type", "Introduced by", "Introducer mobile", "Introducer type"],
-      ...rows.map((r) => [r.full_name, r.mobile_number, formatDate(r.joined_on), r.current_plan ?? "", r.gold_type === "renewal" ? "Renewal" : r.gold_type === "new" ? "New" : "", r.introducer_name ?? "", r.introducer_mobile ?? "", KIND_LABEL[r.introducer_kind]]),
-    ], [24, 14, 14, 26, 24, 16, 16]);
+      ["New person", "Mobile", "Joined", "Current plan", "Gold UMS type", "Introduced by", "Introducer mobile", "Introducer type", "Known/Unknown"],
+      ...rows.map((r) => [r.full_name, r.mobile_number, formatDate(r.joined_on), r.current_plan ?? "", r.gold_type === "renewal" ? "Renewal" : r.gold_type === "new" ? "New" : "", r.introducer_name ?? "", r.introducer_mobile ?? "", KIND_LABEL[r.introducer_kind], r.referral_acquaintance ?? ""]),
+    ], [24, 14, 14, 26, 14, 24, 16, 16, 16]);
   };
 
   const tiles: [string, Row[]][] = [
@@ -138,7 +139,9 @@ export function IntroducerReport() {
               <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
                 <tr>
                   <th className="p-3">Introduced by</th><th className="p-3">Type</th>
-                  <th className="p-3 text-right">Introduced</th><th className="p-3 text-right">Paid trial</th>
+                  <th className="p-3 text-right">Introduced</th>
+                  <th className="p-3 text-right">Known</th><th className="p-3 text-right">Unknown</th>
+                  <th className="p-3 text-right">Paid trial</th>
                   <th className="p-3 text-right">White Card</th><th className="p-3 text-right">New Gold UMS</th><th className="p-3 text-right">Renewal Gold UMS</th>
                 </tr>
               </thead>
@@ -150,6 +153,8 @@ export function IntroducerReport() {
                       <td className="p-3 font-medium">{g.name}{g.mobile ? <span className="ml-2 text-xs text-muted-foreground">{g.mobile}</span> : null}</td>
                       <td className="p-3"><Badge variant={g.kind === "coach" ? "default" : "secondary"}>{KIND_LABEL[g.kind]}</Badge></td>
                       <td className="p-3 text-right"><NumBtn bold n={g.people.length} title={`Introduced by ${g.name}`} people={g.people} /></td>
+                      <td className="p-3 text-right">{g.kind === "coach" ? <NumBtn n={g.people.filter((p) => p.referral_acquaintance === "known").length} title={`${g.name} · Known`} people={g.people.filter((p) => p.referral_acquaintance === "known")} /> : <span className="text-muted-foreground">—</span>}</td>
+                      <td className="p-3 text-right">{g.kind === "coach" ? <NumBtn n={g.people.filter((p) => p.referral_acquaintance === "unknown").length} title={`${g.name} · Unknown / Public`} people={g.people.filter((p) => p.referral_acquaintance === "unknown")} /> : <span className="text-muted-foreground">—</span>}</td>
                       <td className="p-3 text-right"><NumBtn n={b("paid_trial").length} title={`${g.name} · Paid trial`} people={b("paid_trial")} /></td>
                       <td className="p-3 text-right"><NumBtn n={b("white").length} title={`${g.name} · White Card`} people={b("white")} /></td>
                       <td className="p-3 text-right"><NumBtn n={b("gold_new").length} title={`${g.name} · New Gold UMS`} people={b("gold_new")} /></td>
@@ -158,7 +163,7 @@ export function IntroducerReport() {
                   );
                 })}
                 {!groups.length && (
-                  <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No introducers recorded in this period.</td></tr>
+                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">No introducers recorded in this period.</td></tr>
                 )}
               </tbody>
             </table>
@@ -185,6 +190,7 @@ export function IntroducerReport() {
                   <p className="text-xs text-muted-foreground">{p.mobile_number} · joined {formatDate(p.joined_on)} · {p.status}</p>
                   <p className="text-xs text-muted-foreground">
                     Introduced by: {p.introducer_kind === "none" ? <span className="text-destructive">Not recorded</span> : `${p.introducer_name ?? "—"}${p.introducer_mobile ? ` · ${p.introducer_mobile}` : ""} (${KIND_LABEL[p.introducer_kind]})`}
+                    {p.introducer_kind === "coach" && p.referral_acquaintance && <Badge variant="outline" className="ml-2 text-[10px]">{p.referral_acquaintance === "known" ? "Known" : "Unknown"}</Badge>}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
@@ -198,7 +204,7 @@ export function IntroducerReport() {
               </div>
               {editId === p.member_id && (
                 <div className="mt-2 rounded-md border p-3">
-                  <IntroducerEditor member={{ id: p.member_id, referred_by_member_id: null, referrer_name: null, referrer_mobile: null }} />
+                  <IntroducerEditor member={{ id: p.member_id, referred_by_member_id: null, referrer_name: null, referrer_mobile: null, referral_acquaintance: null }} />
                 </div>
               )}
             </li>

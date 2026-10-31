@@ -15,7 +15,7 @@ import { Check, ChevronsUpDown, X } from "lucide-react";
 
 interface Props {
   value: string | null;
-  onChange: (id: string | null, name?: string) => void;
+  onChange: (id: string | null, name?: string, tags?: string[]) => void;
   excludeId?: string;
   placeholder?: string;
 }
@@ -53,12 +53,13 @@ export function ReferrerPicker({ value, onChange, excludeId, placeholder = "Sear
                     key={r.id}
                     value={r.id}
                     onSelect={() => {
-                      onChange(r.id, r.full_name);
+                      onChange(r.id, r.full_name, r.tags);
                       setOpen(false);
                     }}
                   >
                     <Check className={`mr-2 h-4 w-4 ${value === r.id ? "opacity-100" : "opacity-0"}`} />
                     <span className="flex-1">{r.full_name}</span>
+                    {(r.tags ?? []).includes("coach") && <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">Coach</span>}
                     <span className="text-xs text-muted-foreground">{r.mobile_number}</span>
                   </CommandItem>
                 ))}

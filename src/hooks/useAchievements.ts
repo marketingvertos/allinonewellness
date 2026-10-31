@@ -277,14 +277,14 @@ export function useMemberSearch(term: string, excludeId?: string) {
     queryFn: async () => {
       let q = supabase
         .from("wellness_members")
-        .select("id, full_name, mobile_number, status")
+        .select("id, full_name, mobile_number, status, tags")
         .neq("status", "inactive")
         .order("full_name")
         .limit(20);
       if (term.trim()) q = q.or(`full_name.ilike.%${term}%,mobile_number.ilike.%${term}%`);
       const { data, error } = await q;
       if (error) throw error;
-      const rows = data as unknown as { id: string; full_name: string; mobile_number: string; status: string }[];
+      const rows = data as unknown as { id: string; full_name: string; mobile_number: string; status: string; tags: string[] }[];
       return excludeId ? rows.filter((r) => r.id !== excludeId) : rows;
     },
   });

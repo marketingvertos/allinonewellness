@@ -80,6 +80,9 @@ export interface WellnessMember {
   batch_id: string | null;
   category_id?: string | null;
   referred_by_member_id?: string | null;
+  referrer_name?: string | null;
+  referrer_mobile?: string | null;
+  referral_acquaintance?: string | null;
   contact_id: string | null;
   is_guest: boolean;
   member_mode: string;
@@ -2414,6 +2417,7 @@ export function useStartGuestTrial() {
       referred_by_member_id?: string | null;
       referrer_name?: string | null;
       referrer_mobile?: string | null;
+      referral_acquaintance?: string | null;
       local_area?: string | null;
     }) => {
       const duration = args.duration_days ?? 3;
@@ -2435,6 +2439,7 @@ export function useStartGuestTrial() {
           referred_by_member_id: args.referred_by_member_id ?? null,
           referrer_name: args.referred_by_member_id ? null : args.referrer_name?.trim() || null,
           referrer_mobile: args.referred_by_member_id ? null : args.referrer_mobile?.trim() || null,
+          referral_acquaintance: args.referral_acquaintance ?? null,
           local_area: args.local_area?.trim() || null,
           created_by: args.created_by,
         } as never)
