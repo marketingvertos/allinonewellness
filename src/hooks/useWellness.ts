@@ -19,6 +19,25 @@ async function readAllPages<T>(
   }
 }
 
+type CheckinResult = { status: string; message?: string; remaining?: number; mode?: string; owed?: number };
+
+/** At zero servings, staff may log up to 3 credit visits; they are deducted from the next plan. */
+async function offerCreditVisit(memberId: string, result: CheckinResult): Promise<CheckinResult> {
+  if (result?.status !== "renew_required") return result;
+  const ok = window.confirm(
+    "No servings left. Mark a credit visit instead?\n\nUp to 3 credit visits are allowed; they are deducted automatically when the member renews.",
+  );
+  if (!ok) return result;
+  const note = window.prompt("Optional note for this credit visit", "") ?? "";
+  const { data, error } = await supabase.rpc("staff_credit_checkin", { p_member_id: memberId, p_note: note || null });
+  if (error) throw error;
+  const r = data as unknown as CheckinResult;
+  if (r?.status === "ok") {
+    return { ...r, mode: "credit", message: `Credit visit recorded. Member owes ${r.owed} serving(s), deducted on renewal.` };
+  }
+  return r;
+}
+
 function getErrorMessage(error: unknown): string {
   const e = error as { message?: string; details?: string; hint?: string } | null;
   const raw = (e?.message ?? "").trim();
@@ -696,7 +715,7 @@ export function useCheckIn() {
     mutationFn: async (args: { memberId: string; method?: string }) => {
       const { data, error } = await supabase.functions.invoke("servings-checkin", { body: { action: "staff_checkin", member_id: args.memberId, method: args.method ?? "staff_entry" } });
       if (error) throw error;
-      return data as unknown as { status: string; message?: string; remaining?: number; mode?: string };
+      return offerCreditVisit(args.memberId, data as never);
     },
     onSuccess: (result) => {
       qc.invalidateQueries();
@@ -704,7 +723,9 @@ export function useCheckIn() {
         toast({
           title: "Checked in",
           description:
-            result.mode === "trial"
+            result.mode === "credit"
+              ? result.message
+              : result.mode === "trial"
               ? "Trial visit recorded."
               : `Serving used. ${result.remaining} servings left.`,
         });
@@ -1465,7 +1486,7 @@ export function useCheckInWithWeight() {
       if (!args.skipCheckIn) {
         const { data, error } = await supabase.functions.invoke("servings-checkin", { body: { action: "staff_checkin", member_id: args.memberId, method: args.method ?? "staff_entry" } });
         if (error) throw error;
-        result = data as never;
+        result = (await offerCreditVisit(args.memberId, data as never)) as never;
       }
 
       if (args.weight && args.recordedBy) {
@@ -1503,7 +1524,7 @@ export function useCheckInWithWeight() {
         toast({
           title: "Checked in",
           description:
-            (result.mode === "trial" ? "Trial visit recorded." : `Serving used. ${result.remaining} servings left.`) +
+            (result.mode === "credit" ? result.message : result.mode === "trial" ? "Trial visit recorded." : `Serving used. ${result.remaining} servings left.`) +
             weightNote,
         });
       } else {

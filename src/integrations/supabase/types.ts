@@ -3477,6 +3477,10 @@ export type Database = {
       }
       rotate_checkin_code: { Args: never; Returns: string }
       seed_default_pipeline: { Args: { p_user_id: string }; Returns: string }
+      staff_credit_checkin: {
+        Args: { p_member_id: string; p_note?: string }
+        Returns: Json
+      }
       submit_trial_lead: {
         Args: {
           p_area?: string

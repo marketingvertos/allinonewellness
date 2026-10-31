@@ -589,6 +589,13 @@
       "when": 1793269656835,
       "tag": "0083_member_local_area",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1793444612200,
+      "tag": "0084_credit_visits",
+      "breakpoints": true
     }
   ]
 }
