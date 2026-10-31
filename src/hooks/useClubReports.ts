@@ -2,15 +2,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface DailyRow {
-  day: string; total_shake: number; wlp: number; new_guest: number; tp_new: number; tp_repeat: number;
+  day: string; total_shake: number; daily_shake: number; wlp: number; new_guest: number; tp_new: number; tp_repeat: number;
   ums15_new: number; ums15_renew: number; ums30_cust_new: number; ums30_cust_renew: number; ums30_coach: number;
   total_amount: number; cash: number; swipe: number; upi: number; online: number; milk: number; product_retail: number;
 }
 
 export interface MonthlyAuto {
-  total_shake: number; new_guest: number; trials_3day: number; ums15: number; ums30: number;
+  total_shake: number; daily_shake: number; wlp: number; new_guest: number; trials_3day: number; ums15: number; ums30: number;
   ums30_new_cust: number; ums15_new_cust: number; total_customers: number; total_coaches: number;
   total_amount: number; lead_generation_auto: number;
+}
+
+/** Total Shake = morning club servings + WLP session servings. */
+export function withWlpTotal(clubShakes: number, wlp: number) {
+  return { daily_shake: clubShakes, wlp, total_shake: clubShakes + wlp };
 }
 
 export type MonthlyManual = {
@@ -49,7 +54,7 @@ export function useClubDailyReport(month: string) {
       if (error) throw error;
       const wlp = await wlpCountsByDay(month);
       return ((data ?? []) as any[]).map((r) => {
-        const o: any = { ...r, wlp: wlp[String(r.day).slice(0, 10)] ?? 0 };
+        const o: any = { ...r, ...withWlpTotal(Number(r.total_shake ?? 0), wlp[String(r.day).slice(0, 10)] ?? 0) };
         for (const k of Object.keys(o)) if (k !== "day") o[k] = Number(o[k] ?? 0);
         return o as DailyRow;
       });
@@ -63,7 +68,10 @@ export function useClubMonthlyReport(month: string) {
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_club_monthly_report", { p_month: month });
       if (error) throw error;
-      return data as unknown as MonthlyAuto;
+      const wlpDays = await wlpCountsByDay(month);
+      const wlp = Object.values(wlpDays).reduce((s, n) => s + n, 0);
+      const a = data as unknown as MonthlyAuto;
+      return { ...a, ...withWlpTotal(Number(a.total_shake ?? 0), wlp) } as MonthlyAuto;
     },
   });
 }
