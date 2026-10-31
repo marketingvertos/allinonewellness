@@ -79,6 +79,8 @@ export default function PortalCheckIn() {
   if (idle) {
     const weightNum = weight ? Number(weight) : null;
     const weightInvalid = weightNum != null && (Number.isNaN(weightNum) || weightNum <= 0 || weightNum > 400);
+    const ist = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    const wlpTime = ist.getDay() === 3 && ist.getHours() >= 16;
 
     return (
       <>
@@ -87,12 +89,22 @@ export default function PortalCheckIn() {
             <CardTitle className="text-base">{code ? "Request attendance" : "Check in"}</CardTitle>
             <CardDescription>
               {code
-                ? "Enter today's weight, then send your attendance request to the front desk."
+                ? "Enter today's weight (required), then send your attendance request to the front desk."
                 : "Scan the QR poster at the centre to start."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
-            {code ? (
+            {code && wlpTime ? (
+              <>
+                <p>
+                  This is the Balanced Living Program (WLP) session. No weight is needed — just punch your
+                  attendance.
+                </p>
+                <Button className="w-full" size="lg" onClick={() => void runCheckIn(code, null)}>
+                  Punch WLP attendance
+                </Button>
+              </>
+            ) : code ? (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="request-weight">Today&apos;s weight (kg)</Label>
@@ -107,7 +119,7 @@ export default function PortalCheckIn() {
                     <p className="text-xs text-destructive">Enter a weight between 1 and 400 kg.</p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      Optional — the team verifies it before approving your attendance.
+                      Required — the team verifies it before approving your attendance.
                     </p>
                   )}
                 </div>
@@ -118,7 +130,7 @@ export default function PortalCheckIn() {
                 <Button
                   className="w-full"
                   size="lg"
-                  disabled={weightInvalid}
+                  disabled={weightNum == null || weightInvalid}
                   onClick={() => void runCheckIn(code, weightInvalid ? null : weightNum)}
                 >
                   Request attendance
