@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Check, Download, FileText, RefreshCw, Search, Sparkles, TrendingUp, Trophy, UserCheck, Users, UserX, X } from "lucide-react";
 import { MemberModeFilter, useAttendanceRegister, AttendanceRow } from "@/hooks/useWellness";
 import { MemberSheetById } from "@/components/wellness/MemberSheetById";
+import { AttendanceFilterBar, applyAttendanceFilters, formatLastSeen, DEFAULT_FILTERS, type AttendanceFilters } from "@/components/wellness/AttendanceFilterBar";
 import { cn } from "@/lib/utils";
 import { downloadXlsx } from "@/lib/reportExport";
 import { downloadBrandedPdf } from "@/lib/reportPdf";
@@ -208,10 +209,10 @@ export default function WellnessAttendance() {
         <Skeleton className="h-64 w-full" />
       ) : view === "daily" ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <MemberList title="Present at club" tone="present" rows={present} onSelect={setSelected} />
-          <MemberList title="Serving issued (not at club)" tone="served" rows={served} onSelect={setSelected} />
-          <MemberList title="WLP evening session" tone="served" rows={wlpToday} onSelect={setSelected} />
-          <MemberList title="Absent" tone="absent" rows={absent} onSelect={setSelected} />
+          <MemberList title="Present at club" tone="present" rows={present} today={data?.today ?? ""} onSelect={setSelected} />
+          <MemberList title="Serving issued (not at club)" tone="served" rows={served} today={data?.today ?? ""} onSelect={setSelected} />
+          <MemberList title="WLP evening session" tone="served" rows={wlpToday} today={data?.today ?? ""} onSelect={setSelected} />
+          <MemberList title="Absent" tone="absent" rows={absent} today={data?.today ?? ""} onSelect={setSelected} />
         </div>
       ) : (
         <Card>
@@ -309,65 +310,70 @@ function Tile({ icon, label, value, sub }: { icon: React.ReactNode; label: strin
   );
 }
 
-function MemberList({ title, tone, rows, onSelect }: {
-  title: string; tone: "present" | "served" | "absent"; rows: AttendanceRow[]; onSelect: (id: string) => void;
+function MemberList({ title, tone, rows, today, onSelect }: {
+  title: string; tone: "present" | "served" | "absent"; rows: AttendanceRow[]; today: string; onSelect: (id: string) => void;
 }) {
-  const showTrialFilter = tone === "present" || tone === "absent";
-  const [trialOnly, setTrialOnly] = useState(false);
+  const showFilters = tone === "present" || tone === "absent";
+  const [filters, setFilters] = useState<AttendanceFilters>({ ...DEFAULT_FILTERS, statuses: new Set() });
 
-  const trialCount = showTrialFilter ? rows.filter((r) => r.status === "trial").length : 0;
-  const visible = trialOnly ? rows.filter((r) => r.status === "trial") : rows;
+  const visible = showFilters ? applyAttendanceFilters(rows, filters, today) : rows;
+  const isFiltered = showFilters && visible.length !== rows.length;
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           {title}
-          <Badge variant={tone === "present" ? "default" : tone === "served" ? "secondary" : "destructive"}>{rows.length}</Badge>
+          <Badge variant={tone === "present" ? "default" : tone === "served" ? "secondary" : "destructive"}>
+            {isFiltered ? `${visible.length} / ${rows.length}` : rows.length}
+          </Badge>
         </CardTitle>
-        {showTrialFilter && trialCount > 0 && (
-          <div className="mt-1.5">
-            <Button size="sm" variant={trialOnly ? "default" : "outline"}
-              className="h-7 gap-1.5 text-xs" onClick={() => setTrialOnly((v) => !v)}>
-              <Sparkles className="h-3.5 w-3.5" />
-              Trial / New Guest
-              <Badge variant={trialOnly ? "secondary" : "outline"} className="ml-0.5 h-5 min-w-[20px] justify-center px-1.5 text-[10px]">{trialCount}</Badge>
-            </Button>
-          </div>
+        {showFilters && (
+          <AttendanceFilterBar filters={filters} onChange={setFilters} />
         )}
       </CardHeader>
       <CardContent className="space-y-1.5">
-        {visible.length ? visible.map((r) => (
-          <button key={r.memberId} onClick={() => onSelect(r.memberId)}
-            className="flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/50">
-            <div className="min-w-0">
-              <p className="truncate font-medium">
-                {r.name}
-                {r.status === "trial" && <Badge variant="outline" className="ml-1.5 text-[10px] align-middle">Trial</Badge>}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">{r.planName ?? "No active plan"}</p>
-              {tone === "present" && (
-                <p className="truncate text-xs">
-                  {r.latestWeight != null ? (
-                    <>
-                      {r.latestWeight} kg
-                      {r.latestWeightDate && r.latestWeightDate !== Object.keys(r.dayMap)[0] && (
-                        <span className="text-muted-foreground"> (last: {fmt(r.latestWeightDate, { day: "2-digit", month: "short" })})</span>
-                      )}
-                      {" · "}<ChangeLabel r={r} />
-                    </>
-                  ) : <span className="text-muted-foreground">No reading</span>}
+        {visible.length ? visible.map((r) => {
+          const lastSeen = formatLastSeen(r.lastVisitDate, today);
+          return (
+            <button key={r.memberId} onClick={() => onSelect(r.memberId)}
+              className="flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/50">
+              <div className="min-w-0">
+                <p className="truncate font-medium">
+                  {r.name}
+                  {r.status === "trial" && <Badge variant="outline" className="ml-1.5 text-[10px] align-middle">Trial</Badge>}
+                  {r.status === "expired" && <Badge variant="destructive" className="ml-1.5 text-[10px] align-middle">Expired</Badge>}
+                  {r.status === "renewal_due" && <Badge variant="secondary" className="ml-1.5 text-[10px] align-middle">Renewal</Badge>}
                 </p>
-              )}
-            </div>
-            {tone === "served" && (
-              <Badge variant="outline" className="shrink-0 text-[10px]">Serving issued</Badge>
-            )}
-            {r.remainingServings !== null && (
-              <span className="shrink-0 text-xs text-muted-foreground">{r.remainingServings} left</span>
-            )}
-          </button>
-        )) : <p className="text-sm text-muted-foreground">{trialOnly ? "No trial members." : "Nobody here."}</p>}
+                <p className="truncate text-xs text-muted-foreground">{r.planName ?? "No active plan"}</p>
+                {tone === "present" && (
+                  <p className="truncate text-xs">
+                    {r.latestWeight != null ? (
+                      <>
+                        {r.latestWeight} kg
+                        {r.latestWeightDate && r.latestWeightDate !== Object.keys(r.dayMap)[0] && (
+                          <span className="text-muted-foreground"> (last: {fmt(r.latestWeightDate, { day: "2-digit", month: "short" })})</span>
+                        )}
+                        {" · "}<ChangeLabel r={r} />
+                      </>
+                    ) : <span className="text-muted-foreground">No reading</span>}
+                  </p>
+                )}
+                <p className={cn("text-[11px]", lastSeen.warn ? "text-orange-500" : "text-muted-foreground")}>
+                  Last seen: {lastSeen.text}
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                {tone === "served" && (
+                  <Badge variant="outline" className="text-[10px]">Serving issued</Badge>
+                )}
+                {r.remainingServings !== null && (
+                  <span className="text-xs text-muted-foreground">{r.remainingServings} left</span>
+                )}
+              </div>
+            </button>
+          );
+        }) : <p className="text-sm text-muted-foreground">Nobody here.</p>}
       </CardContent>
     </Card>
   );

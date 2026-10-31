@@ -3336,6 +3336,7 @@ export interface AttendanceRow {
   latestWeight: number | null;
   latestWeightDate: string | null;
   totalChange: number | null;
+  lastVisitDate: string | null;
 }
 
 export interface AttendanceRegisterResult {
@@ -3456,6 +3457,25 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
         if (!data || data.length < pageSize) break;
       }
 
+      // Last physical visit date per member (all-time, excludes serving_issue).
+      const lastVisitMap: Record<string, string> = {};
+      if (ids.length) {
+        for (let page = 0; page < 50; page++) {
+          const { data: lv, error } = await supabase
+            .from("wellness_attendance")
+            .select("member_id, visit_date")
+            .in("member_id", ids)
+            .neq("checkin_method", "serving_issue" as never)
+            .order("visit_date", { ascending: false })
+            .range(page * pageSize, page * pageSize + pageSize - 1);
+          if (error) throw error;
+          for (const r of lv ?? []) {
+            if (!lastVisitMap[r.member_id]) lastVisitMap[r.member_id] = r.visit_date;
+          }
+          if (!lv || lv.length < pageSize) break;
+        }
+      }
+
       const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       const dates = isoDateRange(from, to);
       const countedDates = dates.filter((d) => d <= today);
@@ -3503,6 +3523,7 @@ export function useAttendanceRegister(from: string, to: string, memberMode?: Mem
           latestWeight: latest?.w ?? null,
           latestWeightDate: latest?.d ?? null,
           totalChange: init != null && latest ? Math.round((latest.w - init) * 10) / 10 : null,
+          lastVisitDate: lastVisitMap[m.id] ?? null,
         };
       });
       rows.sort((a, b) => a.name.localeCompare(b.name));
