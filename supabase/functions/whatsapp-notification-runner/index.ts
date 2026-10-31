@@ -527,7 +527,7 @@ Deno.serve(async (req) => {
 
       const result = await sendWhatsApp(supabase, cfg, {
         to,
-        ...(mediaUrl ? { mediaUrl, mediaType: "document" as const, mediaFileName: "Yellow-Card.pdf" } : {}),
+        ...(mediaUrl ? (mediaType === "image" ? { mediaUrl, mediaType: "image" as const } : { mediaUrl, mediaType: "document" as const, mediaFileName: "Yellow-Card.pdf" }) : {}),
         templateName: tpl?.template_name || null,
         templateLanguage: tpl?.template_language || null,
         vars: templateVars,
